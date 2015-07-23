@@ -31,6 +31,9 @@ jpoApp.factory('FileExplorerModel', ['jpoModelBuilder', 'Model', function(jpoMod
 			selectParentDirFromLinks: function () {
 				return linkHelpers.selectActionFromLinks('parent', this.links);
 			},
+			selectSelfPhysicalFromLinks: function () {
+				return linkHelpers.selectActionFromLinks('self.phys', this.links);
+			},
 			getFolderByLink: function(linkUrl) {
 				var self = this;
 

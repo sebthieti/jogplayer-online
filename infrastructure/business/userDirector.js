@@ -127,18 +127,24 @@ UserDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, issuer
 };
 
 UserDirector.prototype.removeUserByIdAsync = function(userId, currentUser) {
-	//if (currentUser.role !== 'admin') {
-	//	throw 'Not authorized no manage users.';
-	//}
-	//
-	//return _userProxy
-	//	.getUserByIdWithPermissionsAsync(userId)
-	//	.then(function(user) {
-	//		if (user.isRoot === true) {
-	//			throw 'Root user cannot be removed.';
-	//		}
-	//		return _userProxy.removeUserByIdAsync(user, currentUser);
-	//	});
+	if (!currentUser.permissions.isRoot && !currentUser.permissions.isAdmin) {
+		throw "Not authorized no manage users.";
+	}
+	if (currentUser.id === userId) {
+		throw "Cannot remove yourself.";
+	}
+
+	return _userProxy
+		.getUserByIdWithPermissionsAsync(userId)
+		.then(function(user) {
+			if (!user) {
+				return;
+			}
+			if (user.isRoot === true) {
+				throw 'Root user cannot be removed.';
+			}
+			return _userProxy.removeUserByIdAsync(user, currentUser);
+		});
 };
 
 module.exports = UserDirector;

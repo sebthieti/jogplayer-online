@@ -4,70 +4,20 @@
 
 		<ol id="user-list">
 			<li ng-repeat="userVm in usersVm">
-				<div class="user-info">
-					<div class="avatar-container"></div>
-					<div class="user" ng-hide="userVm.isEditing">
-						<div>
-							<div>
-								<span class="full-name" ng-bind="::userVm.model.fullName"></span>&nbsp;<span class="user-name">({{ ::userVm.model.username }})</span>
-							</div>
-							<span class="email" ng-bind="::userVm.model.email"></span>
-						</div>
-						<div class="edit">
-							<button class="btn-rounded-new btn-small icon-pencil" ng-click="beginEditUser(userVm)"></button>
-						</div>
-						<div class="remove" ng-hide="userVm.model.isRoot">
-							<button class="btn-rounded-new btn-small" ng-click="removeUser(userVm)">X</button>
-						</div>
+				<div ng-hide="userVm.isEditing" class="edit-container">
+					<div class="edit">
+						<button class="btn-rounded-new btn-small icon-pencil" style="display: block" ng-click="beginEditUser(userVm)"></button>
+						<button class="btn-rounded-new btn-small" style="display: block;margin-top: 5px" ng-hide="userVm.model.permissions.isRoot"  ng-click="removeUser(userVm)">X</button>
 					</div>
-					<div class="user" ng-show="userVm.isEditing">
-						<div class="remove">
-							<button class="btn-rounded-new btn-small" ng-click="cancelEditUser(userVm)">X</button>
-						</div>
-						<form ng-submit="submitUser(userVm)">
-							<div>
-								<input type="text" name="fullName" ng-model="userVm.model.fullName">&nbsp;(<input type="text" name="username" ng-model="userVm.model.username">)
-							</div>
-							<input placeholder="Email" name="email" type="email" ng-model="userVm.model.email">
-
-							<label for="is-admin-edit">Is Admin</label>
-							<input id="is-admin-edit" name="isAdmin" type="checkbox" ng-model="userVm.model.permissions.isAdmin">
-
-							<label for="can-write-edit">Can Write</label>
-							<input id="can-write-edit" name="canWrite" type="checkbox" ng-model="userVm.model.permissions.canWrite">
-
-							<!--<ul>-->
-								<!--<li ng-repeat="allowPath in userVm.model.permissions.allowPaths">-->
-									<!--<input type="text" ng-model="allowPath.path">-->
-									<!--<button type="button" ng-click="removeAllowPath(allowPath, userVm)" class="icon-close"></button>-->
-								<!--</li>-->
-								<!--<li>-->
-									<!--<div>-->
-										<!--<button type="button" ng-click="addAllowedPathToNewUser(userVm)">+ Allow Path</button>-->
-									<!--</div>-->
-								<!--</li>-->
-							<!--</ul>-->
-							<ul>
-								<li ng-repeat="denyPath in userVm.model.permissions.denyPaths">
-									<input type="text" ng-model="denyPath.path">
-									<button type="button" ng-click="removeDenyPath(denyPath, userVm)" class="icon-close"></button>
-								</li>
-								<li>
-									<div>
-										<button type="button" ng-click="addDenyPathToNewUser(userVm)">+ Deny Path</button>
-									</div>
-								</li>
-							</ul>
-							<input placeholder="HomePath" type="text" ng-model="userVm.model.permissions.homePath">
-							<button type="submit">Commit</button>
-						</form>
-					</div>
-
+					<user-summary user-vm="userVm"></user-summary>
+				</div>
+				<div ng-show="userVm.isEditing">
+					<button class="btn-rounded-new btn-small" style="position: absolute;right: 22px" ng-click="cancelEditUser(userVm)">X</button>
+					<add-or-edit-user user-vm="userVm"></add-or-edit-user>
 				</div>
 			</li>
 			<li>
 				<!--ng-class="canShowAddUserArea ? 'active' : 'inactive'"-->
-
 				<div id="add-user">
 					<!-- TODO Remove ng-show once accordion anim in use -->
 					<div id="add-user-button-area" ng-hide="canShowAddUserPanel">

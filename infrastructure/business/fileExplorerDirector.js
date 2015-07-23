@@ -59,22 +59,22 @@ function filterBySupportedMediaTypes(fileInfos) {
 				return true;
 			}
 			var ext = fileInfo.getName().substring(fileInfo.getName().lastIndexOf('.'));
-			return isSupportedMediaExt(ext);
+			return isSupportedMediumExt(ext);
 		})
 		.toArray();
 }
 
-function isSupportedMediaExt(ext) {
+function isSupportedMediumExt(ext) {
 	switch(ext) {
-		case ".mp3":
-		case ".flac":
-		case ".ogg":
+		//case ".mp3":
+		//case ".flac":
+		//case ".ogg":
 		case '.m3u':
 		case '.m3u8':
 		case '.pls':
-			return true;
-		default:
 			return false;
+		default:
+			return true;
 	}
 }
 

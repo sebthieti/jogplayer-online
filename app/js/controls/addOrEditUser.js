@@ -8,14 +8,14 @@ jpoApp.directive("addOrEditUser", [
 	function($timeout, userBusiness, authBusiness, viewModelBuilder) {
 	return {
 		restrict: 'E',
-		/*scope: {
-
-		},*/
+		scope: { userVm: '=?' },
 		templateUrl: '/templates/controls/addOrEditUser.html',
 		controller: function($scope) {
 			$scope.canShowIdentityTab = true;
 			$scope.canShowHomePathTab = false;
 			$scope.canShowDenyPathsTab = false;
+			$scope.homeFolderPath = "";
+			$scope.canShowDenyPathsExplorer = false;
 			$scope.tabSelected = function(tabName) {
 				switch (tabName) {
 					case "identity":
@@ -36,16 +36,22 @@ jpoApp.directive("addOrEditUser", [
 				}
 			};
 
+			//var _currentIndexEdited = -1;
 
-			var _currentIndexEdited = -1;
+			$scope.selectedDenyPath = "";
 
-			$scope.newUserVm = null;
-			$scope.editUserVm = null;
+			$scope.isNewUser = $scope.userVm === undefined;
+			$scope.isExistingUser = !$scope.isNewUser;
 
-			$scope.canShowAddUserPanel = false;
+			function hasAdminPermissions() {
+				return $scope.userVm.model.permissions &&
+					($scope.userVm.model.permissions.isRoot
+					||
+					$scope.userVm.model.permissions.isAdmin);
+			}
 
-			$scope.beginAddUser = function() {
-				$scope.newUserVm = viewModelBuilder.buildEditableViewModel({
+			if ($scope.isNewUser) {
+				$scope.userVm = viewModelBuilder.buildEditableViewModel({
 					isActive: true,
 					fullName: '',
 					username: '',
@@ -59,36 +65,26 @@ jpoApp.directive("addOrEditUser", [
 						homePath: ''
 					}
 				});
-				$scope.canShowAddUserPanel = true;
-			};
+			} else {
+				$scope.isRootUser = hasAdminPermissions();
+			}
 
-			$scope.beginAddAllowedPath = function() {
-				$scope.newAllowedPath = {};
-				//$scope.canShowAddAllowedPathArea = true;
-			};
+			$scope.submitCaption = $scope.isNewUser ? "Add" : "Done";
 
-			$scope.addAllowedPathToNewUser = function(userVm) {
-				userVm.model.permissions.allowPaths.push({ path: '' });
-				//$scope.newAllowedPath = {};
-				//$scope.canShowAddUserArea = true;
-			};
-
+			$scope.canShowAddUserPanel = false;
 			$scope.addDenyPathToNewUser = function(userVm) {
-				userVm.model.permissions.denyPaths.push({ path: '' });
-				//$scope.newAllowedPath = {};
-				//$scope.canShowAddUserArea = true;
+				userVm.model.permissions.denyPaths.push({ path: $scope.selectedDenyPath  });
+				$scope.canShowDenyPathsList = true;
+				$scope.canShowDenyPathsExplorer = !$scope.canShowDenyPathsList;
 			};
 
+			$scope.showDenyPathExplorer = function() {
+				$scope.canShowDenyPathsExplorer = true;
+				$scope.canShowDenyPathsList = !$scope.canShowDenyPathsExplorer;
+			};
+			$scope.canShowDenyPathsList = true;
+			$scope.canShowDenyPathsExplorer = !$scope.canShowDenyPathsList;
 
-
-			//$scope.endAddAllowedPath = function(userVm) {
-			//	userVm.model.permissions.allowPaths.push($scope.newAllowedPath);
-			//	userBusiness
-			//		.updateUserAsync(userVm.model)
-			//		.then(function() {
-			//			//$scope.newUser = null;
-			//		});
-			//};
 
 			$scope.endAddAllowedPathNewUser = function(userVm) {
 				userVm.model.permissions.allowPaths.push($scope.newAllowedPath);
@@ -100,56 +96,48 @@ jpoApp.directive("addOrEditUser", [
 					});
 			};
 
-			$scope.removeAllowPath = function(allowPath, newUserVm) {
-				newUserVm.model.permissions.allowPaths = _.filter(newUserVm.model.permissions.allowPaths, function(x) {
-					return x !== allowPath;
-				});
-			};
-			$scope.removeDenyPath = function(denyPath, newUserVm) {
-				newUserVm.model.permissions.denyPaths = _.filter(newUserVm.model.permissions.denyPaths, function(x) {
+			//$scope.removeAllowPath = function(allowPath, userVm) {
+			//	userVm.model.permissions.allowPaths = _.filter(userVm.model.permissions.allowPaths, function(x) {
+			//		return x !== allowPath;
+			//	});
+			//};
+			$scope.removeDenyPath = function(denyPath, userVm) {
+				userVm.model.permissions.denyPaths = _.filter(userVm.model.permissions.denyPaths, function(x) {
 					return x !== denyPath;
 				});
 			};
 
-			$scope.submitNewUser = function() {
-				$scope.newUserVm.model.permissions.allowPaths = $scope.newUserVm.model.permissions.allowPaths.map(function(x) {
-					return x.path;
-				});
-				$scope.newUserVm.model.permissions.denyPaths = $scope.newUserVm.model.permissions.denyPaths.map(function(x) {
-					return x.path;
-				});
-
-				userBusiness
-					.addUserAsync($scope.newUserVm)
-					.then(function() {
-						$scope.newUserVm = null;
-					});
-			};
-
 			$scope.submitUser = function() {
-				$scope.editUserVm.isEditing = false;
-				$scope.editUserVm.model.permissions.allowPaths = $scope.editUserVm.model.permissions.allowPaths.map(function(x) {
-					return x.path;
-				});
-				$scope.editUserVm.model.permissions.denyPaths = $scope.editUserVm.model.permissions.denyPaths.map(function(x) {
+				//$scope.editUserVm.isEditing = false;
+				$scope.userVm.model.permissions.denyPaths = $scope.userVm.model.permissions.denyPaths.map(function(x) {
 					return x.path;
 				});
 
-				userBusiness
-					.updateUserAsync($scope.editUserVm.model)
-					.then(function(updatedUserModel) {
-						var updatedUserVm = viewModelBuilder.buildEditableViewModel(updatedUserModel);
-						updatedUserVm.isEditing = false;
+				if ($scope.isNewUser) {
+					userBusiness
+						.addUserAsync($scope.userVm)
+						.then(function () {
+							$scope.userVm = null;
+						});
+				} else {
+					userBusiness
+						.updateUserAsync($scope.userVm.model)
+						.then(function(updatedUserModel) {
+							$scope.userVm.isEditing = false;
 
-						$scope.usersVm[_currentIndexEdited] = updatedUserVm;
-						$scope.editUserVm = null;
-						_currentIndexEdited = -1;
-					});
-				//userBusiness
-				//	.updateUserAsync($scope.editUserVm)
-				//	.then(function() {
-				//		$scope.newUserVm = null;
-				//	});
+							//var updatedUserVm = viewModelBuilder.buildEditableViewModel(updatedUserModel);
+							//updatedUserVm.isEditing = false;
+
+							// TODO This control should not change array
+							//$timeout(function () {
+							//$scope.usersVm = $scope.usersVm.concat(updatedUserVm);//[currentIndexEdited] = updatedUserVm;
+							//});
+
+							// Close current user view
+							//$scope.editUserVm = null;
+							//_currentIndexEdited = -1;
+						});
+				}
 			};
 
 			$scope.cancelAddAllowedPath = function() {
@@ -166,57 +154,10 @@ jpoApp.directive("addOrEditUser", [
 				userBusiness.removeUser(userVm.model);
 			};
 
-			$scope.beginEditUser = function(userVm) {
-				$scope.editUserVm = userVm;
-				userVm.isEditing = true;
-			};
-
-			//$scope.endEditUser = function(userVm) {
-			//	userVm.isEditing = false;
-			//	userBusiness
-			//		.updateUserAsync(userVm.model)
-			//		.then(function(updatedUserModel) {
-			//			var updatedUserVm = viewModelBuilder.buildEditableViewModel(updatedUserModel);
-			//			updatedUserVm.isEditing = false;
-			//
-			//			$scope.usersVm[_currentIndexEdited] = updatedUserVm;
-			//			$scope.editUserVm = null;
-			//			_currentIndexEdited = -1;
-			//		});
-			//};
-
 			$scope.cancelEditUser = function(userVm) {
 				userVm.isEditing = false;
 				$scope.editUserVm = null;
 			};
-
-			authBusiness
-				.observeAuthenticatedUser()
-				.where(function(user) {
-					return user.permissions.isAdmin || user.permissions.isRoot})
-				.selectMany(function() {
-					return userBusiness.observeUsers();
-				})
-				.do(function(users) {
-					$timeout(function() {
-						if (users == null) {
-							$scope.usersVm = null;
-							return;
-						}
-						var usersVm = users.map(function(x) {
-							var vm = viewModelBuilder.buildEditableViewModel(x);
-							vm.model.permissions.allowPaths = vm.model.permissions.allowPaths.map(function(y) {
-								return { path: y }
-							});
-							vm.model.permissions.denyPaths = vm.model.permissions.denyPaths.map(function(y) {
-								return { path: y }
-							});
-							return vm;
-						});
-						$scope.usersVm = usersVm;
-					})
-				})
-				.silentSubscribe();
 		}
 	}
 }]);

@@ -48,6 +48,9 @@ function tryMakeFileSelfPhysLink(parentFolderPath, file) {
 	if (!fullFilePath || fullFilePath === '/') {
 		return;
 	}
+	if (file.isDirectory()) {
+		fullFilePath += "/";
+	}
 
 	return new Dto.LinkDto('self.phys', fullFilePath);
 }

@@ -105,8 +105,11 @@ function registerUserPermissionsRoutes() {
 					req.user
 				);
 			})
-			.then(function(data) { res.status(200).send(data) })
-			.catch(function(err) { res.status(400).send(err) })
+			.then(function(data) {
+				res.status(200).send(data) })
+			.catch(function(err) {
+				res.status(400).send(err)
+			})
 			.done();
 	});
 }

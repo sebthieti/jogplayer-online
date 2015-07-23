@@ -14,7 +14,12 @@ jpoApp.directive("fileExplorer", [
 			restrict: 'E',
 			templateUrl: '/templates/controls/fileExplorer.html',
 			scope: {
-				bindToFavorites: '='
+				id: '@?',
+				bindToFavorites: '=',
+				isVisible: '=?',
+				exploreWhenVisible: '=',
+				selectedFiles: '=?',
+				currentFolder: '=?' //fileExplorerBusiness
 			},
 			controller: function ($scope) {
 				this.base = new FileNavigator();
@@ -33,14 +38,15 @@ jpoApp.directive("fileExplorer", [
 				$scope.selectedFiles = null;
 				$scope.hasMediaQueueAny = false;
 
+				if ($scope.isVisible === undefined) {
+					$scope.isVisible = true;
+				}
+
+				var exploringFiles = false;
 				$scope.$watch("isVisible", function (isVisible, oldValue) {
-					if (isVisible &&//$scope.isVisible &&
-						//$scope.isVisible == true &&
-						$scope.exploreWhenVisible &&
-						$scope.exploreWhenVisible == true) {
-						//if (!currentFolder) {
-						explorerBusiness.startExplore();
-						//}
+					if (!exploringFiles && isVisible === true && $scope.exploreWhenVisible === true) {
+						exploringFiles = true;
+						startExplore();
 					}
 				});
 
@@ -48,17 +54,19 @@ jpoApp.directive("fileExplorer", [
 					explorerBusiness.playMedium(file);
 				};
 
-				this.exploreFileSystem = function () {
-					startExplore();
-				};
-
-				this.observeSelectedFiles = function () {
-					return Rx.Observable.create(function(observer) {
-						$scope.$watch("selectedFiles", function (selectedFiles) {
-							observer.onNext(selectedFiles);
-						});
-					});
-				};
+				//this.observeSelectedFiles = function () {
+				//	return Rx.Observable.create(function(observer) {
+				//		$scope.$watch("selectedFiles", function (selectedFiles) {
+				//			observer.onNext(selectedFiles);
+				//		});
+				//	});
+				//};
+				//this
+				//	.observeSelectedFiles()
+				//	.do(function(selectedFiles) {
+				//		scope[attr.selectedFiles] = selectedFiles;
+				//	})
+				//	.silentSubscribe();
 
 				$scope.exploreFileSystem = function () {
 					startExplore();
@@ -82,50 +90,30 @@ jpoApp.directive("fileExplorer", [
 					.do(function (folderContent) {
 						$scope.isActive = true;
 						$scope.folderViewModel = viewModelBuilder.buildFolderContentViewModel(folderContent);
+						$scope.currentFolder = folderContent.selectSelfPhysicalFromLinks();
 					})
 					.silentSubscribe();
 
 				// TODO Handle a disposeWith method
 				// TODO Remember that a failed Observable will end, so find a way to let it alive
 			},
-			link: function (scope, element, attrs, controller) {
+			link: function (scope, jqElement, attrs, controller) {
 				controller.base.link(controller);
+
+				scope.$watch("isVisible", function (isVisible, oldValue) {
+					if (isVisible === true) {
+						jqElement[0].classList.remove('ng-hide');
+					} else {
+						jqElement[0].classList.add('ng-hide');
+					}
+				});
 			}
 		};
-}]).
-directive('isVisible', function() {
-	return {
-		restrict: 'A',
-		require: 'fileExplorer',
-		link: function(scope, jqElement, attr, controller) {
-			scope.$watch(attr.isVisible, function (newValue, oldValue){
-				scope.isVisible = newValue;
-				if (newValue === true) {
-					jqElement[0].classList.remove('ng-hide');
-					if (scope.exploreWhenVisible === true) {
-						controller.exploreFileSystem();
-					}
-				} else {
-					jqElement[0].classList.add('ng-hide');
-				}
-			});
-		}
-	}
-}).
-directive('exploreWhenVisible', function() {
-	return {
-		restrict: 'A',
-		require: 'fileExplorer',
-		link: function(scope, element, attr, controller) {
-			scope.$watch(attr.exploreWhenVisible, function (newValue, oldValue){
-				scope.exploreWhenVisible = newValue;
-			});
-		}
-	}
-}).
+}])/*.
 directive('selectedFiles', function() {
 	return {
 		restrict: 'A',
+		priority: 3,
 		require: 'fileExplorer',
 		link: function(scope, element, attr, controller) {
 			controller
@@ -136,7 +124,8 @@ directive('selectedFiles', function() {
 				.silentSubscribe();
 		}
 	}
-});
+})*/
+;
 //.directive('filterFiles', function() {
 //	return {
 //		restrict: 'A',

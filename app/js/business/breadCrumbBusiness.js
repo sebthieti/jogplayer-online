@@ -15,6 +15,7 @@ jpoApp.factory('breadCrumbPlaylistExplorerBusiness', [
 	function(playlistExplorerBusiness, fileExplorerBusiness) {
 
 		function BreadCrumbBusiness(business) {
+
 			function observeCurrentDir() {
 				return business
 					.observeCurrentFolderContent()

@@ -12,8 +12,8 @@
 
     <div id="folder-up" ng-show="folderViewModel.canExecuteFolderUp" class="icon-folder btn-enabled" ng-click="goUp(folderViewModel.model)"> ...</div>
     <ul id="file-explorer-list">
-        <li ng-click="fileSelected(fileVm)"
-            ng-repeat="fileVm in folderViewModel.files"
+        <li ng-repeat="fileVm in folderViewModel.files"
+            ng-click="fileSelected(fileVm)"
             ng-class="fileVm.selected ? 'selected' : ''"
             class="btn-enabled">
             <span class="icon-folder-open folder" ng-show="fileVm.model.isDirectory()" stop-event></span>

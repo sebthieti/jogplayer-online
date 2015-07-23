@@ -58,7 +58,21 @@ jpoApp.factory('userBusiness', ['$q', 'UserModel', 'authBusiness', function($q, 
 	}
 
 	function updateUserAsync(userModel) {
-		return userModel.updateAsync();
+		return userModel
+			.updateAsync()
+			.then(function (updatedUser) {
+				observeUsers().getValueAsync(function(users) {
+					var currentIndexEdited = _.findIndex(
+						users,
+						function(userModel) {
+							return userModel.username === updatedUser.username;
+						});
+
+					users[currentIndexEdited] = updatedUser;
+					usersSubject.onNext(users);
+				});
+
+			});
 	}
 
 	function removeUser(userModel) {

@@ -45,7 +45,7 @@ function startDbService() {
 		'--config',
 		'mongod.conf'
 		], {
-			cwd: 'C:\\_PROJECTS\\GitHub\\jogplayer-online\\db'
+			cwd: 'C:\\_PROJECTS\\GitHub\\jogplayer-online\\db' // TODO S/b config
 		}
 	);
 	_dbProcess.stdout.on('data', function (data) {

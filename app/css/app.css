@@ -176,11 +176,12 @@ welcome>div.animate-show.ng-hide-remove.ng-hide-remove-active {
     66%  {transform: translateY(-50%) translateX(30px)}
     100%  {transform: translateY(-50%) translateX(0px)}
 }
-
-#manage-users-outer{position:absolute;top: 0;left:90px;margin-top: 20px;z-index: 1;overflow-y: scroll;max-height: 660px}
-#manage-users-inner{background-color: #F4F4F4;padding: 20px;border-radius: 5px;padding: 1px 20px 20px 20px}
+.edit{position: absolute;top:0;right: -15px;}
+.edit-container{position: relative}
+#manage-users-outer{position:absolute;top: 0;left:90px;margin-top: 20px;z-index: 1;overflow-y: scroll;max-height: 660px;min-width: 300px}
+#manage-users-inner{background-color: #F4F4F4;border-radius: 5px;padding: 1px 20px 20px 20px;}
 #user-list{list-style: none;padding: 0;margin: 0}
-#user-list li{margin: 10px 0}
+#user-list li{margin: 10px 0;}
 #user-list li>div{}
 /*#user-list li>div:hover{background-color: #808080}*/
 #user-list .full-name{font-size: 1.2em}

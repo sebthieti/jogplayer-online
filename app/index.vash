@@ -41,7 +41,9 @@
 				<control-bar></control-bar>
 				<div id="right-section">
 					<div id="file-explorer">
-						<file-explorer id="explorer" is-visible="true" bind-to-favorites="true" explore-when-visible="false">
+						<file-explorer id="explorer"
+									   bind-to-favorites="true"
+									   explore-when-visible="false">
 						</file-explorer>
 					</div>
 					<div id="favorites-container">
@@ -121,6 +123,7 @@
 		<script src="js/controls/addOrEditUser.js"></script>
 		<script src="js/services/jpoService.js"></script>
 		<script src="js/ngEnter.js"></script>
+		<script src="js/controls/userSummary.js"></script>
 
 		<script src="js/filters.js"></script>
 		<script src="js/filters/time.js"></script>
