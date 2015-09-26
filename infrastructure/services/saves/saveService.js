@@ -66,9 +66,14 @@ function startDbService() {
 }
 
 function getMongodExecRelativePath() {
-	return os.platform() === "win32"
-		? ".\\bin\\mongod.exe"
-		: "./bin/mongod";
+	switch (os.platform()) {
+		case 'win32':
+			return '.\\bin\\mongod.exe';
+		case 'linux':
+			return 'mongod';
+		default:
+			return './bin/mongod';
+	}
 }
 
 function getMongodConfigRelativePath() {
