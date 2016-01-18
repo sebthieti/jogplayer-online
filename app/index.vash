@@ -59,7 +59,7 @@
 		<welcome id="welcome-screen" ng-controller="WelcomeController"></welcome>
 
 		<script src="lib/underscore/underscore.js"></script>
-		<script src="lib/datejs/build/production/date.min.js"></script>
+		<script src="lib/DateJS/build/production/date.min.js"></script>
 		<!-- TODO Use appropriate lib (lite for instance) -->
 		<script src="lib/rxjs/dist/rx.all.min.js"></script>
 

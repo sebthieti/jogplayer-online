@@ -18,13 +18,13 @@
     "angular": "~1.4.8",
     "angular-animate": "~1.4.8",
     "angular-mocks": "~1.4.8",
-    "angular-resource": "~1.4.8",
     "angular-route": "~1.4.8",
-    "bootstrap": "~3.3.2",
-    "datejs": "~1.0.0-rc1",
-    "normalize-css": "~3.0.1",
-    "normalize.css": "~3.0.2",
+    "angular-resource": "~1.4.8",
+    "bootstrap": "~3.3.6",
+    "DateJS": "datejs#~1.0.0-rc3",
+    "normalize-css": "normalize.css#~3.0.3",
     "rxjs": "~4.0.7",
-    "underscore": "^1.8.3"
+    "underscore": "~1.8.3",
+    "jquery-easy-wizard": "~1.1.2"
   }
 }

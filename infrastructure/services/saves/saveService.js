@@ -6,7 +6,11 @@ var os = require('os'),
 	mongoose = require('mongoose'),
 	util = require('util'),
 	child_process = require('child_process'),
-	Rx = require('rx');
+	Rx = require('rx'),
+	process = require('process'),
+	path = require('path'),
+	fs = require('fs'),
+	utils = require('../../utils');
 
 var _dbConnection = null,
 	_dbProcess = null,
@@ -37,8 +41,12 @@ process.on('SIGINT', exitHandler.bind(null, { exit: true }));
 process.on('uncaughtException', exitHandler.bind(null, { exit: true }));
 
 function SaveService (configObservable) {
-	startDbService();
-	observeConfigAndInit(configObservable);
+	ensureDbFolderExists()
+		.then(ensureLogFolderExists)
+		.then(function() {
+			startDbService();
+			observeConfigAndInit(configObservable);
+		});
 }
 
 SaveService.prototype.disconnectFromDb = function() {
@@ -48,6 +56,26 @@ SaveService.prototype.disconnectFromDb = function() {
 SaveService.prototype.observeDbConnectionReady = function() {
 	return _dbConnectionReadySubject;
 };
+
+function ensureDbFolderExists() {
+	var dbPath = path.join(process.cwd(), './db/db/');
+	return utils.checkFileExistsAsync(dbPath)
+		.then(function(folderExists) {
+			if (!folderExists) {
+				return Q.nfcall(fs.mkdir, dbPath);
+			}
+		});
+}
+
+function ensureLogFolderExists() {
+	var dbPath = path.join(process.cwd(), './db/log/');
+	return utils.checkFileExistsAsync(dbPath)
+		.then(function(folderExists) {
+			if (!folderExists) {
+				return Q.nfcall(fs.mkdir, dbPath);
+			}
+		});
+}
 
 function startDbService() {
 	// Following is windows cfg
