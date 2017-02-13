@@ -1,7 +1,29 @@
-jogplayer-online
+JogPlayer Online
 ================
-Create Service:
-sc.exe create MongoDB binPath= "\"C:\_EXTRA_SOFTS\MongoDB\mongod.exe\" --service --rest --httpinterface --config=\"C:\_EXTRA_SOFTS\MongoDB\mongod.cfg\"" DisplayName= "MongoDB 2.6 Standard" start= "auto"
 
-Start it:
-net start MongoDB
+How to install JogPlayer Online:
+--------------------------------
+
+Clone a copy of the JogPlayer Online repo by running:
+
+```bash
+git clone https://github.com/sebthieti/jogplayer-online.git
+```
+
+On the project root run the following script:
+
+```bash
+npm install && bower install
+```
+
+To start the server, type the following command:
+
+```bash
+node server.js
+```
+
+Start a browser and reach JogPlayer Online through this url: 
+
+```bash
+http://localhost:10000/
+```
