@@ -1,18 +1,11 @@
 'use strict';
 
 jpoApp.factory("playlistService", function ($http, $q, jpoProxy) {
-	var selectActionFromLinks = function(action, links) {
-		var link = _.find(links, function(link) {
-			return link.rel === action;
-		});
-		if (link) {
-			return link.href;
-		}
-	};
+	var linkHelper = Helpers.linkHelpers;
 
-	var addOrInsertMediaByFilePathToPlaylist = function (playlist, mediaFilePaths, index) {
+	var addOrInsertMediaByFilePathToPlaylist = function (playlist, mediaFilePath, index) {
 		return $http
-			.post(selectActionFromLinks('media.insert', playlist.links), { index: index, mediaFilePaths: mediaFilePaths })
+			.post(linkHelper.selectActionFromLinks('media.insert', playlist.links), { index: index, mediaFilePath: mediaFilePath })
 			.then(function (result) {
 				return { playlist: playlist, newMedia: result.data};
 			});
@@ -20,7 +13,7 @@ jpoApp.factory("playlistService", function ($http, $q, jpoProxy) {
 
 	return {
 		getPlaylists: function () {
-			return jpoProxy.getApiLink('playlists')
+			return jpoProxy.getApiLinkAsync('playlists')
 				.then(function(link) {
 					return $http.get(link);
 				})
@@ -30,7 +23,7 @@ jpoApp.factory("playlistService", function ($http, $q, jpoProxy) {
 		},
 
 		addPlaylist: function(playlist) {
-			return jpoProxy.getApiLink('playlists')
+			return jpoProxy.getApiLinkAsync('playlists')
 				.then(function(link) {
 					return $http.post(link, playlist)
 				})
@@ -40,7 +33,7 @@ jpoApp.factory("playlistService", function ($http, $q, jpoProxy) {
 		},
 
 		addPhysicalPlaylist: function(filePath) {
-			return jpoProxy.getApiLink('playlists')
+			return jpoProxy.getApiLinkAsync('playlists')
 				.then(function(link) {
 					return $http.post(link, {filePath: filePath})
 				})
@@ -50,8 +43,8 @@ jpoApp.factory("playlistService", function ($http, $q, jpoProxy) {
 		},
 
 		updatePlaylist: function (playlist) {
-			return $http
-				.put(selectActionFromLinks('update', playlist.links), playlist)
+			return $http({ method: 'PATCH', url: linkHelper.selectActionFromLinks('update', playlist.links), data: playlist })
+				//.patch(, )
 				.then(function (result) {
 					return result.data;
 				});
@@ -60,7 +53,7 @@ jpoApp.factory("playlistService", function ($http, $q, jpoProxy) {
 		removePlaylist: function(playlist) {
 			var deferred = $q.defer();
 
-			$http.delete(selectActionFromLinks('remove', playlist.links))
+			$http.delete(linkHelper.selectActionFromLinks('remove', playlist.links))
 				.then(function (result) {
 					var removeSuccess = result.status === 204;
 					if (removeSuccess) { deferred.resolve() }
@@ -72,17 +65,18 @@ jpoApp.factory("playlistService", function ($http, $q, jpoProxy) {
 			return deferred.promise;
 		},
 
+		// TODO rename to addMediumByFilePathToPlaylist
 		addMediaByFilePathToPlaylist: function (playlist, mediaFilePaths) {
-			return addOrInsertMediaByFilePathToPlaylist(playlist, mediaFilePaths, 'end');
+			return addOrInsertMediaByFilePathToPlaylist(playlist, mediaFilePaths[0], 'end');
 		},
 
 		insertMediaByFilePathToPlaylist: function (playlist, mediaFilePaths, index) {
-			return addOrInsertMediaByFilePathToPlaylist(playlist, mediaFilePaths, index);
+			return addOrInsertMediaByFilePathToPlaylist(playlist, mediaFilePaths[0], index);
 		},
 
 		getPlaylistMedia: function (playlist) {
 			return $http
-				.get(selectActionFromLinks('media', playlist.links))
+				.get(linkHelper.selectActionFromLinks('media', playlist.links))
 				.then(function (result) {
 					return result.data;
 				});
@@ -92,7 +86,7 @@ jpoApp.factory("playlistService", function ($http, $q, jpoProxy) {
 			var deferred = $q.defer();
 
 			return $http
-				.delete(selectActionFromLinks('remove', media.links))
+				.delete(linkHelper.selectActionFromLinks('remove', media.links))
 				.then(function (result) {
 					var removeSuccess = result.status === 204;
 					if (removeSuccess) { deferred.resolve() }

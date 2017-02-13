@@ -1,15 +1,13 @@
 'use strict';
 
-jpoApp.directive("favoritesExplorer", function () {
+jpoApp.directive("favoritesExplorer", function (favoriteBusiness) {
+	//var EntityStatus = JpoAppTypes.EntityStatus;
+
 	return {
 		restrict: 'E',
 		templateUrl: '/templates/controls/favoritesExplorer.html',
 		scope: {
-			deleteFavorite: '&',
-			updateFavorite: '&',
-			favorites: '=',
-			changeDirCmd: '&'
-			//currentDirPath: '='
+			changeDirCmd: '&' // TODO I can use RxJs for that
 		},
 		controller: function ($scope) {
 
@@ -24,10 +22,10 @@ jpoApp.directive("favoritesExplorer", function () {
 				}
 			};
 
-
 			$scope.goToFolder = function (favorite) {
 				//$scope.currentDirPath = favorite.folderPath;
-				$scope.changeDirCmd({ link: selectTargetLinkFromLinks(favorite.links) })
+				//$scope.changeDirCmd({ link: selectTargetLinkFromLinks(favorite.links) });
+				favoriteBusiness.changeSelectedFavorite(favorite);
 			};
 
 			$scope.editFavorite = function(fav) {
@@ -45,8 +43,7 @@ jpoApp.directive("favoritesExplorer", function () {
 
 			$scope.done = function(favorite) {
 				// Proceed with update.
-				$scope
-					.updateFavorite({ favorite: favorite })
+				return updateFavorite(favorite)
 					.then(function(updatedFavorite) {
 						updatedFavorite.isEditing = false;
 						_currentIndexEdited = -1;
@@ -54,8 +51,38 @@ jpoApp.directive("favoritesExplorer", function () {
 			};
 
 			$scope.innerDeleteFavorite = function(favorite) {
-				$scope.deleteFavorite({ favorite: favorite });
+				favoriteBusiness.deleteFavoriteAsync(favorite);
 			};
+
+			var updateFavorite = function(favorite) {
+				return favoriteBusiness.updateFavoriteAsync(favorite)
+			};
+
+			function handleUpdate(favoriteSet) {
+				//if (favoriteSet.status !== EntityStatus.Updated) {
+				//	return;
+				//}
+				//
+				//_.each(favoriteSet.entity, function(favorite) {
+				//	var favToUpdate =_.find($scope.favorites, function(fav) {
+				//		return fav._id === favorite._id;
+				//	});
+				//
+				//	var favIndex = $scope.favorites.indexOf(favToUpdate);
+				//	$scope.favorites[favIndex] = favorite;
+				//});
+			}
+
+			favoriteBusiness
+				.getAndObserveFavorites()
+				.do(function (favorites) {
+					$scope.favorites = favorites;
+				})
+				//.do(handleUpdate)
+				.subscribe(
+					function(_) {},
+					function(err) { console.log(err) } // TODO console.log should disappear in prod.
+				); // TODO Handle a disposeWith method
 
 		}
 	}

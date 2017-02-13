@@ -1,8 +1,18 @@
 'use strict';
 
+var Q = require('q'),
+	FavoriteDto = require('../dto').FavoriteDto;
+
 var _app,
 	_favoriteDirector,
 	_routes;
+
+var assertAndGetFavoriteId = function (obj) {
+	if (!obj || !obj.favId) {
+		throw 'Id must be set.';
+	}
+	return obj.favId;
+};
 
 function FavoriteController (app, routes, favoriteDirector) {
 	_app = app;
@@ -20,55 +30,38 @@ FavoriteController.prototype.init = function() {
 	});
 
 	_app.post(_routes.favorites.insertPath, function(req, res) {
-		// TODO Don't forget validator
-		var favorite = req.body;
-
-		if (!favorite) {
-			res.send(400, "favorite has not been providen.");
-			return;
-		}
-
-		_favoriteDirector
-			.addFavoriteAsync(favorite)
-			.then(function(data) { res.send(data) })
-			.catch(function(err) { res.send(400, err) })
-			.done();
+		Q.fcall(FavoriteDto.toDto, req.body)
+		.then(_favoriteDirector.addFavoriteAsync)
+		.then(function(data) { res.send(data) })
+		.catch(function(err) { res.send(400, err) })
+		.done();
 	});
 
-	_app.put(_routes.favorites.updatePath, function(req, res) {
-		var favId = req.params.favId;
-		// TODO Maybe care about using param ?
-		if (favId === undefined) {
-			res.send(400, "Id must be set.");
-			return;
-		}
-		// TODO Don't forget validator
-		var favorite = req.body;
-
-		if (!favorite) {
-			res.send(400, "favorite has not been providen.");
-			return;
-		}
-
-		_favoriteDirector
-			.updateFavoriteAsync(favorite)
-			.then(function(data) { res.send(data) })
-			.catch(function(err) { res.send(400, err) })
-			.done();
+	_app.patch(_routes.favorites.updatePath, function(req, res) {
+		Q.fcall(assertAndGetFavoriteId, req.params)
+		.then(function (favId) {
+			return {
+				favId: favId,
+				favorite: FavoriteDto.toDto(req.body, favId)
+			}
+		})
+		.then(function (reqSet) {
+			return _favoriteDirector.updateFromFavoriteDtoAsync( // TODO Maybe change method in save layer that uses dtos
+				reqSet.favId,
+				reqSet.favorite
+			);
+		})
+		.then(function(data) { res.send(200, data) })
+		.catch(function(err) { res.send(400, err) })
+		.done();
 	});
 
 	_app.delete(_routes.favorites.deletePath, function(req, res) {
-		var favId = req.params.favId;
-		if (favId === undefined) {
-			res.send(400, "Id must be set.");
-			return;
-		}
-
-		_favoriteDirector
-			.removeFavoriteByIdAsync(favId)
-			.then(function() { res.send(204) })
-			.catch(function(err) { res.send(400, err) })
-			.done();
+		Q.fcall(assertAndGetFavoriteId, req.params)
+		.then(_favoriteDirector.removeFavoriteByIdAsync)
+		.then(function() { res.send(204) })
+		.catch(function(err) { res.send(400, err) })
+		.done();
 	});
 };
 

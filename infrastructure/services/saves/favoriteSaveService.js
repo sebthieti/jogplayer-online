@@ -17,11 +17,8 @@ FavoriteSaveService.prototype.getSortedFavoritesAsync = function() {
 		.find({})
 		.sort('index')
 		.exec(function(err, favorites) {
-			if (err) {
-				defer.reject(err);
-			} else {
-				defer.resolve(favorites);
-			}
+			if (err) { defer.reject(err) }
+			else { defer.resolve(favorites) }
 		});
 
 	return defer.promise;
@@ -37,44 +34,32 @@ FavoriteSaveService.prototype.addFavoriteAsync = function (favorite) {
 
 	var defer = Q.defer();
 
-	Favorite.create({
-		name: favorite.name,
-		index: favorite.index,
-		folderPath: favorite.folderPath
-	}, function(err, favorite) {
-		if (err) {
-			defer.reject(err);
-		} else {
-			defer.resolve(favorite);
-		}
+	Favorite.create(
+		favorite.getDefinedFields(),
+		function(err, favorite) {
+		if (err) { defer.reject(err) }
+		else { defer.resolve(favorite) }
 	});
 
 	return defer.promise;
 };
 
-FavoriteSaveService.prototype.updateFavoriteAsync = function (favorite) {
-	if (!favorite) {
-		throw "FavoriteSaveService.updateFavoriteAsync: favorite must be set";
+FavoriteSaveService.prototype.updateFromFavoriteDtoAsync = function (favoriteId, favoriteDto) {
+	if (!favoriteDto) {
+		throw "FavoriteSaveService.updateFromFavoriteDtoAsync: favorite must be set";
 	}
-	if (!favorite._id) {
-		throw "FavoriteSaveService.updateFavoriteAsync: favorite.Id should be set";
+	if (!favoriteId) {
+		throw "FavoriteSaveService.updateFromFavoriteDtoAsync: favorite.Id should be set";
 	}
 
 	var defer = Q.defer();
 
-	Favorite.findOneAndUpdate( // TODO Assert on fav not found
-		{ _id: favorite._id },
-		{
-			index: favorite.index,
-			name: favorite.name,
-			folderPath: favorite.folderPath
-		},
+	Favorite.findOneAndUpdate(
+		{ _id: favoriteId },
+		favoriteDto.getDefinedFields(),
 		function(err, favorite) {
-			if (err) {
-				defer.reject(err);
-			} else {
-				defer.resolve(favorite);
-			}
+			if (err) { defer.reject(err) }
+			else { defer.resolve(favorite) }
 		}
 	);
 
@@ -88,14 +73,11 @@ FavoriteSaveService.prototype.removeFavoriteByIdAsync = function (favId) {
 
 	var defer = Q.defer();
 
-	Favorite.findOneAndRemove( // TODO Assert on fav not found
+	Favorite.findOneAndRemove(
 		{ _id: favId },
 		function(err) {
-			if (err) {
-				defer.reject(err);
-			} else {
-				defer.resolve();
-			}
+			if (err) { defer.reject(err) }
+			else { defer.resolve() }
 		}
 	);
 

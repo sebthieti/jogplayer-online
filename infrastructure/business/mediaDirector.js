@@ -17,7 +17,7 @@ MediaDirector.prototype.getBinaryChunkAndFileSizeByIdAsync = function (mediaId, 
 	return _mediaSaveService
 		.getMediaByIdAsync(mediaId)
 		.then(function(media) {
-			return getOffsetAndFileSize(media.filePath, toOffset) // TODO Later use repositories to save fileSize (save file size)
+			return getOffsetAndFileSizeAsync(media.filePath, toOffset) // TODO Later use repositories to save fileSize (save file size)
 				.then(function(offsetAndFileSize) {
 					offsetAndFileSize.media = media;
 					return offsetAndFileSize;
@@ -25,11 +25,11 @@ MediaDirector.prototype.getBinaryChunkAndFileSizeByIdAsync = function (mediaId, 
 		})
 		.then(function (dataSet) {
 			var safeToOffset = toOffset || dataSet.fileSize;
-			return _mediaService
-				.getFileChunkAsync(dataSet.media.filePath, fromOffset, safeToOffset)
-				.then(function (data) {
-					return { media: dataSet.media, data: data, fileSize: dataSet.fileSize }
-				});
+			return {
+				media: dataSet.media,
+				dataStream: _mediaService.getFileStream(dataSet.media.filePath, fromOffset, safeToOffset),
+				fileSize: dataSet.fileSize
+			};
 		});
 };
 
@@ -37,15 +37,15 @@ MediaDirector.prototype.getBinaryChunkAndFileSizeByPathAsync = function (mediaPa
 	return Q
 		.fcall(giveRealPath, mediaPath)
 		.then(function(realPath) {
-			return getOffsetAndFileSize(realPath, toOffset);
+			return getOffsetAndFileSizeAsync(realPath, toOffset);
 		})
 		.then(function (dataSet) {
 			var safeToOffset = toOffset || dataSet.fileSize;
-			return _mediaService
-				.getFileChunkAsync(mediaPath, fromOffset, safeToOffset)
-				.then(function (data) {
-					return { mimeType: mediaHelper.getMimeTypeFromPath(mediaPath), data: data, fileSize: dataSet.fileSize }
-				});
+			return {
+				mimeType: mediaHelper.getMimeTypeFromPath(mediaPath),
+				dataStream: _mediaService.getFileStream(mediaPath, fromOffset, safeToOffset),
+				fileSize: dataSet.fileSize
+			};
 		});
 };
 
@@ -56,7 +56,7 @@ MediaDirector.prototype.ensureReadableMediaAsync = function (mediaFilePath, brow
     } else {
         // is this media already converted ? // TODO Record in db
         // proceed to convertion, then return path
-        return _mediaService.convertMediaToAsync(mediaFilePath, /*browserFormats*/'.mp3');
+        return _mediaService.convertMediumToAsync(mediaFilePath, /*browserFormats*/'.mp3');
     }
 };
 
@@ -92,7 +92,7 @@ var canBrowserHandleFormat = function (mediaFilePath, browserAcceptedFormats) {
 	}
 };
 
-var getOffsetAndFileSize = function(mediaPath, toOffset) {
+var getOffsetAndFileSizeAsync = function(mediaPath, toOffset) {
 	return _mediaService
 		.getFileSizeAsync(mediaPath)
 		.then(function (fileSize) {

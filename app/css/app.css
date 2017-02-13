@@ -86,7 +86,7 @@ file-explorer>div{position:relative}
 .playFolder{padding:2px;border-radius:5px;border:3px solid #d0d0d0;background-color:#cdcdcd;vertical-align:middle}
 .playFolder.active{border-color:#f4f4f4;background-color:#e8e8e8}
 .playFolder:hover{background-color:#ededed}
-.tab-tools{display:none;position:absolute;top:-19px;left:0;min-width:35px;background-color:#dbdbdb;border-radius:3px;padding:2px 0 0 1px}
+.tab-tools{display:none;position:absolute;top:-18px;left:0;min-width:35px;background-color:#dbdbdb;border-radius:3px;padding:2px 0 0 1px}
 
 /* TODO Usefull ? */
 #breadcrumb{width:280px}

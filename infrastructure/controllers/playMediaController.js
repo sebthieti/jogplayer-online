@@ -5,14 +5,14 @@ var _app,
 	_mediaRoutes,
 	_fileRoute;
 
-function MediaController (app, mediaRoutes, fileRoute, mediaStreamer) {
+function PlayMediaController (app, mediaRoutes, fileRoute, mediaStreamer) {
 	_app = app;
 	_mediaRoutes = mediaRoutes;
 	_fileRoute = fileRoute;
 	_mediaStreamer = mediaStreamer;
 }
 
-MediaController.prototype.init = function() {
+PlayMediaController.prototype.init = function() {
 	_app.get(_mediaRoutes.selfPlay, function (req, res) {
 		var mediaIdWithExt = req.params.mediaIdWithExt;
 		_mediaStreamer.streamByMediaIdAndExt(mediaIdWithExt, req, res);
@@ -20,9 +20,9 @@ MediaController.prototype.init = function() {
 
 	// Read media with given file path.
 	_app.get(_fileRoute.selfPlayPattern, function (req, res) {
-		var mediaPath = req.params[0];//decodeURI();
+		var mediaPath = req.params[0];
 		_mediaStreamer.streamByMediaPath(mediaPath, req, res);
 	});
 };
 
-module.exports = MediaController;
+module.exports = PlayMediaController;

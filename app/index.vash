@@ -1,124 +1,144 @@
 <!DOCTYPE html>
 
 <html ng-app="jpoApp" ng-controller="mainCtrl">
-    <head>
-        <!-- meta content -->
-        <meta charset="utf-8">
-        <meta name="description" content="">
-        <meta name="keywords" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title ng-bind="pageTitle"></title>
-        <!-- build:css ../build/css/app.min.css -->
-        <link rel="stylesheet" href="lib/normalize-css/normalize.css">
-        <link rel="stylesheet" href="css/fonts.css">
-        <link rel="stylesheet" href="css/app.css">
-        <!-- endbuild -->
-    </head>
-    <body>
-        <!--[if lt IE 7]>
-            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
-        <![endif]-->
+	<head>
+		<!-- meta content -->
+		<meta charset="utf-8">
+		<meta name="description" content="">
+		<meta name="keywords" content="">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title ng-bind="pageTitle"></title>
+		<!-- build:css ../build/css/app.min.css -->
+		<link rel="stylesheet" href="lib/normalize-css/normalize.css">
+		<link rel="stylesheet" href="css/fonts.css">
+		<link rel="stylesheet" href="css/app.css">
+		<!-- endbuild -->
+	</head>
+	<body>
+		<!--[if lt IE 7]>
+			<p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+		<![endif]-->
 
-        <div id="main-container">
-            <div id="command-bar">
-                <audio-player media-url="selectedMediaUrl"
-                              play-media="playMediaToCtrl(mediaUrl)"
-                              media-ended="mediaEnded()"
-                              play-next="playNext()"
-                              play-previous="playPrevious()"
-                              play-request="playRequest()"
-                              current-media-error="playCurrentMediaError()">
-                </audio-player>
-            </div>
-            <div id="middle-container">
-                <playlist-explorer id="playlist-explorer"
-                                   selected-playlist="selectedPlaylist"
-                                   selected-media="selectedMedia"
-                                   play-media="playMediaFromPlaylist(media,srcPlaylist)"
-                                   add-playlist="addPlaylist(name)">
-                </playlist-explorer>
-                <div id="file-explorer-commands">
-                    <span id="addToPlaylist"
-                          class="button medium btn-rounded btn-enabled"
-                          title="Add files to current playlist"
-                          ng-disabled="canUseAddToPlaylist"
-                          ng-click="addFilesToPlaylist()">< P</span>
-                    <span id="addMediaToQueue" class="button medium btn-rounded btn-enabled" title="Add media to queue (left panel)" ng-click="enqueueMediaSelection()">> Q</span>
-                    <span id="addFilesToQueue" class="button medium btn-rounded btn-enabled" title="Add files to queue (right panel)" ng-click="enqueueFileSelection()">Q <</span>
-                    <span id="addFolderToFavorites" class="button medium btn-rounded btn-enabled" title="Add folder to favorites" ng-click="addFolderToFavorites()">&#9829;+</span>
-                </div>
-                <div id="right-section">
-                    <div id="breadcrumb-container">
-                        <bread-crumb id="breadcrumb"
-                                     change-dir-cmd="changeDirByPhysPathCmd(folderPath)"
-                                     folder-path="currentFileExplorerDirPath"
-                                     play-folder="playFolder(folderPath)">
-                        </bread-crumb>
-                    </div>
-                    <div id="file-explorer">
-                        <file-explorer id="explorer"
-                                       is-visible="true"
-                                       explore-when-visible="false"
-                                       play-media="playMediaFromFileExplorer(file)"
-                                       enqueue-media="enqueueMediaFromFileExplorer(file)"
-                                       selected-files="selectedFiles"
-                                       folder-path="currentFileExplorerDirPath"
-                                       selection-mode="selectionMode"
-                                       media-queue="mediaQueue">
-                        </file-explorer>
-                    </div>
-                    <div id="favorites-container">
-                        <favorites-explorer favorites="favorites"
-                                            delete-favorite="deleteFavorite(favorite)"
-                                            update-favorite="updateFavorite(favorite)"
-                                            change-dir-cmd="changeDirByLinkCmd(link)">
-                        </favorites-explorer>
-                    </div>
-                </div>
-            </div>
-            <div id="queue-container">
-                <media-queue queued-media="mediaQueue"
-                             play-media="playMediaFromQueue(media)"
-                             current-media-in-queue="currentMediaInQueue"
-                             remove="removeFromQueue(media)"
-                             clear-queue="clearQueue()">
-                </media-queue>
-            </div>
-        </div>
+		<div id="main-container">
+			<div id="command-bar">
+				<audio-player media-url="selectedMediaUrl"
+							  play-media="playMediaToCtrl(mediaUrl)"
+							  media-ended="mediaEnded()"
+							  play-next="playNext()"
+							  play-previous="playPrevious()"
+							  play-request="playRequest()"
+							  current-media-error="playCurrentMediaError()">
+				</audio-player>
+			</div>
+			<div id="middle-container">
+				<playlist-explorer id="playlist-explorer"
+								   selected-playlist="selectedPlaylist"
+								   selected-media="selectedMedia"
+								   play-media="playMediaFromPlaylist(media,srcPlaylist)"
+								   add-playlist="addPlaylist(name)">
+				</playlist-explorer>
+				<div id="file-explorer-commands">
+					<span id="addToPlaylist"
+						  class="button medium btn-rounded btn-enabled"
+						  title="Add files to current playlist"
+						  ng-disabled="canUseAddToPlaylist"
+						  ng-click="addFilesToPlaylist()">< P</span>
+					<span id="addMediaToQueue" class="button medium btn-rounded btn-enabled" title="Add media to queue (left panel)" ng-click="enqueueMediaSelection()">> Q</span>
+					<span id="addFilesToQueue" class="button medium btn-rounded btn-enabled" title="Add files to queue (right panel)" ng-click="enqueueFileSelection()">Q <</span>
+					<span id="addFolderToFavorites" class="button medium btn-rounded btn-enabled" title="Add folder to favorites" ng-click="addFolderToFavoritesCmd()">&#9829;+</span>
+				</div>
+				<div id="right-section">
+					<div id="breadcrumb-container">
+						<!--change-dir-cmd="changeDirByPhysPathCmd(folderPath)"-->
+						<!--folder-path="currentFileExplorerDirPath"-->
+						<!--play-folder="playFolder(folderPath)"-->
+						<bread-crumb id="breadcrumb"></bread-crumb>
+					</div>
+					<div id="file-explorer">
+						<file-explorer id="explorer"
+									   is-visible="true"
+									   bind-to-favorites="true"
+									   explore-when-visible="false"
+									   play-media="playMediaFromFileExplorer(file)"
+									   enqueue-media="enqueueMediaFromFileExplorer(file)"
+									   selected-files="selectedFiles"
+									   folder-path="currentFileExplorerDirPath"
+									   selection-mode="selectionMode"
+									   media-queue="mediaQueue">
+						</file-explorer>
+					</div>
+					<div id="favorites-container">
 
-        <!-- In production use:-->
-        <!--<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>-->
-        <script src="js/polyfill.js"></script>
-        <script src="lib/underscore/underscore.js"></script>
-        <script src="lib/datejs/build/production/date.min.js"></script>
-        <script src="lib/angular/angular.js"></script>
-        <script src="lib/angular-animate/angular-animate.js"></script>
-        <script src="lib/angular-resource/angular-resource.js"></script>
-        <script src="lib/angular-route/angular-route.js"></script>
-        <!-- build:js ../build/js/app.min.js -->
-        <script src="js/controllers.js"></script>
+						<!--favorites="favorites"-->
+						<!--update-favorite="updateFavorite(favorite)"-->
+						<!--change-dir-cmd="changeDirByLinkCmd(link)"-->
+						<favorites-explorer></favorites-explorer>
+					</div>
+				</div>
+			</div>
+			<div id="queue-container">
+				<media-queue queued-media="mediaQueue"
+							 play-media="playMediaFromQueue(media)"
+							 current-media-in-queue="currentMediaInQueue"
+							 remove="removeFromQueue(media)"
+							 clear-queue="clearQueue()">
+				</media-queue>
+			</div>
+		</div>
 
-        <script src="js/app.js"></script>
+		<!-- In production use:-->
+		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular-animate.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular-resource.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular-route.js"></script>
 
-        <script src="js/services.js"></script>
-        <script src="js/services/fileExplorerService.js"></script>
-        <script src="js/services/favoriteService.js"></script>
-        <script src="js/helpers/pathHelper.js"></script>
-        <script src="js/services/playlistService.js"></script>
-        <script src="js/services/mediaService.js"></script>
+		<script src="lib/underscore/underscore.js"></script>
+		<script src="lib/datejs/build/production/date.min.js"></script>
+		<!-- TODO Use appropriate lib (lite for instance) -->
+		<script src="lib/rxjs/dist/rx.all.min.js"></script>
 
-        <script src="js/stop-event.js"></script>
-        <script src="js/controls/playlistExplorer.js"></script>
-        <script src="js/controls/favoritesExplorer.js"></script>
-        <script src="js/controls/breadCrumb.js"></script>
-        <script src="js/controls/mediaQueue.js"></script>
-        <script src="js/controls/audioPlayer.js"></script>
-        <script src="js/controls/fileExplorer.js"></script>
-        <script src="js/services/jpoService.js"></script>
+		<script src="js/polyfill.js"></script>
+		<script src="js/rxExtentions.js"></script>
+		<script src="js/entityStatus.js"></script>
+		<script src="js/helpers/linkHelpers.js"></script>
 
-        <script src="js/filters.js"></script>
-        <script src="js/filters/time.js"></script>
-        <script src="js/directives.js"></script>
-        <!-- endbuild -->        
-    </body>
+        <!--"//code.angularjs.org/X.Y.Z/angular-animate.js"-->
+
+		<!--<script src="lib/angular/angular.js"></script>-->
+		<!--<script src="lib/angular-animate/angular-animate.js"></script>-->
+		<!--<script src="lib/angular-resource/angular-resource.js"></script>-->
+		<!--<script src="lib/angular-route/angular-route.js"></script>-->
+
+		<!-- build:js ../build/js/app.min.js -->
+		<script src="js/controllers.js"></script>
+
+		<script src="js/app.js"></script>
+
+		<script src="js/services.js"></script>
+		<script src="js/services/fileExplorerService.js"></script>
+		<script src="js/services/favoriteService.js"></script>
+		<script src="js/helpers/pathHelper.js"></script>
+		<script src="js/services/playlistService.js"></script>
+		<script src="js/services/mediaService.js"></script>
+
+		<script src="js/business/fileExplorerBusiness.js"></script>
+		<script src="js/business/breadCrumbBusiness.js"></script>
+		<script src="js/business/favoriteBusiness.js"></script>
+		<script src="js/business/playlistBusiness.js"></script>
+
+		<script src="js/stop-event.js"></script>
+		<script src="js/controls/playlistExplorer.js"></script>
+		<script src="js/controls/favoritesExplorer.js"></script>
+		<script src="js/controls/breadCrumb.js"></script>
+		<script src="js/controls/mediaQueue.js"></script>
+		<script src="js/controls/audioPlayer.js"></script>
+		<script src="js/controls/fileExplorer.js"></script>
+		<script src="js/services/jpoService.js"></script>
+		<script src="js/ngEnter.js"></script>
+
+		<script src="js/filters.js"></script>
+		<script src="js/filters/time.js"></script>
+		<script src="js/directives.js"></script>
+		<!-- endbuild -->
+	</body>
 </html>

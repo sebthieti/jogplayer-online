@@ -2,7 +2,9 @@
 
 var fs = require('fs'),
 	Q = require('q'),
-	from = require('fromjs');
+	from = require('fromjs'),
+	_ = require('underscore'),
+	utils = require('../utils');
 
 var _fileExplorerService,
 	_physicalPlaylistServices,
@@ -12,68 +14,206 @@ var _fileExplorerService,
 	_mediaBuilder,
 	_mediaDirector;
 
-var reorderLowerMedia = function (mediaIdsLowerSet, mediaIdToRemove) {
-	var index = mediaIdsLowerSet.lowestIndex;
-
-	var mediaIdsReordered = from(mediaIdsLowerSet.lowerIds)
-		.where(function(lowerId) {
-			// Only increment playlists not to be deleted
-			return mediaIdToRemove !== String(lowerId);
-		})
-		.select(function(lowerId) {
-			return { _id: lowerId, index: index++ }
-		})
-		.toArray();
-
-	return _mediaSaveService.updateMediaIndexByIdsAsync(mediaIdsReordered);
+var assertOnNotFound = function(data) {
+	if (data === undefined || data === null) { throw "No data has been found" }
+	return data;
 };
 
-var getMediaIdIndexToUpdateForReorderAsync = function (playlistId, mediaIndex) {
-	var deferred = Q.defer();
+var findPhysicalPlaylistServiceFor = function(plFilePath) {
+	return from(_physicalPlaylistServices)
+		.first(function (svc) { return svc.isOfType(plFilePath) });
+};
 
-	_playlistSaveService
-		.getMediaIdsLowerThanAsync(playlistId, mediaIndex, false)
-		.then(function(mediaIdsLower) {
-			deferred.resolve( { lowerIds: mediaIdsLower, lowestIndex: mediaIndex });
+// BEGIN Get media from playlist
+
+var getMediaFromPlaylistByIdAsync = function (playlistId) {
+	return _playlistSaveService
+		.getPlaylistWithMediaAsync(playlistId)
+		.then(assertOnNotFound)
+		.then(function (playlist) {
+			if (playlist.isVirtual) {
+				// A virtual playlist won't change outside (compared to physical)
+				return { playlist: playlist, reloaded: false };
+			} else {
+				return ifPhysicalPlaylistChangeThenUpdateAsync(playlist);
+			}
+		})
+		.then(ifPlaylistNotReloadedCheckMediaAvailabilityAsync)
+		.then(function(pl) {
+			return pl.media;
 		});
-
-	return deferred.promise;
 };
 
-//PlaylistDirector.prototype.insertMediaAsync = function (playlistId, medium, index) {
-//	return _mediaSaveService.insertMediumAsync(medium, index); // TODO Refactor
-//}
+var ifPlaylistNotReloadedCheckMediaAvailabilityAsync = function(plReloadedSet) {
 
-var performMediaInsertionAsync = function (playlistId, media, desiredIndex) {
-	var startIndex = desiredIndex;
-	var mediaAddPromises = media.map(function(medium) {
-		medium.filePath = medium.filePath.substring(1); // TODO Use PhysicalService for that ?
-		medium.index = startIndex++;
-		return _mediaSaveService.insertMediumAsync(medium);
-	});
-
-	return Q.all(mediaAddPromises);
-};
-
-var performMediaByFilePathInsertionAsync = function (playlistId, mediaFilePaths, desiredIndex) { // TODO Index is fixed
-	var startIndex = desiredIndex;
-	var mediaAddPromises = mediaFilePaths.map(function(mediaFilePath) {
-		mediaFilePath = mediaFilePath.substring(1); // TODO Use PhysicalService for that ?
-		return _mediaBuilder
-			.buildMediaAsync(playlistId, mediaFilePath, startIndex)
-			.then(function(medium) {
-				medium.index = startIndex++;
-				return _mediaSaveService.insertMediumAsync(medium);
+	var checkAndUpdatePromises = plReloadedSet.playlist.media.map(function(medium) {
+		return utils.checkFileExistsAsync(medium.filePath)
+			.then(function (fileExists) {
+				// TODO Move this to Model when Mongoose doc comes up (move hasChanged to model). isAvailable shouldn't be stored
+				var isAvailableChanged = medium.isAvailable !== fileExists;
+				if (isAvailableChanged) {
+					return {
+						medium: medium.setIsAvailable(fileExists),
+						hasChanged: isAvailableChanged
+					};
+				}
+				return {
+					medium: medium,
+					hasChanged: isAvailableChanged
+				};
 			});
 	});
-	return Q.all(mediaAddPromises);
+
+	return Q.all(checkAndUpdatePromises)
+		.then(function(mediaHasChangedSet) {
+			// Filter the ones to update
+			var mediaToUpdate = from(mediaHasChangedSet)
+				.where(function(mediumHasChanged) {
+					return mediumHasChanged.hasChanged;
+				})
+				.select(function(mediumHasChanged) {
+					return mediumHasChanged.medium;
+				})
+				.toArray();
+
+			var mediaToUpdatePromises = mediaToUpdate.map(function(medium) {
+				return utils.saveModelAsync(medium);
+			});
+
+			return Q.all(mediaToUpdatePromises);
+		})
+		.then(function() {
+			return plReloadedSet.playlist;
+		});
 };
 
-//var addMediaAsync = function (playlistId, media) {
-//	return Q.fcall (function() { return true });
-//};
+var ifPhysicalPlaylistChangeThenUpdateAsync = function (playlist) {
+	return Q
+		.nfcall(fs.stat, playlist.filePath)
+		.then(function(stat) {
+			var lastUpdateOn = stat.mtime;
+			if (playlistHasChanged(playlist.updatedOn, lastUpdateOn)) {
+				return updatePlaylistDateReloadMediaAndSaveAsync(playlist, lastUpdateOn)
+					.then(function(pl) {
+						return { playlist: pl, reloaded: true }
+					});
+			}
+			return { playlist: playlist, reloaded: false };
+		});
+};
 
-var makeRoomForMediaAtIndexFromPlaylistIdAsync = function (desiredIndex, playlistId) {
+var updatePlaylistDateReloadMediaAndSaveAsync = function(playlist, lastUpdateOn) {
+	return _playlistSaveService
+		.removeAllMediaFromPlaylistAsync(playlist.id)
+		.then(function(cleanPl) {
+			return cleanPl.setUpdatedOn(lastUpdateOn);
+		})
+		.then(function(cleanPlUpdated) {
+			return utils.saveModelAsync(cleanPlUpdated);
+		})
+		.then(feedPhysicalPlaylistWithMediaAndSaveAsync);
+};
+
+var playlistHasChanged = function(currentPlaylistUpdateDate, lastUpdateDate) {
+	return lastUpdateDate > currentPlaylistUpdateDate;
+};
+
+// END Get media from playlist
+
+// BEGIN Fill playlist: Load it's content, and return a fed playlist
+
+var feedPhysicalPlaylistWithMediaAndSaveAsync = function(emptyPlaylist) {
+	return loadMediaFromPhysicalPlaylistAsync(emptyPlaylist) // Should give new Pl with media not yet persisted
+		.then(saveMediaAsync)
+		.then(function(media) {
+			return _playlistSaveService.insertMediaToPlaylistReturnSelfAsync(
+				emptyPlaylist.id,
+				media
+			);
+		});
+};
+
+var saveMediaAsync = function (media) {
+	var addMediaPromises = media.map(function(medium) {
+		return utils.saveModelAsync(medium);
+	});
+	return Q.all(addMediaPromises);
+};
+
+var loadMediaFromPhysicalPlaylistAsync = function (emptyPlaylist) {
+	if (!emptyPlaylist) {
+		throw "PlaylistDirector.injectMediaToPhysicalPlaylistAsync: playlist must be set";
+	}
+
+	var filePath = emptyPlaylist.filePath;
+	if (!filePath) {
+		throw "PlaylistDirector.injectMediaToPhysicalPlaylistAsync: playlist.FilePath must be set";
+	}
+
+	var physicalPlaylistService = findPhysicalPlaylistServiceFor(filePath);
+	if (!physicalPlaylistService) {
+		throw "PlaylistDirector.injectMediaToPhysicalPlaylistAsync cannot load playlist of format: " + fs.extname(filePath);
+	}
+
+	var plId = emptyPlaylist.id;
+	return physicalPlaylistService
+		.loadMediaSummariesFromPlaylistAsync(filePath)
+		.then(function(ms) { return _mediaBuilder.toMediaAsync(ms, plId) });
+};
+
+// END Fill playlist: Load it's content, and return a fed playlist
+
+var updatePlaylistAsync = function(playlistId, playlistDto) {
+	return _playlistSaveService.updatePlaylistDtoAsync(playlistId, playlistDto);
+};
+
+// BEGIN Add/Insert medium
+
+var addMediumByFilePathAsync = function (playlistId, mediaFilePaths) {
+	return insertMediumByFilePathAsync(playlistId, mediaFilePaths);
+};
+
+var insertMediumByFilePathAsync = function (playlistId, mediaFilePath, index) {
+	var prepareAndGetPosition;
+	if (!index) { // We'll append medium
+		prepareAndGetPosition = _playlistSaveService.getMediaCountForPlaylistByIdAsync(playlistId);
+	} else {
+		prepareAndGetPosition = makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, index)
+			.then(function() { return index });
+	}
+
+	return prepareAndGetPosition
+		.then(function(mediaPosition) {
+			return buildAndInsertMediumByFilePathAsync(playlistId, mediaFilePath, mediaPosition);
+		})
+		.then(function(unlinkedMedium) {
+			return _playlistSaveService.insertMediaToPlaylistAsync(playlistId, unlinkedMedium);
+		})
+		.then(function(linkedMedium) {
+			return _playlistSaveService
+				.getPlaylistWithMediaAsync(playlistId)
+				.then(function(playlist) {
+					// if virtual, then update file
+					if (!playlist.isVirtual) {
+						return findPhysicalPlaylistServiceFor(playlist.filePath)
+							.savePlaylistAsync(playlist)
+							.then(function() {
+								return linkedMedium;
+							})
+					}
+					return linkedMedium;
+				});
+		});
+};
+
+var buildAndInsertMediumByFilePathAsync = function (playlistId, mediaFilePath, desiredIndex) {
+	mediaFilePath = _fileExplorerService.normalizePathForCurrentOs(mediaFilePath);
+	return _mediaBuilder
+		.buildMediumAsync(playlistId, mediaFilePath, desiredIndex)
+		.then(utils.saveModelAsync);
+};
+
+var makeRoomForMediaAtIndexFromPlaylistIdAsync = function (playlistId, desiredIndex) {
 	return _playlistSaveService
 		.getPlaylistsCountAsync()
 		.then(function(count) {
@@ -101,88 +241,52 @@ var makeRoomForMediaAtIndexFromPlaylistIdAsync = function (desiredIndex, playlis
 		});
 };
 
-var getMediaFromPlaylist = function (playlist) {
-	if (!playlist) {
-		throw "PlaylistDirector.loadMediaToPlaylist: playlist must be set";
-	}
-	if (!playlist.filePath) {
-		throw "PlaylistDirector.loadMediaToPlaylist: playlist.FilePath must be set";
-	}
+// END Add/Insert medium
 
-	// TODO Following statement: should be elsewhere
-	playlist.filePath = _fileExplorerService.normalizePathForCurrentOs(playlist.filePath);
+// BEGIN Remove medium
 
-	var physicalPlaylistService = findPhysicalPlaylistServiceFor(playlist.filePath);
-	if (!physicalPlaylistService) {
-		throw "PlaylistDirector.loadMediaToPlaylist cannot load playlist of format: " + fs.extname(playlist.filePath);
-	}
-
-	return physicalPlaylistService
-		.loadMediaFromPlaylistAsync(playlist.filePath)
-		.then(toMediaArrayAsync)
-		// TODO Also update path
-		.then(_mediaService.checkAndUpdateMustRelocalizeAsync)
-		.then(_mediaSaveService.updateMustRelocalizeOnMedia)
-		//.then(function (media) {
-		//	//var loadedPlaylist = playlist.clone().setMedia(media); TODO Maybe use Playlist and add clone, setMedia
-		//	//return loadedPlaylist;//onSuccess(loadedPlaylist);
-		//	playlist.media = media;
-		//	return playlist;
-		//})
-		//.done()
-		;
+var removeMediaAsync = function (playlistId, mediaId) {
+	return _mediaSaveService
+		.findIndexFromMediaIdsAsync(mediaId)
+		.then(assertOnNotFound)
+		.then(function(mediaIndex) {
+			return getMediaIdIndexToUpdateForReorderAsync(playlistId, mediaIndex);
+		})
+		.then(function(plIdLowIdSet) {
+			if (plIdLowIdSet.lowerIds.length > 0) {
+				return reorderLowerMedia(plIdLowIdSet, mediaId);
+			}
+		})
+		.then(function () {
+			return _playlistSaveService.removeMediaFromPlaylistAsync(playlistId, mediaId);
+		});
 };
 
-var loadMediaToPlaylistAsync = function (playlist) {
-	if (!playlist) {
-		throw "PlaylistDirector.loadMediaToPlaylist: playlist must be set";
-	}
-	if (!playlist.filePath) {
-		throw "PlaylistDirector.loadMediaToPlaylist: playlist.FilePath must be set";
-	}
-
-	// TODO Following statement: should be elsewhere
-	playlist.filePath = _fileExplorerService.normalizePathForCurrentOs(playlist.filePath);
-
-	var physicalPlaylistService = findPhysicalPlaylistServiceFor(playlist.filePath);
-	if (!physicalPlaylistService) {
-		throw "PlaylistDirector.loadMediaToPlaylist cannot load playlist of format: " + fs.extname(playlist.filePath);
-	}
-
-	//Q.promise(function(onSuccess, onError) {
-	return physicalPlaylistService
-			.loadMediaFromPlaylistAsync(playlist.filePath)
-			.then(toMediaArrayAsync)
-			// TODO Also update path
-			.then(_mediaService.checkAndUpdateMustRelocalizeAsync)
-			.then(_mediaSaveService.updateMustRelocalizeOnMedia)
-			.then(function (media) {
-				//var loadedPlaylist = playlist.clone().setMedia(media); TODO Maybe use Playlist and add clone, setMedia
-				//return loadedPlaylist;//onSuccess(loadedPlaylist);
-				playlist.media = media;
-				return playlist;
-			})
-			//.done()
-		;
-	//});
+var getMediaIdIndexToUpdateForReorderAsync = function (playlistId, mediaIndex) {
+	return _playlistSaveService
+		.getMediaIdsLowerThanAsync(playlistId, mediaIndex, false)
+		.then(function(mediaIdsLower) {
+			return { lowerIds: mediaIdsLower, lowestIndex: mediaIndex };
+		});
 };
 
-var assertOnNotFound = function(data) {
-	if (data === undefined || data === null) { throw "No data has been found" }
-	return data;
-};
+var reorderLowerMedia = function (mediaIdsLowerSet, mediaIdToRemove) {
+	var index = mediaIdsLowerSet.lowestIndex;
 
-var toMediaArrayAsync = function(mediaSummaries) {
-	var arr = from(mediaSummaries)
-		.select(function (ms) { return _mediaBuilder.toMediaAsync(ms) })
+	var mediaIdsReordered = from(mediaIdsLowerSet.lowerIds)
+		.where(function(lowerId) {
+			// Only increment playlists not to be deleted
+			return mediaIdToRemove !== String(lowerId);
+		})
+		.select(function(lowerId) {
+			return { _id: lowerId, index: index++ }
+		})
 		.toArray();
-	return Q.all(arr);
+
+	return _mediaSaveService.updateMediaIndexByIdsAsync(mediaIdsReordered);
 };
 
-var findPhysicalPlaylistServiceFor = function(plFilePath) {
-	return from(_physicalPlaylistServices)
-		.first(function (svc) { return svc.isOfType(plFilePath) });
-};
+// END Remove medium
 
 var PlaylistDirector = function(
 	fileExplorerService,
@@ -203,80 +307,12 @@ var PlaylistDirector = function(
 };
 
 PlaylistDirector.prototype = {
-
-	getMediaFromPlaylistByIdAsync: function (playlistId) {
-		return _playlistSaveService
-			.getPlaylistWithMediaAsync(playlistId)
-			.then(assertOnNotFound)
-			.then(function (playlist) {
-				if (playlist.isVirtual) {
-					return playlist.media;
-				} else {
-					return _mediaService
-						.checkAndUpdateMustRelocalizeAsync(playlist.media); // TODO Do we need to schedule ?
-				}
-			});
-	},
-
-	addMediaAsync: function (playlistId, media) {
-		return _playlistSaveService
-			.getMediaCountForPlaylistByIdAsync(playlistId)
-			.then(function(count) { return performMediaInsertionAsync(playlistId, media, count) })
-			.then(function(mediaArray) {
-				return _playlistSaveService.insertMediaToPlaylistAsync(playlistId, mediaArray);
-			});
-	},
-
-	addMediaByFilePathAsync: function (playlistId, mediaFilePaths) {
-		return _playlistSaveService
-			.getMediaCountForPlaylistByIdAsync(playlistId)
-			.then(function(mediaCount) {
-				return performMediaByFilePathInsertionAsync(playlistId, mediaFilePaths, mediaCount);
-			})
-			.then(function(mediaArray) {
-				return _playlistSaveService.insertMediaToPlaylistAsync(playlistId, mediaArray);
-			});
-	},
-
-	loadMediaToPlaylistAsync: loadMediaToPlaylistAsync,
-
-	getMediaFromPlaylist: getMediaFromPlaylist,
-
-	insertMediaAsync: function (playlistId, media, index) {
-		if (index == null) { // We can just append
-			return this.addMediaAsync(media, playlistId);
-		} else {
-			return makeRoomForMediaAtIndexFromPlaylistIdAsync(index, playlistId)
-				.then(function() { return performMediaInsertionAsync(media, playlistId, index) });
-		}
-	},
-
-	insertMediaByFilePathAsync: function (playlistId, mediaFilePaths, index) {
-		if (index == null) { // We can just append
-			return this.addMediaAsync(media, playlistId);
-		} else {
-			return makeRoomForMediaAtIndexFromPlaylistIdAsync(index, playlistId)
-				.then(function() { return performMediaByFilePathInsertionAsync(playlistId, mediaFilePaths, index) });
-		}
-	},
-
-	removeMediaAsync: function (playlistId, mediaId) {
-		return _mediaSaveService
-			.findIndexFromMediaIdsAsync(mediaId)
-			.then(assertOnNotFound)
-			.then(function(mediaIndex) {
-				return getMediaIdIndexToUpdateForReorderAsync(playlistId, mediaIndex);
-			})
-			.then(function(plIdLowIdSet) {
-				if (plIdLowIdSet.lowerIds.length > 0) {
-					return reorderLowerMedia(plIdLowIdSet, mediaId);
-				}
-			})
-			.then(function () {
-				return _playlistSaveService.removeMediaFromPlaylistAsync(playlistId, mediaId);
-			});
-	}
-
+	feedPhysicalPlaylistWithMediaAndSaveAsync: feedPhysicalPlaylistWithMediaAndSaveAsync,
+	updatePlaylistAsync: updatePlaylistAsync,
+	getMediaFromPlaylistByIdAsync: getMediaFromPlaylistByIdAsync,
+	addMediumByFilePathAsync: addMediumByFilePathAsync,
+	insertMediumByFilePathAsync: insertMediumByFilePathAsync,
+	removeMediaAsync: removeMediaAsync
 };
 
 module.exports = PlaylistDirector;

@@ -1,62 +1,70 @@
 'use strict';
 
 var Q = require('q'),
-	from = require('fromjs')/*,
-	playlistBuilder = require('../invokers').playlistBuilder*/;
+	from = require('fromjs'),
+	utils = require('../utils');
 
 var _playlistDirector,
 	_physicalPlaylistServices,
 	_playlistSaveService,
 	_playlistBuilder;
 
-var addVirtualPlaylistAsync = function (dtoPlaylist) {
-	return _playlistSaveService
-		.getPlaylistsCountAsync()
-		.then(function(count) {
-			var playlist = _playlistBuilder.buildEmptyVirtualPlaylist(dtoPlaylist.name, count);
-			return _playlistSaveService.insertPlaylistAsync(playlist, count);
+var assertOnPlaylistNotFound = function (playlist) {
+	if (!playlist) {
+		throw "No playlist has been found";
+	}
+	return playlist;
+};
+
+var getPlaylistsAsync = function () {
+	return _playlistSaveService.getPlaylistsAsync();
+};
+
+// BEGIN Add/Insert Playlist
+
+var addPlaylistAsync = function (playlistDto) {
+	return insertPlaylistAsync(playlistDto);
+};
+
+var insertPlaylistAsync = function (playlistDto, index) {
+	var prepareAndGetPosition;
+	if (!index) { // We'll append medium
+		prepareAndGetPosition = _playlistSaveService.getPlaylistsCountAsync();
+	} else {
+		prepareAndGetPosition = makeRoomForPlaylistAtIndexAsync(index)
+			.then(function() { return index });
+	}
+
+	return prepareAndGetPosition
+		.then(function(position) {
+			return playlistDto.isVirtual()
+				? buildAndInsertVirtualPlaylistAsync(playlistDto, position)
+				: buildAndInsertPhysicalPlaylistAsync(playlistDto, position);
 		});
 };
 
-var addPhysicalPlaylistAsync = function (dtoPlaylist) {
-	return _playlistSaveService
-		.getPlaylistsCountAsync()
-		.then(function(count) { // Create playlist
-			var playlist = _playlistBuilder.buildEmptyPhysicalPlaylist(dtoPlaylist.filePath, dtoPlaylist.name, count);
-			playlist.index = count;
-			return _playlistSaveService.insertPlaylistAsync(playlist, playlist.index);
-		})
-		.then(function(playlist) {
-			return _playlistDirector
-				.getMediaFromPlaylist(playlist)
-				.then(function(media) {
-					return { media: media, playlist: playlist };
-				});
-		})
-		.then(function(result) {
-			return _playlistDirector
-				.addMediaAsync(result.playlist.id, result.media)
-				.then(function(media) {
-					return { media: media, playlist: result.playlist };
-				});
-		})
-		.then(function(result) { // TODO Refactor that logic to playlistDirector
-			result.playlist.media = result.media;
-			return _playlistSaveService.updatePlaylistAsync(result.playlist.id, result.playlist);
-		});
-}; // TODO Should parse playlist but don't return it's content. there's the playlistDirector for that
+var buildAndInsertVirtualPlaylistAsync = function (playlistDto, index) {
+	var emptyPlaylist = _playlistBuilder.buildEmptyVirtualPlaylist(playlistDto.name, index);
+	return utils.saveModelAsync(emptyPlaylist);
+};
 
-var insertVirtualPlaylistAsync = function (playlist, index) {
-	return makeRoomForPlaylistAtIndex(index)
-		.then(function() {
-			return _playlistSaveService.insertPlaylistAsync(playlist, index);
+var buildAndInsertPhysicalPlaylistAsync = function (playlistDto, index) {
+		return buildAndInsertEmptyPlaylistFromDtoAsync(playlistDto, index)
+			.then(_playlistDirector.feedPhysicalPlaylistWithMediaAndSaveAsync);
+};
+
+var buildAndInsertEmptyPlaylistFromDtoAsync = function(dtoPlaylist, index) {
+	return _playlistBuilder
+		.buildEmptyPhysicalPlaylistAsync(
+		dtoPlaylist.filePath,
+		dtoPlaylist.name,
+		index
+	).then(function(emptyPlaylist) {
+			return utils.saveModelAsync(emptyPlaylist);
 		});
 };
 
-var insertPhysicalPlaylistAsync = function (playlist, index) {
-}; // TODO Should parse playlist but don't return it's content. there's the playlistDirector for that
-
-var makeRoomForPlaylistAtIndex = function (desiredIndex) {
+var makeRoomForPlaylistAtIndexAsync = function (desiredIndex) {
 	return _playlistSaveService
 		.getPlaylistsCountAsync()
 		.then(function(count) {
@@ -84,23 +92,100 @@ var makeRoomForPlaylistAtIndex = function (desiredIndex) {
 		});
 };
 
-var reorderLowerPlaylists = function (plIdLowerSet, playlistIdsToRemove) {
-	var index = plIdLowerSet.lowestIndex;
+// END Add/Insert Playlist
 
-	var plIdReordered = from(plIdLowerSet.lowerIds)
-		.where(function(lowerId) {
-			return playlistIdsToRemove.indexOf(lowerId._id) == -1; // Only increment playlists not to be deleted
-		})
-		.select(function(lowerId) {
-			return { _id: lowerId._id, index: index++ }
-		})
-		.toArray();
+var movePlaylistsAsync = function (playlistIdIndexes, steps) { // TODO To be tested
+	if (!playlistIdIndexes || !playlistIdIndexes.length || playlistIdIndexes.length == 0) {
+		throw "playlists cannot be empty";
+	}
 
-	return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdReordered);
+	return _playlistSaveService
+		.getPlaylistIdIndexesAsync()
+		.then(function (plIdIndexes) {
+			var lowerIndex = from(plIdIndexes).select(function(x) {return x.index}).min();
+			var higherIndex = from(plIdIndexes).select(function(x) {return x.index}).max();
+
+			var isValidLowerBound = lowerIndex + steps >= 0;
+			var isValidUpperBound = higherIndex + steps <= plIdIndexes.length;
+			if (!isValidLowerBound || !isValidUpperBound) {
+				throw "steps value is outer bounds";
+			}
+
+			var plIds = from(plIdIndexes).select(function(x) {return x._id.toString()}).toArray();
+
+			var plIdIndexes_ = plIdIndexes.slice();
+
+			if (steps > 0) {
+
+				var mediaIndexes = [];
+				for (var rowIndex = playlistIdIndexes.length - 1; rowIndex >= 0; rowIndex--) {
+					mediaIndexes.push(playlistIdIndexes[rowIndex]);
+
+					var media1ToSwapIndex = playlistIdIndexes[rowIndex];
+					var media2ToSwapIndex = playlistIdIndexes[rowIndex] + 1;
+
+					for (var moveIndex = 0; moveIndex < steps; moveIndex++, media1ToSwapIndex++, media2ToSwapIndex++) {
+						var media1IdIndex = plIdIndexes_[media1ToSwapIndex];
+						media1IdIndex.index = media2ToSwapIndex;
+
+						var media2IdIndex = plIdIndexes_[media2ToSwapIndex];
+						media2IdIndex.index = media1ToSwapIndex;
+
+						plIdIndexes_[media1ToSwapIndex] = media2IdIndex;
+						plIdIndexes_[media2ToSwapIndex] = media1IdIndex;
+					}
+				}
+
+			} else {
+			}
+
+			//for (var rowIndex = 0; rowIndex < playlistIdIndexes.length; rowIndex++) {
+			////for (var playlistIdIndex in playlistIdIndexes) {
+			//	var playlistIdToMove = playlistIdIndexes[rowIndex];
+			//
+			//	var currentIndex = plIds.indexOf(playlistIdToMove._id);
+			//
+			//	//for (var rowIndexPlToOffset = currentIndex; rowIndexPlToOffset < plIdIndexes.length; rowIndexPlToOffset++) {
+			//	//}
+			//	//delete plIds[currentIndex];
+			//	var newIndex = currentIndex + steps + 1;
+			//	plIds[newIndex] = {_id: playlistIdToMove._id, index: newIndex};
+			//}
+
+			//return from(plIds)
+			//	.where(function(plId) {
+			//		var actualIndex = plIdIndexes.indexOf(plId)
+			//		var newIndex = plIds.indexOf(plId);
+			//		return actualIndex != newIndex;
+			//	})
+			//	.toArray();
+			return plIdIndexes_;
+		})
+		.then(function (plIdsToList) {
+			return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdsToList)
+		});
 };
 
-var getPlaylistsIdIndexToUpdateForReorderAsync = function (playlistIdIndexes) {
-	var lowestIndex = from(playlistIdIndexes).select(function(x) {return x.index}).min();
+var moveMediasToPlaylistAsync = function (srcPlaylistId, mediaIds, destPlaylistId) { // TODO
+};
+
+var removePlaylistAsync = function (playlistId) {
+	return _playlistSaveService
+		.findIndexFromPlaylistIdAsync(playlistId)
+		.then(assertOnPlaylistNotFound)
+		.then(getPlaylistsIdIndexToUpdateForReorderAsync)
+		.then(function(plIdLowIdSet) {
+			if (plIdLowIdSet.lowerIds.length > 0) {
+				return reorderLowerPlaylists(plIdLowIdSet, playlistId);
+			}
+		})
+		.then(function () {
+			return _playlistSaveService.removePlaylistByIdAsync(playlistId)
+		});
+};
+
+var getPlaylistsIdIndexToUpdateForReorderAsync = function (playlist) {
+	var lowestIndex = playlist.index;
 
 	var deferred = Q.defer();
 	_playlistSaveService
@@ -111,11 +196,20 @@ var getPlaylistsIdIndexToUpdateForReorderAsync = function (playlistIdIndexes) {
 	return deferred.promise;
 };
 
-var assertOnPlaylistsNotFound = function (playlistIds) {
-	if (!playlistIds || playlistIds.length == 0) {
-		throw "No playlists have been found";
-	}
-	return playlistIds;
+var reorderLowerPlaylists = function (plIdLowerSet, playlistIdsToRemove) {
+	var index = plIdLowerSet.lowestIndex;
+
+	var plIdReordered = from(plIdLowerSet.lowerIds)
+		.where(function(lowerId) {
+			// Only increment playlists not to be deleted
+			return playlistIdsToRemove.indexOf(lowerId._id) == -1;
+		})
+		.select(function(lowerId) {
+			return { _id: lowerId._id, index: index++ }
+		})
+		.toArray();
+
+	return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdReordered);
 };
 
 var PlaylistsDirector = function (playlistDirector, physicalPlaylistServices, playlistSaveService, playlistBuilder) {
@@ -126,134 +220,15 @@ var PlaylistsDirector = function (playlistDirector, physicalPlaylistServices, pl
 };
 
 PlaylistsDirector.prototype = {
+	getPlaylistsAsync: getPlaylistsAsync,
 
-	getPlaylistsAsync: function () {
-		// TODO When we get should we update db for changes (load phys play, then see that they're changes and update db)?
-		return _playlistSaveService.getPlaylistsAsync();
-	},
+	addPlaylistAsync: addPlaylistAsync,
+	insertPlaylistAsync: insertPlaylistAsync,
 
-	getPlaylistsCountAsync: function () {
-		return _playlistSaveService.getPlaylistsCountAsync();
-	},
+	movePlaylistsAsync: movePlaylistsAsync,
+	moveMediasToPlaylistAsync: moveMediasToPlaylistAsync,
 
-	addPlaylistAsync: function (playlist) {
-		if (!playlist.filePath || playlist.filePath == null) {
-			return addVirtualPlaylistAsync(playlist);
-		} else {
-			return addPhysicalPlaylistAsync(playlist);
-		}
-	},
-
-	insertPlaylistAsync: function (playlist, index) {
-		if (!playlist.filePath || playlist.filePath == null) {
-			return insertVirtualPlaylistAsync(playlist, index);
-		} else {
-			return insertPhysicalPlaylistAsync(playlist, index);
-		}
-	},
-
-	movePlaylistsAsync: function (playlistIdIndexes, steps) { // TODO To be tested
-		if (!playlistIdIndexes || !playlistIdIndexes.length || playlistIdIndexes.length == 0) {
-			throw "playlists cannot be empty";
-		}
-
-		return _playlistSaveService
-			.getPlaylistIdIndexesAsync()
-			.then(function (plIdIndexes) {
-				var lowerIndex = from(plIdIndexes).select(function(x) {return x.index}).min();
-				var higherIndex = from(plIdIndexes).select(function(x) {return x.index}).max();
-
-				var isValidLowerBound = lowerIndex + steps >= 0;
-				var isValidUpperBound = higherIndex + steps <= plIdIndexes.length;
-				if (!isValidLowerBound || !isValidUpperBound) {
-					throw "steps value is outer bounds";
-				}
-
-				var plIds = from(plIdIndexes).select(function(x) {return x._id.toString()}).toArray();
-
-				var plIdIndexes_ = plIdIndexes.slice();
-
-				if (steps > 0) {
-
-					var mediaIndexes = [];
-					for (var rowIndex = playlistIdIndexes.length - 1; rowIndex >= 0; rowIndex--) {
-						mediaIndexes.push(playlistIdIndexes[rowIndex]);
-
-						var media1ToSwapIndex = playlistIdIndexes[rowIndex];
-						var media2ToSwapIndex = playlistIdIndexes[rowIndex] + 1;
-
-						for (var moveIndex = 0; moveIndex < steps; moveIndex++, media1ToSwapIndex++, media2ToSwapIndex++) {
-							var media1IdIndex = plIdIndexes_[media1ToSwapIndex];
-							media1IdIndex.index = media2ToSwapIndex;
-
-							var media2IdIndex = plIdIndexes_[media2ToSwapIndex];
-							media2IdIndex.index = media1ToSwapIndex;
-
-							plIdIndexes_[media1ToSwapIndex] = media2IdIndex;
-							plIdIndexes_[media2ToSwapIndex] = media1IdIndex;
-						}
-					}
-
-				} else {
-				}
-
-//for (var rowIndex = 0; rowIndex < playlistIdIndexes.length; rowIndex++) {
-////for (var playlistIdIndex in playlistIdIndexes) {
-//	var playlistIdToMove = playlistIdIndexes[rowIndex];
-//
-//	var currentIndex = plIds.indexOf(playlistIdToMove._id);
-//
-//	//for (var rowIndexPlToOffset = currentIndex; rowIndexPlToOffset < plIdIndexes.length; rowIndexPlToOffset++) {
-//	//}
-//	//delete plIds[currentIndex];
-//	var newIndex = currentIndex + steps + 1;
-//	plIds[newIndex] = {_id: playlistIdToMove._id, index: newIndex};
-//}
-
-//return from(plIds)
-//	.where(function(plId) {
-//		var actualIndex = plIdIndexes.indexOf(plId)
-//		var newIndex = plIds.indexOf(plId);
-//		return actualIndex != newIndex;
-//	})
-//	.toArray();
-				return plIdIndexes_;
-			})
-			.then(function (plIdsToList) {
-				return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdsToList)
-			});
-	},
-
-	moveMediasToPlaylistAsync: function (srcPlaylistId, mediaIds, destPlaylistId) {
-	},
-
-	updatePlaylistAsync: function(playlistId, playlist) {
-		return _playlistSaveService
-			.findIndexesFromPlaylistIdsAsync([ playlistId ])
-			.then(assertOnPlaylistsNotFound)
-			.then(function () {
-				return _playlistSaveService.updatePlaylistAsync(playlistId, playlist);
-			});
-	},
-
-	removePlaylistsAsync: function (playlistIds) {
-		return _playlistSaveService // TODO Remove pl should only remove one at a time
-			.findIndexesFromPlaylistIdsAsync(playlistIds)
-			.then(assertOnPlaylistsNotFound)
-			.then(getPlaylistsIdIndexToUpdateForReorderAsync)
-			.then(function(plIdLowIdSet) {
-				if (plIdLowIdSet.lowerIds.length > 0) {
-					return reorderLowerPlaylists(plIdLowIdSet, playlistIds);
-				}
-			})
-			.then(function () {
-				return _playlistSaveService.removePlaylistsByIdAsync(playlistIds)
-			});
-	},
-
-	copyMediasToPlaylistAsync: function (srcPlaylistId, mediaIds, destPlaylistId) {
-	}
-
+	removePlaylistAsync: removePlaylistAsync
 };
 
 module.exports = PlaylistsDirector;

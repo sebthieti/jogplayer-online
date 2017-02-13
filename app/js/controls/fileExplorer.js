@@ -1,6 +1,6 @@
 'use strict';
 
-jpoApp.directive("fileExplorer", function ($window, $http, fileExplorerService, jpoProxy) {
+jpoApp.directive("fileExplorer", function ($window, $http, fileExplorerBusiness, fileExplorerService) {
 	return {
 		restrict: 'E', // To be used as element (HTML tag)
 		templateUrl: '/templates/controls/fileExplorer.html',
@@ -12,18 +12,18 @@ jpoApp.directive("fileExplorer", function ($window, $http, fileExplorerService, 
 			selectedFiles: '=',
 			keyDown: '&',
 			selectionMode: '=',
-			mediaQueue: '='
+			mediaQueue: '=',
+			bindToFavorites: '='
 		},
 		controller: function($scope, $rootScope) {
 
-			var currentFolder;
-
+			var self = this;
+			var fileExplorerType = $scope.bindToFavorites
+					? 'mediaExplorer'
+					: 'fileSelector';
 			// canExecuteFolderUp true when user initiate component which load file tree
 			$scope.canExecuteFolderUp = false;
 			$scope.isActive = false;
-
-			//$scope.isVisible = true;
-			//$scope.exploreWhenVisible = false;
 
 			$scope.$watch('mediaQueue.length', function(newValue) {
 				if (newValue) {
@@ -33,17 +33,17 @@ jpoApp.directive("fileExplorer", function ($window, $http, fileExplorerService, 
 				}
 			});
 
-			this.setBehaviors = function() {
-
-			}
-
-			//$scope.$watch("isVisible", function(isVisible, oldValue) {
-			//	if ($scope.isVisible && $scope.isVisible == true && $scope.exploreWhenVisible && $scope.exploreWhenVisible == true) {
-			//		if (!currentFolder) {
-			//			startExplore();
-			//		}
-			//	}
-			//});
+			// TODO Don't remove until I care about import playlist
+			$scope.$watch("isVisible", function(isVisible, oldValue) {
+				if ($scope.isVisible &&
+					$scope.isVisible == true &&
+					$scope.exploreWhenVisible &&
+					$scope.exploreWhenVisible == true) {
+					//if (!currentFolder) {
+						fileExplorerBusiness.startExplore(self);
+					//}
+				}
+			});
 
 			// TODO Should be put as constant in class
 			var rootPath = '/',
@@ -52,73 +52,13 @@ jpoApp.directive("fileExplorer", function ($window, $http, fileExplorerService, 
 				GROUPED = 'grouped',
 				KEEP_EACH = 'keepeach';
 
-			var _lastSelectedFile,
-				_fileTree = [];
-
+			var _lastSelectedFile;
 
 			$scope.selectedFiles = [];
 			$scope.files = [];
 
-			//changeDirectory
-			$rootScope.$on('changeDirectoryByPhysPath', function(event, physPath) {
-				event.stopPropagation();
-				changeWorkingDirByPath(physPath, null);
-			});
-
-			$rootScope.$on('changeDirectoryByLink', function(event, link) {
-				event.stopPropagation();
-				changeWorkingDirByLink(link, null);
-			});
-			var filterFiles = function (files, filterFiles) {
-				return _.filter(files, function(file) {
-					return file.type === 'D' || file.name.endsWith(filterFiles); // TODO Should handle multi ext.
-				});
-			};
 			$scope.goUp = function() {
-				var upPath = selectParentDirFromLinks(currentFolder.links);
-				$http.get(upPath)
-					.then(function(result) {
-						currentFolder = result.data;
-						var files = filterFiles(result.data.files, $scope.filterFiles);
-
-							//var files = currentFolder.files;
-						// TODO To Builder To VM -> To entity/data
-						_.each(files, function(file) {
-							buildViewModel(file);
-						});
-
-						setCurrentWorkingDirUp();
-						setCurrentFolderFiles(files);
-
-						var parentDirPath = selectParentDirFromLinks(currentFolder.links); // TODO Should be an object's method
-						var currentDirPath = selectSelfPhysicalFromLinks(currentFolder.links);// TODO Should be an object's method
-						$scope.currentDirPath = currentDirPath;
-						$scope.canExecuteFolderUp = angular.isDefined(parentDirPath); // TODO weird code because of path bug
-					});
-			};
-
-			var selectParentDirFromLinks = function(links) {
-				var link = _.find(links, function(link) {
-					return link.rel === 'parent';
-				});
-				if (link) {
-					return link.href;
-				}
-			};
-
-			var selectSelfFromLinks = function(links) {
-				return _.find(links, function(link) {
-					return link.rel === 'self';
-				}).href;
-			};
-
-			var selectSelfPhysicalFromLinks = function(links) {
-				var link = _.find(links, function(link) {
-					return link.rel === 'self.phys';
-				});
-				if (link) {
-					return link.href;
-				}
+				fileExplorerBusiness.goUp($scope.links, fileExplorerType);
 			};
 
 			$scope.innerPlayMedia = function(file) {
@@ -145,34 +85,7 @@ jpoApp.directive("fileExplorer", function ($window, $http, fileExplorerService, 
 // BEGIN File selection system
 
 			$scope.fileSelected = function(file) {
-				var isFolder = file.type === 'D';
-				if (isFolder) {
-					var dirPath = selectSelfFromLinks(file.links);
-					$http.get(dirPath)
-						.then(function(result) {
-							currentFolder = result.data;
-							var files = filterFiles(currentFolder.files, $scope.filterFiles);
-
-							// TODO To Builder To VM -> To entity/data
-							_.each(files, function(file) {
-								buildViewModel(file);
-							});
-
-							var parentDirPath = selectParentDirFromLinks(currentFolder.links); // TODO Should be an object's method
-							var currentPhysicalDirPath = selectSelfPhysicalFromLinks(currentFolder.links); // TODO Should be an object's method
-
-							setCurrentWorkingDir(currentPhysicalDirPath);
-							setCurrentFolderFiles(files);
-
-							$scope.canExecuteFolderUp = angular.isDefined(parentDirPath); // TODO weird code because of path bug
-							$scope.isActive = true;
-						});
-
-					// Reload folder mean we'll lose last file
-					_lastSelectedFile = null;
-				} else {
-					updateFileSelection(file);
-				}
+				fileExplorerBusiness.fileSelected(file, fileExplorerType);
 			};
 
 			$scope.isDirectory = function(file) {
@@ -260,118 +173,27 @@ jpoApp.directive("fileExplorer", function ($window, $http, fileExplorerService, 
 
 // END File selection system
 			var startExplore = function(){
-				fileExplorerService
-					.startExplore()
-					.then(function(filesResult) {
-						currentFolder = filesResult;
-						var files = filterFiles(currentFolder.files, $scope.filterFiles);
-						// TODO To Builder To VM -> To entity/data
-						_.each(files, function(file) {
-							buildViewModel(file);
-						});
-
-						$scope.currentDirPath = '/';
-						setCurrentFolderFiles(files);
-
-						$scope.isActive = true;
-					});
+				fileExplorerBusiness.startExplore(self);
 			};
 
-			var changeWorkingDirByPath = function(physPath) {
-				fileExplorerService
-					.exploreFolder(physPath)
-					.then(function (result) {
-						currentFolder = result.data;
-						var files = filterFiles(currentFolder.files, $scope.filterFiles);
-						// TODO To Builder To VM -> To entity/data
-						_.each(files, function(file) {
-							buildViewModel(file);
-						});
-
-						setCurrentFolderFiles(files);
-						var currentDirPath = selectSelfPhysicalFromLinks(currentFolder.links);
-						$scope.currentDirPath = currentDirPath;
-						var parentDirPath = selectParentDirFromLinks(currentFolder.links);
-						$scope.canExecuteFolderUp = angular.isDefined(parentDirPath); // TODO weird code because of path bug
-						$scope.isActive = true;
-					}, function (err) {
-					});
-			};
-
-			var changeWorkingDirByLink = function(link) { // dirPath, folderName // TODO ugly
-				var targetLink = link.href;
-
-				$http.get(targetLink)
-					.then(function (result) {
-						currentFolder = result.data;
-						var files = filterFiles(currentFolder.files, $scope.filterFiles);
-						// TODO To Builder To VM -> To entity/data
-						_.each(files, function(file) {
-							buildViewModel(file);
-						});
-
-						setCurrentFolderFiles(files);
-						var currentDirPath = selectSelfPhysicalFromLinks(currentFolder.links);
-						$scope.currentDirPath = currentDirPath;
-						var parentDirPath = selectParentDirFromLinks(currentFolder.links);
-						$scope.canExecuteFolderUp = angular.isDefined(parentDirPath); // TODO weird code because of path bug
-						$scope.isActive = true;
-					}, function (err) {
-					});
-			};
-
-			var setCurrentWorkingDir = function (folderNameOrPath) {
-				// TODO Following statement To method
-				if (folderNameOrPath !== rootPath && folderNameOrPath.indexOf(pathSeparator) !== -1) {
-					// REDO TREE
-					_fileTree = [];
-					_.each(folderNameOrPath.split(pathSeparator), function (folderName) {
-						enteringFolder(folderName);
-					});
-				} else { // No path, just one dir
-					enteringFolder(folderNameOrPath);
-				}
-				setCurrentDirPath(getCurrentDirPath());
-			};
-
-			var setCurrentWorkingDirUp = function () {
-				exitingFolder();
-				setCurrentDirPath(getCurrentDirPath());
-			};
-
-			var setCurrentDirPath = function(dirPath){
-				$scope.currentDirPath = dirPath;
-			};
-
-			var enteringFolder = function (folderName) {
-				_fileTree.push(folderName);
-			};
-
-			var exitingFolder = function () {
-				_fileTree.pop();
-			};
-
-			var buildViewModel = function (file) {
-				file.selected = false;
-				file.hasError = false;
-			};
-
-			var setCurrentFolderFiles = function (files) {
-				$scope.files = files;
-			};
-
-			var getCurrentDirPath = function () {
-				var noRootDirPath = _.rest(_fileTree, 1);
-				if (noRootDirPath.length === 1) {
-					return pathSeparator + noRootDirPath[0] + pathSeparator;
-				} else {
-					var path = pathSeparator + _.filter(noRootDirPath, function(dir) {return dir != ''}).join(pathSeparator);
-					if (!path.endsWith('/')) {
-						path += '/';
-					}
-					return path;
-				}
-			};
+			// TODO Temporary check. Check with better code (observ. sn/b subsc. if fileExp is the left one (no favs))
+			var observeExternalChanges = $scope.bindToFavorites;
+			fileExplorerBusiness
+				.observeCurrentFolderContent(observeExternalChanges, fileExplorerType, self)
+				.do(function (filesViewModel) {
+					$scope.files = filesViewModel.files;
+					$scope.links = filesViewModel.links;
+					$scope.isActive = filesViewModel.isActive;
+					$scope.canExecuteFolderUp = filesViewModel.canExecuteFolderUp;
+				})
+				.subscribe( // TODO To SilentSubscribe ?
+					function (_) {
+					},
+					function (err) {
+						console.log(err)
+					} // TODO console.log should disappear in prod.
+				); // TODO Handle a disposeWith method
+				// TODO Remember that a failed Observable will end, so find a way to let it alive
 		},
 		link: function(scope) {
 			var SINGLE = 'single',

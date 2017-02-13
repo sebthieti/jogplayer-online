@@ -1,20 +1,38 @@
 'use strict';
 
+var path = require('path'),
+	FileExplorerService = require('./fileExplorerService');
+
 var osDirectPath = "/mnt/";
 
-function LinuxFileExplorerService () { // fileExplorerService s/b fileService
-}
+var LinuxFileExplorerService = function () {
+	FileExplorerService.call(this);
 
-LinuxFileExplorerService.prototype.canHandleOs = function(osName) {
-    return osName === "linux"; // TODO To test
-};
+	this.canHandleOs = function (osName) {
+		return osName === "linux";
+	};
 
-LinuxFileExplorerService.prototype.normalizePathForCurrentOs = function (completePath) {
-    return "/mnt/" + completePath;
-};
+	this.normalizePathForCurrentOs = function (completePath) {
+		return osDirectPath + completePath;
+	};
 
-LinuxFileExplorerService.prototype.getAvailableDrivesPathsAsync = function() {
-    return osDirectPath;
+	this.getNewLineConstant = function () {
+		return '\n';
+	};
+
+	this.getNetworkRoot = function () {
+		return path.sep + path.sep;
+	};
+
+	this.getLevelUpPath = function () {
+		return '..' + path.sep;
+	};
+
+	this.getAvailableDrivesPathsAsync = function () {
+		return osDirectPath;
+	}
 };
+LinuxFileExplorerService.prototype = Object.create(FileExplorerService.prototype);
+LinuxFileExplorerService.prototype.constructor = FileExplorerService;
 
 module.exports = LinuxFileExplorerService;

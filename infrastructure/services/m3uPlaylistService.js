@@ -5,11 +5,12 @@ var fs = require('fs'),
 	Q = require('q'),
 	//m3uWriter = require("m3u"),
 	from = require('fromjs'),
-	path = require('path'),
-	pathBuilder = require('../utils').pathBuilder;
+	path = require('path');
 
 var EXTENDED = "#EXTM3U",
-	_mediaBuilder;
+	_mediaBuilder,
+	_fileExplorer,
+	_pathBuilder;
 
 var readPlaylistAsync = function (filePath) {
 	return Q.nfcall(fs.readFile, filePath, { encoding: "utf8" })
@@ -45,7 +46,7 @@ var parsePlaylist = function (playlistContent, filePath) {
 		var mediaPath = playlistContentParsed[lineIndex];
 
 		var media = _mediaBuilder.buildMediaSummary(
-			pathBuilder.toAbsolutePath(filePath, mediaPath),
+			_pathBuilder.toAbsolutePath(filePath, mediaPath),
 			title,
 			medias.length,
 			duration);
@@ -56,18 +57,41 @@ var parsePlaylist = function (playlistContent, filePath) {
 	return medias;
 };
 
-function M3UPlaylistService(mediaBuilder) {
+var generateLine = function(title, duration) {
+	return '#EXTINF:' + Math.round(duration) + ',' + title;
+};
+
+var savePlaylistAsync = function(playlist) {
+	var lines = new Array(playlist.media.length * 2 + 1); // 2 lines per title + header
+	lines[0] = EXTENDED;
+	var cursor = 0;
+	playlist.media.forEach(function(medium) {
+		lines[++cursor] = generateLine(medium.title, medium.duration);
+		lines[++cursor] = _pathBuilder.toRelativePath(playlist.filePath, medium.filePath);
+	});
+
+	var linesToString = lines.join(_fileExplorer.getNewLineConstant());
+	return Q
+		.nfcall(fs.writeFile, playlist.filePath, linesToString)
+		.then(function() {return playlist});
+};
+
+var M3UPlaylistService = function (mediaBuilder, fileExplorer, pathBuilder) {
 	_mediaBuilder = mediaBuilder;
-}
+	_fileExplorer = fileExplorer;
+	_pathBuilder = pathBuilder;
+};
 
 M3UPlaylistService.prototype = {
 
-	loadMediaFromPlaylistAsync: function (filePath) {
+	loadMediaSummariesFromPlaylistAsync: function (filePath) {
 		return readPlaylistAsync(filePath)
 			.then(function(playlistContent) {
 				return parsePlaylist(playlistContent, filePath)
 			});
 	},
+
+	savePlaylistAsync: savePlaylistAsync,
 
 	isOfType: function(filePath) {
 		var ext = path.extname(filePath).toLowerCase();

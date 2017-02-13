@@ -1,47 +1,61 @@
 'use strict';
 
-require('../../extentions').StringExtentions;
 var child_process = require('child_process'),
-	Q = require('Q');
+	Q = require('Q'),
+	path = require('path'),
+	FileExplorerService = require('./fileExplorerService'),
+	FileInfo = require('../../models').FileInfo;
 
-function WinFileExplorerService () {
-}
+var anyDriveLetterPattern = /([a-zA-Z]:)/g;
 
-WinFileExplorerService.prototype.canHandleOs = function(osName) {
-    return osName === "win32";
+var WinFileExplorerService = function() {
+	FileExplorerService.call(this);
+
+	this.canHandleOs = function (osName) {
+		return osName === "win32";
+	};
+
+	this.normalizePathForCurrentOs = function (completePath) {
+		if (completePath.startsWith('/')) {
+			return completePath.substring(1).replace(/\//g, path.sep);
+		}
+		return completePath.replace(/\//g, path.sep);
+	};
+
+	this.getNewLineConstant = function () {
+		return '\r\n';
+	};
+
+	this.getNetworkRoot = function () {
+		return path.sep + path.sep;
+	};
+
+	this.getLevelUpPath = function () {
+		return '..' + path.sep;
+	};
+
+	this.getAvailableDrivesPathsAsync = function () {
+		return Q.promise(function (onSucceed, onError) {
+			// For Windows we need a process to get for us drives paths
+			var exec = child_process.exec;
+			var cmd = 'wmic logicaldisk get name';
+			exec(cmd, function (err, stdOut, stdErr) {
+				if (err) {
+					onError('Error running wmic logicaldisk command:' + err + "|" + stdErr);
+					return;
+				}
+
+				onSucceed(stdOut
+					.match(anyDriveLetterPattern)
+					.map(function(drive) {
+						return new FileInfo(drive, FileInfo.Directory, true);
+					})
+				);
+			});
+		});
+	};
 };
-
-WinFileExplorerService.prototype.normalizePathForCurrentOs = function (completePath) {
-    if (completePath.startsWith('/')) {
-	    return completePath.substring(1).replace(/\//g, '\\');
-    }
-	return completePath.replace(/\//g, '\\');
-};
-
-WinFileExplorerService.prototype.getAvailableDrivesPathsAsync = function() {
-    return Q.promise(function(onSucceed, onError) {
-        // For Windows we need a process to get for us drives paths
-        var exec = child_process.exec;
-        var cmd = 'wmic logicaldisk get name';
-        exec(cmd, function(err, stdOut, stdErr) {
-	        if (err) {
-		        onError('Error running wmic logicaldisk command:' + err + "|" + stdErr);
-		        return;
-	        }
-
-	        var splitted = stdOut.split('\n');// TODO Use system's CRLF .split("\n")
-	        var drives = [];
-	        for(var line = 1; line < splitted.length; line++) {
-		        var drive = /(\S*)/.exec(splitted[line]);//splitted[line];
-		        if (drive[0]) {
-			        drives.push ({ name: drive[0], type: 'D', isRoot: true }); // TODO Add that to the other
-		        }
-	        }
-
-	        onSucceed(drives);
-        });
-    });
-
-};
+WinFileExplorerService.prototype = Object.create(FileExplorerService.prototype);
+WinFileExplorerService.prototype.constructor = FileExplorerService;
 
 module.exports = WinFileExplorerService;

@@ -1,7 +1,10 @@
 'use strict';
 
 angular.module('jpoApp.controllers', []).
-	controller('mainCtrl', ['$scope', 'favoriteService', 'playlistService', function($scope, favoriteService, playlistService) {
+	controller('mainCtrl', ['$scope', 'favoriteBusiness', 'playlistService', function($scope, favoriteBusiness, playlistService) {
+
+
+
 
 		//$scope.currentDirPath = '';
 		$scope.currentFileExplorerDirPath = '';
@@ -25,69 +28,11 @@ angular.module('jpoApp.controllers', []).
 			}
 		};
 
-		$scope.addFolderToFavorites = function() {
+		$scope.addFolderToFavoritesCmd = function() {
 			// Get folder name for fav name.
-			var folderPath = $scope.currentFileExplorerDirPath;
-
-			var favCount = 0;
-			if ($scope.favorites) {
-				favCount = $scope.favorites.length;
-			}
-
-			var favorite = {
-				name: _.last(splitFolderPath(folderPath)),
-				folderPath: folderPath,
-				index: favCount
-			};
-
-			favoriteService
-				.addFavorite(favorite)
-				.then(function (newFavorite) {
-					$scope.favorites = $scope.favorites.concat(newFavorite);
-				});
+			var folderPath = $scope.currentFileExplorerDirPath; // TODO Current folder path instead
+			favoriteBusiness.addFolderToFavoritesAsync(folderPath);
 		};
-
-		// TODO May be moved to helper ?
-		var splitFolderPath = function(folderPath) {
-			var levels = folderPath.split("/");
-			return _.filter(
-				levels,
-				function(lvl) {
-					return lvl !== ''
-				});
-		};
-
-		$scope.deleteFavorite = function(favToDelete) {
-			favoriteService
-				.deleteFavorite(favToDelete)
-				.then(function () {
-					$scope.favorites = _.filter($scope.favorites, function(fav) {
-						return fav.index !== favToDelete.index;
-					});
-
-					// Remap indexes
-					var favIndex = 0;
-					_.each($scope.favorites, function(fav) {
-						fav.index = favIndex;
-						favIndex++;
-					});
-				});//.catch()
-		};
-
-		$scope.updateFavorite = function(favorite) {
-			var updatingIndex = favorite.index;
-			return favoriteService
-				.updateFavorite(favorite)
-				.then(function(updatedFavorite) {
-					$scope.favorites[updatingIndex] = updatedFavorite;
-					return updatedFavorite;
-				});
-		};
-
-		favoriteService.getFavorites()
-			.then(function (favorites) {
-				$scope.favorites = favorites;
-			});
 
 		// END Favorites section
 
@@ -321,9 +266,9 @@ angular.module('jpoApp.controllers', []).
 			$scope.$emit('changeDirectoryByPhysPath', physPath);
 		};
 
-		$scope.changeDirByLinkCmd = function(link){
-			$scope.$emit('changeDirectoryByLink', link);
-		};
+		//$scope.changeDirByLinkCmd = function(link){
+		//	$scope.$emit('changeDirectoryByLink', link);
+		//};
 
 		$scope.playFolder = function(folderPath) {
 

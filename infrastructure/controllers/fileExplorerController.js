@@ -2,13 +2,17 @@
 
 var _app,
 	_mediaStreamer,
-	_fileExplorerRepository;
+	_fileExplorerDirector;
 
-function FileExplorerController (app, mediaStreamer, fileExplorerRepository) {
+function extractUrlFromParams(params) {
+	return ('/' + (params[0] || '')) || '';
+}
+
+var FileExplorerController = function (app, mediaStreamer, fileExplorerDirector) {
 	_app = app;
 	_mediaStreamer = mediaStreamer;
-	_fileExplorerRepository = fileExplorerRepository;
-}
+	_fileExplorerDirector = fileExplorerDirector;
+};
 
 FileExplorerController.prototype.init = function() {
 	_app.get("/", function(req, res) {
@@ -17,15 +21,10 @@ FileExplorerController.prototype.init = function() {
 
 	// Explore path
 	_app.get(/^\/api\/explore\/(.*[\/])*$/, function (req, res) {
-		var extractedUrlPath = ('/' + (req.params[0] || '')) || '';
-		_fileExplorerRepository
-			.getFolderContentAsync(extractedUrlPath)
-			.then(function(fileDetails) {
-				res.send(fileDetails);
-			})
-			.catch(function(err) {
-				res.send(400, err)
-			})
+		_fileExplorerDirector
+			.getFolderContentAsync(extractUrlFromParams(req.params))
+			.then(function(fileDetails) { res.send(fileDetails) })
+			.catch(function(err) { res.send(400, err) })
 			.done();
 	});
 };

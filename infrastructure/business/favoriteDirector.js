@@ -15,8 +15,8 @@ FavoriteDirector.prototype = {
 		return _favoriteSaveService.addFavoriteAsync(favorite);
 	},
 
-	updateFavoriteAsync: function(favorite) {
-		return _favoriteSaveService.updateFavoriteAsync(favorite);
+	updateFromFavoriteDtoAsync: function(favoriteId, favoriteDto) {
+		return _favoriteSaveService.updateFromFavoriteDtoAsync(favoriteId, favoriteDto);
 	},
 
 	removeFavoriteByIdAsync: function(favorite) {

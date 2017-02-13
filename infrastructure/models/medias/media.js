@@ -9,12 +9,12 @@ var MediaType = {
 var Media = (function (_super) {
 	'use strict'
 	
-	function Media(id, mediaType, title, filePath, duration, mustRelocalize, isSelected, bookmarks, metadatas) {
+	function Media(id, mediaType, title, filePath, duration, isAvailable, isSelected, bookmarks, metadatas) {
 		_super.call(this, title, filePath, duration);
 
 		this._id = id;
 		this.mediaType = mediaType;
-		this.mustRelocalize = mustRelocalize;
+		this.isAvailable = isAvailable;
 		this.isSelected = isSelected;
 		this.bookmarks = bookmarks;
 		this.metadatas = metadatas;

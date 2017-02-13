@@ -1,12 +1,16 @@
 'use strict';
 
-var path = require('path');
+var path = require('path'),
+	fs = require('fs'),
+	Q = require('q');
 
-var Playlist;
+var Playlist,
+	_fileExplorerService;
 
-var PlaylistBuilder = function (playlistModel) {
+var PlaylistBuilder = function (playlistModel, fileExplorerService) {
 	Playlist = playlistModel;
-}
+	_fileExplorerService = fileExplorerService;
+};
 
 PlaylistBuilder.prototype = {
 
@@ -20,28 +24,34 @@ PlaylistBuilder.prototype = {
 			index: index,
 			filePath: '',
 			checked: true,
-			mustRelocalize: false,
+			isAvailable: true,
 			createdOn: new Date().toUTCString()
 		});
 	},
 
-	buildEmptyPhysicalPlaylist: function (playlistFilePath, name, index) {
+	buildEmptyPhysicalPlaylistAsync: function (playlistFilePath, name, index) {
+		var normalizedPlaylistFilePath = _fileExplorerService.normalizePathForCurrentOs(playlistFilePath);
 		var playlistName = '';
 		if (name) {
 			playlistName = name;
 		} else {
-			var plExt = path.extname(playlistFilePath);
-			playlistName = path.basename(playlistFilePath, plExt);
+			var plExt = path.extname(normalizedPlaylistFilePath);
+			playlistName = path.basename(normalizedPlaylistFilePath, plExt);
 		}
 
-		return new Playlist({
-			name: playlistName,
-			index: index,
-			filePath: playlistFilePath,
-			checked: true,
-			mustRelocalize: false,
-			createdOn: new Date().toUTCString()
-		});
+		return Q
+			.nfcall(fs.stat, normalizedPlaylistFilePath)
+			.then(function(stat) {
+				return new Playlist({
+					name: playlistName,
+					index: index,
+					filePath: normalizedPlaylistFilePath,
+					checked: true,
+					isAvailable: true,
+					createdOn: stat.ctime,
+					updatedOn: stat.mtime
+				});
+			});
 	}
 
 };

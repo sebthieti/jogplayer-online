@@ -1,6 +1,6 @@
 module.exports = function () {
 	return {
-		api: '/api/',
+		api: '/api/', // TODO Clearly separate public endpoint from private def.
 		components: [{
 				rel: 'explore',
 				href: '/api/explore/'
@@ -17,7 +17,7 @@ module.exports = function () {
 				sendConfig: '/api/config/playableType'
 			}*/
 		],
-		favorites: {
+		favorites: { // TODO Regen. url according to base endpoint (on top)
 			selfPath: '/api/favorites/:favId',
 			getPath: '/api/favorites/',
 			insertPath: '/api/favorites/',

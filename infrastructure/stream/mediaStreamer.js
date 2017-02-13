@@ -33,7 +33,7 @@ MediaStreamer.prototype.streamByMediaIdAndExt = function(mediaIdWithExt, request
 	return _mediaDirector
 		.getBinaryChunkAndFileSizeByIdAsync(mediaId, chunckParams.startOffset, chunckParams.endOffset)
 		.then(function(dataSet) {
-			prepareBodyResponse(canUseChunkedStratagy, chunckParams, dataSet.fileSize, dataSet.mimeType, dataSet.data, response);
+			prepareAndSendResponseWithData(response, canUseChunkedStratagy, chunckParams, dataSet);
 		})
 		.catch(function(err) {
 			response.send(400, err) }
@@ -42,7 +42,7 @@ MediaStreamer.prototype.streamByMediaIdAndExt = function(mediaIdWithExt, request
 };
 
 MediaStreamer.prototype.streamByMediaPath = function(rawPath, request, response) {
-	var completePath = rawPath;//decodeURI();
+	var completePath = rawPath;
     var realPath = _fileService.normalizePathForCurrentOs(completePath);//adaptPathToSystem(completePath);
 
 	var canUseChunkedStratagy = typeof request.headers.range !== 'undefined';
@@ -55,12 +55,12 @@ MediaStreamer.prototype.streamByMediaPath = function(rawPath, request, response)
 	}
 
 	return _mediaDirector
-        .ensureReadableMediaAsync(realPath, request.headers.accept)
+		.ensureReadableMediaAsync(realPath, request.headers.accept)
 		.then(function(mediaPath) {
 			return _mediaDirector.getBinaryChunkAndFileSizeByPathAsync(mediaPath, chunckParams.startOffset, chunckParams.endOffset)
 		})
 		.then(function(dataSet) {
-			prepareBodyResponse(canUseChunkedStratagy, chunckParams, dataSet.fileSize, dataSet.mimeType, dataSet.data, response);
+			prepareAndSendResponseWithData(response, canUseChunkedStratagy, chunckParams, dataSet);
 		})
 		.catch(function(err) {
 			response.send(400, err)
@@ -68,7 +68,12 @@ MediaStreamer.prototype.streamByMediaPath = function(rawPath, request, response)
 		.done();
 };
 
-var prepareBodyResponse = function (useChunkMode, chunckParams, fileSize, mimeType, data, response) {
+var prepareAndSendResponseWithData = function (response, canUseChunkedStratagy, chunckParams, dataSet) {
+	injectHeaderInResponse(response, canUseChunkedStratagy, chunckParams, dataSet.fileSize, dataSet.mimeType);
+	injectDataStreamInResponse(response, dataSet.dataStream);
+};
+
+var injectHeaderInResponse = function (response, useChunkMode, chunckParams, fileSize, mimeType) {
 	var header = {};
 
 	header["Accept-Ranges"] = "bytes";
@@ -86,17 +91,22 @@ var prepareBodyResponse = function (useChunkMode, chunckParams, fileSize, mimeTy
 		header["Connection"] = "close";
 
 		response.writeHead(206, header);
-		response.write(data, "binary");
 	} else {
 		// reply to normal un-chunked request
 		header["Content-Length"] = fileSize;
 		header["Connection"] = "keep-alive";
 
 		response.writeHead(200, header);
-		response.write(data, "binary");
 	}
+};
 
-	response.end();
+var injectDataStreamInResponse = function (response, dataStream) {
+	dataStream.on('data', function(data) {
+		response.write(data, "binary");
+	});
+	dataStream.on('end', function() {
+		response.end();
+	});
 };
 
 var parseChunkRequest = function (request) {

@@ -11,8 +11,8 @@ jpoApp.factory("favoriteService", function ($http, $q, jpoProxy) {
 	};
 
 	return {
-		getFavorites: function () {
-			return jpoProxy.getApiLink('favorites')
+		getFavoritesAsync: function () {
+			return jpoProxy.getApiLinkAsync('favorites')
 				.then(function(link) {
 					return $http.get(link)
 				})
@@ -21,8 +21,8 @@ jpoApp.factory("favoriteService", function ($http, $q, jpoProxy) {
 				});
 		},
 
-		addFavorite: function(favorite) {
-			return jpoProxy.getApiLink('favorites')
+		addFavoriteAsync: function(favorite) {
+			return jpoProxy.getApiLinkAsync('favorites')
 				.then(function(link) {
 					return $http.post(link, favorite)
 				})
@@ -31,15 +31,17 @@ jpoApp.factory("favoriteService", function ($http, $q, jpoProxy) {
 				});
 		},
 
-		updateFavorite: function(favorite) {
-			return $http
-				.put(selectActionFromLinks('update', favorite.links), favorite)
-				.then(function (result) {
-					return result.data;
-				});
+		updateFavoriteAsync: function(favorite) {
+			return $http({
+				method: 'PATCH',
+				url: selectActionFromLinks('update', favorite.links), data: favorite
+			})
+			.then(function (result) {
+				return result.data;
+			});
 		},
 
-		deleteFavorite: function(favorite) {
+		deleteFavoriteAsync: function(favorite) {
 			var deferred = $q.defer();
 
 			$http.delete(selectActionFromLinks('remove', favorite.links))

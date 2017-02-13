@@ -3,16 +3,16 @@
 var mongoose = require('mongoose'),
 	Schema = mongoose.Schema;
 
-var _mediaRoutes;
+var _mediaRoutes,
+	Media;
 
-var mediaSchema = new Schema({
+var mediaSchema = new Schema({ // TODO Rename to mediumSchema
 	_playlistId: { type: Schema.Types.ObjectId, ref: 'Playlist' },
 	title: String,
 	createdOn: { type: Date },
 	updatedOn: { type: Date },
 	filePath: String,
 	isChecked: { type: Boolean, default: true },
-	mustRelocalize: Boolean,
 	mediaType: String,
 	index: Number,
 	duration: Number,
@@ -22,6 +22,12 @@ var mediaSchema = new Schema({
 	//bookmarks: [{ type: Schema.Types.ObjectId, ref: 'Bookmark' }]
 });
 mediaSchema.set('toJSON', { virtuals: true });
+// TODO Think about remove this and only compute it elsewhere (maybe only put it to DTO ?)
+mediaSchema.virtual('isAvailable').get(function() {
+	return this._isAvailable || false;
+}).set(function(value) {
+	this._isAvailable = value;
+});
 mediaSchema.virtual('links').get(function() {
 	return [{
 		rel: 'self',
@@ -43,8 +49,13 @@ mediaSchema.virtual('links').get(function() {
 			.replace(':mediaId', this._id)
 	}];
 });
+mediaSchema.methods.setIsAvailable = function (isAvailable) {
+	this.isAvailable = isAvailable;
+	return this;
+};
 
 module.exports = function(mediaRoutes){
 	_mediaRoutes = mediaRoutes;
-	return mongoose.model('Media', mediaSchema);
+	Media = mongoose.model('Media', mediaSchema);
+	return Media;
 };

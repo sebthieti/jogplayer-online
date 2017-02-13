@@ -9,6 +9,7 @@
     "angular-resource": "~1.2.16",
     "angular-route": "~1.2.16",
     "underscore": "~1.6.0",
-    "datejs": "~1.0.0-rc1"
+    "datejs": "~1.0.0-rc1",
+    "rxjs": "~2.3.18"
   }
 }

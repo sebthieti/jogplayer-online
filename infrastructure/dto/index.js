@@ -1,0 +1,9 @@
+module.exports.Dto = require('./Dto');
+module.exports.PlaylistDto = require('./playlistDto');
+module.exports.FolderContentDto = require('./folderContentDto');
+module.exports.FileInfoDto = require('./fileInfoDto');
+module.exports.LinkDto = require('./linkDto');
+module.exports.ResourceLinksDto = require('./resourceLinksDto');
+module.exports.Media = require('./media');
+module.exports.FavoriteDto = require('./favoriteDto');
+module.exports.Id31Metadata = require('./id3v1Metadata');

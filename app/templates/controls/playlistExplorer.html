@@ -7,7 +7,7 @@
                 ng-click="innerPlaylistSelected(pl)">
                 <div ng-show="pl.isEditing">
                     <!-- Editing mode -->
-                    <input type="text" ng-model="pl.name">
+                    <input type="text" ng-model="pl.name" ng-enter="endEditPlaylist(pl)">
                     <span class="icon-checkmark rename" stop-event ng-click="endEditPlaylist(pl)"></span>
                     <span class="icon-close cancel" stop-event ng-click="cancel(pl)"></span>
                 </div>
@@ -23,7 +23,7 @@
             </li>
             <li ng-switch="isAdding" class="btn-enabled">
                 <div ng-switch-when="true">
-                    <input type="text" ng-model="newPlaylist.name">
+                    <input type="text" ng-model="newPlaylist.name" ng-enter="endAddVirtualPlaylist()">
                     <span class="icon-checkmark rename" stop-event ng-click="endAddVirtualPlaylist()"></span>
                     <span class="icon-close cancel" stop-event ng-click="cancel()"></span>
                 </div>
@@ -52,6 +52,7 @@
         </ul>
 
         <file-explorer is-visible="isPlaylistFinderVisible"
+                       bind-to-favorites="false"
                        explore-when-visible="true"
                        filter-files="m3u"
                        play-media="playMediaFromFileExplorer(file)"

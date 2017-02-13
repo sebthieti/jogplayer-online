@@ -3,27 +3,76 @@
 var Q = require('q'),
 	fs = require('fs'),
 	path = require('path'),
-    child_process = require('child_process'),
-	probe = require('node-ffprobe');
+	ffmpeg = require('fluent-ffmpeg'),
+	ffprobe = ffmpeg.ffprobe,
+	utils = require('../utils');
+
+var Models = require('../models'),
+	MediumInfo = Models.MediumInfo;
 
 var _convertionOutputFolderRelativePath = "./_converted/",
-	_ffmpeg_process = null;
+	overwriteOutput = '-y';
 
-var ensureConvertionOutputFolderExistsAsync = function () {
-	return Q.promise(function(onSuccess, _) {
-		fs.exists(getConvertionOutputFolderPath(), function(folderExists) {
-			onSuccess(folderExists);
-		});
-	})
-		.then(function (folderExists) {
-			if (!folderExists) {
-				return createConvertionOutputFolderAsync();
-			}
+var getMediumInfosAsync = function (mediaFilePath) {
+	return Q
+		.fcall(getBasicMediumInfo, mediaFilePath)
+		.then(function (basicInfo) {
+			return Q
+				.nfcall(ffprobe, mediaFilePath)
+				.then(function(detailedMediumInfo) {
+					return new MediumInfo(basicInfo.name, basicInfo.fileext, detailedMediumInfo);
+				});
 		});
 };
 
-var createConvertionOutputFolderAsync = function () {
-	return Q.nfcall(fs.mkdir, getConvertionOutputFolderPath())
+var getBasicMediumInfo = function (filePath) {
+	var fileext = path.extname(filePath);
+	var name = path.basename(filePath, fileext);
+	return { name: name, fileext: fileext };
+};
+
+var convertMediumToAsync = function (mediaFilePath, outputFormat) {
+	return ensureConvertionOutputFolderExistsAsync()
+		.then(function () {
+			return execMediumConvertionAsync (mediaFilePath, outputFormat)
+		});
+};
+
+var ensureConvertionOutputFolderExistsAsync = function () {
+	return utils.checkFileExistsAsync(getConvertionOutputFolderPath())
+		.then(ifNotExistsCreateConvertionOutputFolderAsync);
+};
+
+var getConvertionOutputFolderPath = function () {
+	return path.join(process.cwd(), _convertionOutputFolderRelativePath); // or resolve ?
+};
+
+var ifNotExistsCreateConvertionOutputFolderAsync = function (folderExists) {
+	if (!folderExists) {
+		return Q.nfcall(fs.mkdir, getConvertionOutputFolderPath())
+	}
+};
+
+var execMediumConvertionAsync = function (mediaFilePath, outputFormat) {
+	var outputFilePath = generateConvertedMediaFilePath(mediaFilePath, outputFormat);
+
+	// TODO try -map option (http://www.ffmpeg.org/ffmpeg.html)
+	// TODO try -codec copy (http://www.ffmpeg.org/ffmpeg-all.html)
+	// TODO try -t duration (output), -to position (output) (Xclusive Or), check interesting other next options
+	var deferred = Q.defer();
+	ffmpeg()
+		.input(mediaFilePath)
+		.output(outputFilePath)
+		.outputOptions(overwriteOutput)
+		.on('end', function() {
+			deferred.resolve(outputFilePath);
+		})
+		.on('error', function (err) {
+			deferred.reject(err);
+		})
+		.run();
+
+	return deferred.promise;
 };
 
 var generateConvertedMediaFilePath = function (mediaFilePath, outputFormat) {
@@ -35,136 +84,34 @@ var generateConvertedMediaFilePath = function (mediaFilePath, outputFormat) {
 	return path.join(convertionFolderPath, mediaFileNameNoExt + outputFormat);
 };
 
-var getConvertionOutputFolderPath = function () {
-	return path.join(process.cwd(), _convertionOutputFolderRelativePath); // or resolve ?
+//var checkAndUpdateMustRelocalizeAsync = function(media) {
+//	var checkAndUpdatePromises = media.map(function(medium) {
+//		return utils.checkFileExistsAsync(medium.filePath)
+//			.then(function (fileExists) { return setMustRelocalize(medium, fileExists) });
+//	});
+//	return Q.all(checkAndUpdatePromises);
+//};
+//
+//var setMustRelocalize = function(medium, fileExists) {
+//	return medium.setMustRelocalize(!fileExists);
+//};
+
+var getFileSizeAsync = function(filePath) {
+	return Q
+		.nfcall(fs.stat, filePath)
+		.then(function(stat) {
+			return stat.size;
+		});
 };
 
-var convertMediaToAsync = function (mediaFilePath, outputFormat) { // TODO Code smell, to much responsability
-	var deferred = Q.defer();
-
-	var outputFilePath = generateConvertedMediaFilePath(mediaFilePath, outputFormat);
-	// Only one convertion at a time
-	if (_ffmpeg_process) {
-		_ffmpeg_process.kill();
-	}
-
-	_ffmpeg_process = child_process.spawn("ffmpeg", [
-		"-i", // Next is input file
-		mediaFilePath,
-		"-y", // Overwrite output files without asking
-		outputFilePath,
-		"-loglevel", "error" // Only show error to avoid false positives in stderr
-	]);
-	// TODO try -map option (http://www.ffmpeg.org/ffmpeg.html)
-	// TODO try -codec copy (http://www.ffmpeg.org/ffmpeg-all.html)
-	// TODO try -t duration (output), -to position (output) (Xclusive Or), check interesting other next options
-
-	var errorMsg = '';
-	_ffmpeg_process.stderr.on('data', function (data) {
-		errorMsg += data;
-	});
-	_ffmpeg_process.on('close', function (code) {
-		var success = code === 0;
-		if (success) {
-			deferred.resolve(outputFilePath);
-		} else {
-			deferred.reject(errorMsg);
-		}
-
-		//console.log('transcoding with code:' + code);
-	});
-
-	return deferred.promise;
-};
-
-var setMustRelocalize = function(medium, fileExists) {
-	medium.mustRelocalize = fileExists;
-	return medium;
+var getFileStream = function(filePath, fromOffset, toOffset) {
+	return fs.createReadStream(filePath, { start: fromOffset, end: toOffset });
 };
 
 module.exports = {
-
-	checkAndUpdateMustRelocalizeAsync: function(media) {
-		var checkAndUpdatePromises = media.map(function(medium) {
-			return Q.nfcall(fs.exists, medium.filePath)
-				.then(function (fileExists) {
-					return setMustRelocalize(medium, fileExists);
-				});
-		});
-		return Q.all(checkAndUpdatePromises);
-	},
-
-	getFileSizeAsync: function(filePath) {
-		return Q.promise(function (onSuccess, onError) {
-			fs.stat(filePath, function (err, stats) {
-				if (!err) {
-					onSuccess(stats.size);
-				} else {
-					onError(err);
-				}
-			});
-		});
-	},
-
-	getFileChunkAsync: function(filePath, fromOffset, toOffset) {
-		return Q.promise(function(onSuccess, onError) {
-			fs.open(filePath, 'r', function(status, fd) { // TODO Beautifull pyramid of doom!
-				if (status) {
-					console.log(status.message);
-					return;
-				}
-
-//				fs.readFile(filePath, "binary", function(err, file) {
-//					onSuccess(file.slice(fromOffset, toOffset)/*+'0'*/);
-//					//response.write(file.slice(start, end)+'0', "binary");
-//				});
-
-				var bufferSize = (toOffset - fromOffset) + 1;
-
-				//console.log('bufferSize:' + bufferSize + '!fromOffset:' + fromOffset + '!toOffset:' + toOffset);
-
-				var buffer = new Buffer(bufferSize);
-				fs.read(fd, buffer, 0, buffer.length/*bufferSize*/, fromOffset, // append '0' ?
-					function(err, bytesRead, buffer) {
-						fs.close(fd, function() {
-							if (!err) {
-								onSuccess(buffer)
-							} else {
-								onError(err)
-							}
-						});
-					}
-				);
-			});
-		});
-	},
-
-	convertMediaToAsync: function (mediaFilePath, outputFormat) {
-		return ensureConvertionOutputFolderExistsAsync()
-			.then(function () {
-				return convertMediaToAsync (mediaFilePath, outputFormat)
-			});
-	},
-
-	getMediaInfosAsync: function (mediaFilePath) {
-		var deferred = Q.defer();
-
-		// Only one convertion at a time
-		if (_ffmpeg_process) {
-			_ffmpeg_process.kill();
-		}
-
-		//var cleanMediaFilePath = mediaFilePath.substring(1);
-
-		probe(mediaFilePath, function(err, probeData) {
-			if (err) {
-				deferred.reject(err);
-			} else {
-				deferred.resolve(probeData);
-			}
-		});
-
-		return deferred.promise;
-	}
-
+	getMediumInfosAsync: getMediumInfosAsync,
+	convertMediumToAsync: convertMediumToAsync,
+	//checkAndUpdateMustRelocalizeAsync: checkAndUpdateMustRelocalizeAsync,
+	getFileSizeAsync: getFileSizeAsync,
+	getFileStream: getFileStream
 };

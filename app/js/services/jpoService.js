@@ -4,7 +4,8 @@ jpoApp.factory("jpoService", function ($http, $q) {
 	var API_URL = "/api/";
 
 	return {
-		getApiMap: function() {
+
+		getApiMapAsync: function() {
 			var deferred = $q.defer();
 
 			$http.get(API_URL)
@@ -16,6 +17,7 @@ jpoApp.factory("jpoService", function ($http, $q) {
 
 			return deferred.promise;
 		}
+
 	}
 });
 
@@ -23,13 +25,14 @@ jpoApp.factory("jpoProxy", function ($q, jpoService) {
 	var cache = {};
 
 	return {
-		getApiMap: function() {
+
+		getApiMapAsync: function() {
 			var deferred = $q.defer();
 
 			if (cache.apiMap) {
-				deferred.resolve(cache.apiMap); // TODO  must be a copy
+				deferred.resolve(cache.apiMap.clone());
 			} else {
-				jpoService.getApiMap()
+				jpoService.getApiMapAsync()
 					.then(function(apiMap) {
 						cache.apiMap = apiMap;
 						deferred.resolve(apiMap);
@@ -38,10 +41,11 @@ jpoApp.factory("jpoProxy", function ($q, jpoService) {
 
 			return deferred.promise;
 		},
-		getApiLink: function(name) {
+
+		getApiLinkAsync: function(name) {
 			var deferred = $q.defer();
 
-			this.getApiMap()
+			this.getApiMapAsync()
 				.then(function(apiMap) {
 					var apiLink = _.find(apiMap, function(link) {
 						return link.rel === name;
@@ -51,5 +55,6 @@ jpoApp.factory("jpoProxy", function ($q, jpoService) {
 
 			return deferred.promise;
 		}
+
 	}
 });

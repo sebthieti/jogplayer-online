@@ -16,53 +16,62 @@ var MediaBuilder = function (metaTagServices, mediaService, mediaModel) {
 	_metaTagServices = metaTagServices;
 	_mediaService = mediaService;
 	Media = mediaModel;
-}
+};
 
 MediaBuilder.prototype = {
 
-	toMediaAsync: function (mediaSummary) {
+	toMediaAsync: function(mediaSummaries, playlistId) {
+		var mediaPromises = mediaSummaries.map(
+			function(mediumSummary) { return this.toMediumAsync(mediumSummary, playlistId) },
+			this
+		);
+		return Q.all(mediaPromises);
+	},
+
+	toMediumAsync: function (mediaSummary, playlistId) {
 		if (!mediaSummary) {
 			throw "MediaBuilder.toMedia error: mediaSummary must be set";
 		}
-		return this.buildMediaAsync(null, mediaSummary.filePath, mediaSummary.index);
+		return this.buildMediumAsync(playlistId, mediaSummary.filePath, mediaSummary.index);
 	},
 
-	buildMediaAsync: function (playlistId, filePath, index) {
+	buildMediumAsync: function (playlistId, filePath, index) {
 		if (!filePath) {
 			throw "MediaBuilder.buildMedia: filePath not set";
 		}
 
 		var mimeType = mediaHelper.getMimeTypeFromPath(filePath);
 		return _mediaService
-			.getMediaInfosAsync(filePath)
-			.then(function (mediaInfos) {
+			.getMediumInfosAsync(filePath)
+			.then(function (mediumInfo) {
+				var mediumFormat = mediumInfo.detailedInfo.format;
 				return new Media({
 					_playlistId: playlistId,
-					duration: Math.round(mediaInfos.format.duration),
-					ext: mediaInfos.fileext,
-					name: mediaInfos.filename,
+					duration: Math.round(mediumFormat.duration),
+					ext: mediumInfo.fileext,
+					name: mediumInfo.name,
 					index: index,
-					filePath: mediaInfos.file,
+					filePath: mediumFormat.filename,
 					checked: true,
 					mimeType: mimeType,
-					mustRelocalize: false,
-					title: mediaInfos.filename,
+					isAvailable: true,
+					title: mediumInfo.name, // TODO Should also look for tag's title
 					metadatas: [],
 					bookmarks: []
 				});
 			}, function(err) { // Can happen when loading a playlist where media are not found
-				var ext = path.extname(filePath);
-				var name = path.basename(filePath, ext);
+				var fileext = path.extname(filePath);
+				var name = path.basename(filePath, fileext);
 				return new Media({
 					_playlistId: playlistId,
 					duration: 0,
-					ext: ext,
+					ext: fileext,
 					name: name,
 					index: index,
 					filePath: filePath,
 					checked: true,
 					mimeType: mimeType,
-					mustRelocalize: true,
+					isAvailable: false,
 					title: name
 				});
 			});
@@ -84,6 +93,7 @@ MediaBuilder.prototype = {
 
 module.exports = MediaBuilder;
 
+// TODO Uncomment the following for tag reading (maybe ffmpeg can do that)
 //var determineMediaType = function (filePath) {
 //	if (isAudioExtention(filePath)) {
 //		return MediaType.AUDIO;

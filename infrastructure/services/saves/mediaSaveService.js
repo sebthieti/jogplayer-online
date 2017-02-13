@@ -42,22 +42,6 @@ MediaSaveService.prototype = {
 		return defer.promise;
 	},
 
-	updateMustRelocalizeOnMedia: function (media) {
-		// return saveService.getPlaylistsRepositoryAsync()
-		return media;
-	},
-
-	insertMediumAsync: function (medium) {
-		var defer = Q.defer();
-
-		medium.save(function(err, newMedia) {
-			if (!err) { defer.resolve(newMedia) }
-			else { defer.reject(err) }
-		});
-
-		return defer.promise;
-	},
-
 	updateMediaIndexByIdsAsync: function (mediaIdIndexesToOffset) {
 		var updateMediaIdIndexPromises = mediaIdIndexesToOffset.map(function(value) {
 			return this.updateMediaIndexByIdAsync(value._id, value.index);
@@ -84,6 +68,13 @@ MediaSaveService.prototype = {
 			});
 
 		return defer.promise;
+	},
+
+	removeMediaAsync: function (media) {
+		var removeMediumPromises = media.map(function(medium) {
+			return this.removeMediumAsync(medium);
+		}, this);
+		return Q.all(removeMediumPromises);
 	},
 
 	removeMediumAsync: function(medium) {

@@ -9,7 +9,7 @@
 var Media = (function () {
 	'use strict'
 	
-	function Media(id, mediaType, index, title, filePath, duration, mustRelocalize, isSelected, bookmarks, metadatas) {
+	function Media(id, mediaType, index, title, filePath, duration, isAvailable, isSelected, bookmarks, metadatas) {
 		//this.id = id;
 		this._id = id;
 		this.mediaType = mediaType;
@@ -17,7 +17,7 @@ var Media = (function () {
 		this.index = index;
 		this.filePath = filePath;
 		this.duration = duration;
-		this.mustRelocalize = mustRelocalize;
+		this.isAvailable = isAvailable;
 		this.isSelected = isSelected;
 		this.bookmarks = bookmarks;
 		this.metadatas = metadatas;
@@ -29,7 +29,7 @@ var Media = (function () {
 			obj.title &&
 			obj.filePath &&
 			obj.duration &&
-			obj.mustRelocalize &&
+			obj.isAvailable &&
 			obj.isSelected &&
 			obj.bookmarks &&
 			obj.metadatas;

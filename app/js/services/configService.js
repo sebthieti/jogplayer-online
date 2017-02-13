@@ -3,7 +3,7 @@
 jpoApp.factory("configService", function ($http, $q, jpoProxy) {
 	return {
 		sendPlayableTypes: function(playableTypes) {
-			return jpoProxy.getApiLink('config')
+			return jpoProxy.getApiLinkAsync('config')
 				.then(function(link) {
 					return $http.get(link);
 				})
