@@ -10,7 +10,15 @@ var Media = require('../infrastructure/entities/medias/media').Media;
 		app.get('/api/playlists/', function(req, res) {
 			playlistsBusiness
 				.getPlaylistsAsync()
-				.then(function(pls) { res.send(pls) })
+				.then(res.send)
+				.catch(function(err) { res.send(400, err) })
+				.done();
+		});
+
+		app.get('/api/playlists/:id', function(req, res) {
+			playlistBusiness
+				.getPlaylistWithMediasAsync(req.params.id)
+				.then(res.send)
 				.catch(function(err) { res.send(400, err) })
 				.done();
 		});
@@ -26,7 +34,7 @@ var Media = require('../infrastructure/entities/medias/media').Media;
 
 			playlistsBusiness
 				.movePlaylistsAsync(playlistIds, steps)
-				.then(function(newPlaylist) { res.send(newPlaylist) })
+				.then(res.send)
 				.catch(function(err) { res.send(400, err) })
 				.done();
 		});
@@ -40,13 +48,13 @@ var Media = require('../infrastructure/entities/medias/media').Media;
 
 			if (playlist.index != null) {
 				playlistsBusiness
-					.insertVirtualPlaylistAsync(playlist, playlist.index)
-					.then(function(newPlaylist) { res.send(newPlaylist) })
+					.insertPlaylistAsync(playlist, playlist.index)
+					.then(res.send)
 					.catch(function(err) { res.send(400, err) })
 					.done();
 			} else {
 				playlistsBusiness
-					.addVirtualPlaylistAsync(playlist)
+					.addPlaylistAsync(playlist)
 					.then(function(newPlaylist) { res.send(newPlaylist) })
 					.catch(function(err) { res.send(400, err) })
 					.done();
@@ -68,7 +76,7 @@ var Media = require('../infrastructure/entities/medias/media').Media;
 
 			playlistsBusiness
 				.removePlaylistsAsync(playlistIds)
-				.then(function(allPlaylists) { res.send(allPlaylists) })
+				.then(res.send)
 				.catch(function(err) { res.send(400, err) })
 				.done();
 		});

@@ -11,30 +11,38 @@ var MediaSaveService = (function () {
 		this.getMediasFromPlaylistIdAsync = function(playlistId) {
 			return saveService
 				.getPlaylistsRepositoryAsync()
-				.then(assertOnPlaylistNotFound)
-				.then(function (playlistSet) { 
-					return findPlaylistById(playlistSet, playlistId)
-						.then(selectMediasFromPlaylist);
-				})
-				.then(function (playlist) {
-					mediaService.updateMustRelocalizeState()
-				});
+				//.then(assertOnPlaylistNotFound)
+				.then(function (playlistSet) { return findMediasFromPlaylist(playlistSet, playlistId) })
+				//.then(function (playlist) { return mediaService.updateMustRelocalizeState() });
+	// function (playlistSet) { 
+	// return findPlaylistById(playlistSet, playlistId)
+	// 	.then(selectMediasFromPlaylist);
+	// }
 
 	// 			return saveService
 	// .getPlaylistsRepositoryAsync()
 	// .then(selectMediasFromPlaylist)
 		};
 
-		function selectMediasFromPlaylist(playlist) {
-			return playlist.medias;
+		this.updateMustRelocalizeOnMedias = function (medias) {
+			// return saveService
+			// 	.getPlaylistsRepositoryAsync()
+		};
+
+		function findMediasFromPlaylist(playlistSet, playlistId) {
+			return playlistSet.find(
+				{ _id: mongodb.ObjectID(playlistId) },
+				{ medias: 1 }
+			)
+			.sort( {index: 1} );
 		}
 
-		function assertOnPlaylistsNotFound(playlistIds) {
-			if (!playlistIds || playlistIds.length == 0) {
-				throw "No playlists have been found";
-			}
-			return playlistIds;
-		}
+		// function assertOnPlaylistsNotFound(playlistIds) {
+		// 	if (!playlistIds || playlistIds.length == 0) {
+		// 		throw "No playlists have been found";
+		// 	}
+		// 	return playlistIds;
+		// }
 	}
 
 	return MediaSaveService;

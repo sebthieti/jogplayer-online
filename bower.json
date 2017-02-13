@@ -1,0 +1,12 @@
+{
+  "name": "JogPlayer Online",
+  "version": "0.0.1",
+  "dependencies": {
+    "socket.io-client": "~0.9.17",
+    "angular": "~1.2.16",
+    "angular-animate": "~1.2.16",
+    "angular-bootstrap": "~0.11.0",
+    "angular-resource": "~1.2.16",
+    "angular-route": "~1.2.16"
+  }
+}

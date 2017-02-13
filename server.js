@@ -1,6 +1,10 @@
 'use strict'
 
-var path = require('path');
+var http = require('http'),
+	path = require('path'),
+	socketio = require('socket.io'),
+	express = require('express'),
+	controllers = require('./controllers');
 
 var MediaService = require('./infrastructure/services/media-service');
 var SaveService = require('./infrastructure/services/save-service');
@@ -29,18 +33,17 @@ var playlistsDirector = new PlaylistsDirector(playlistDirector, playlistSaveServ
 var playlistBusiness = new PlaylistBusiness(playlistDirector);
 var playlistsBusiness = new PlaylistsBusiness(playlistsDirector);
 
-var http = require('http');
-var express = require('express');
-var controllers = require('./controllers');
-
 var app = express();
 
 app.set('view engine', 'vash');
+app.set('views', path.join(process.cwd(), 'app'));
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')))
+app.use(express.static(path.join(process.cwd(), 'app'))/*express.static(path.join(__dirname, 'public'))*/);
 
-controllers.init(app, playlistsBusiness);
+var server = http.createServer(app);
+var io = socketio.listen(server);
 
-http.createServer(app)
-	.listen(10000);
+controllers.init(app, io, playlistsBusiness);
+
+server.listen(10000);

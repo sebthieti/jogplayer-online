@@ -94,7 +94,8 @@ var PlaylistSaveService = (function () {
 				.then(function (playlistSet) { return Q.nfcall(playlistSet.toArray) })
 				.then(function (playlistIdIndexesSet) {
 					var playlistIdIndexes = [];
-					for (var index = 0; index < playlistIdIndexesSet.length; index++) {
+					var playlistIdIndexesLength = playlistIdIndexesSet.length;
+					for (var index = 0; index < playlistIdIndexesLength; index++) {
 						var key = playlistIdIndexesSet[index]._id.toString();
 						playlistIdIndexes.push({_id: key, index: playlistIdIndexesSet[index].index});
 					}
@@ -114,7 +115,8 @@ var PlaylistSaveService = (function () {
 				.getPlaylistsRepositoryAsync()
 				.then(function(playlistSet) {
 					var query = [];
-					for (var paramIndex = 0; paramIndex < playlistIds.length; paramIndex++) {
+					var playlistIdsLength = playlistIds.length;
+					for (var paramIndex = 0; paramIndex < playlistIdsLength; paramIndex++) {
 						query.push( {_id: mongodb.ObjectID(playlistIds[paramIndex])} );
 					}
 
@@ -138,7 +140,8 @@ var PlaylistSaveService = (function () {
 				.getPlaylistsRepositoryAsync()
 				.then(function(playlistSet) {
 					var query = [];
-					for (var paramIndex = 0; paramIndex < playlistIds.length; paramIndex++) {
+					var playlistIdsLength = playlistIds.length;
+					for (var paramIndex = 0; paramIndex < playlistIdsLength; paramIndex++) {
 						query.push( {_id: mongodb.ObjectID(playlistIds[paramIndex])} );
 					}
 

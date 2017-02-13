@@ -8,12 +8,20 @@ var PlaylistsBusiness = (function () {
 		};
 
 		this.addPlaylistAsync = function (playlist) {
-			return playlistsDirector.addVirtualPlaylistAsync(playlist);
+			if (!playlist.filePath || playlist.filePath == null) {				
+				return playlistsDirector.addVirtualPlaylistAsync(playlist);
+			} else {
+				return playlistsDirector.addPhysicalPlaylistAsync(playlist);
+			}
 		};
 
 		this.insertPlaylistAsync = function (playlist, index) {
-			return playlistsDirector.insertVirtualPlaylistAsync(playlist, index);
-		};
+			if (!playlist.filePath || playlist.filePath == null) {				
+				return playlistsDirector.insertVirtualPlaylistAsync(playlist, index);
+			} else {
+				return playlistsDirector.insertPhysicalPlaylistAsync(playlist, index);
+			}
+		};	
 
 		this.movePlaylistsAsync = function (playlistIds, steps) {
 			return playlistsDirector.movePlaylistsAsync(playlistIds, steps);
@@ -29,7 +37,7 @@ var PlaylistsBusiness = (function () {
 
 		this.copyMediasToPlaylistAsync = function(srcPlaylistId, mediaIds, destPlaylistId) {
 			return playlistsDirector.copyMediasToPlaylistAsync(srcPlaylistId, mediaIds, destPlaylistId);
-		}
+		};
 	}
 
 	return PlaylistsBusiness;

@@ -3,19 +3,19 @@ var PlaylistBusiness = (function () {
 
 	function PlaylistBusiness (playlistDirector) {
 
-		this.getPlaylistContentAsync = function (playlistId) {
-			return playlistDirector.getPlaylistContentAsync(playlistId);
+		this.getPlaylistWithMediasAsync = function (playlistId) {
+			return playlistDirector.getMediasFromPlaylistByIdAsync(playlistId);
 		};
 
-		this.addMediasAsync = function (playlistId, filePaths) {
+		this.addMediasAsync = function (medias, playlistId) {
 			return playlistDirector.addMediasAsync(playlistId, filePaths);
 		};
 
-		this.insertMediaAsync = function (playlistId, filePaths, index) {
+		this.insertMediasAsync = function (medias, playlistId, index) {
 			if (index == null) {
-				return playlistDirector.addMediaAsync(playlistId, filePaths);
+				return playlistDirector.addMediasAsync(medias, playlistId);
 			} else {
-				return playlistDirector.insertMediaAsync(playlistId, filePaths, index);
+				return playlistDirector.insertMediasAsync(medias, playlistId, index);
 			}
 		};
 
@@ -30,6 +30,7 @@ var PlaylistBusiness = (function () {
 
 		this.selectPlaylist = function (playlist, isSelected) { // TODO To mirror user choice in UI
 		};
+		
 	}
 
 	return PlaylistBusiness;

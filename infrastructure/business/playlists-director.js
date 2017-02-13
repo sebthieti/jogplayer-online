@@ -31,6 +31,18 @@ var PlaylistsDirector = (function () {
 				});
 		};
 
+		this.addPhysicalPlaylistAsync = function (playlist) {
+			return playlistSaveService
+				.getPlaylistsCountAsync()
+				.then(function(count) {
+					playlist.index = count;
+					return playlistSaveService.insertPlaylistAsync(playlist, count)
+				});
+		}; // TODO Should parse playlist but don't return it's content. there's the playlistDirector for that
+
+		this.insertPhysicalPlaylistAsync = function (playlist, index) {
+		}; // TODO Should parse playlist but don't return it's content. there's the playlistDirector for that
+
 		this.movePlaylistsAsync = function (playlistIdIndexes, steps) { // TODO To be tested
 			if (!playlistIdIndexes || !playlistIdIndexes.length || playlistIdIndexes.length == 0) {
 				throw "playlists cannot be empty";
