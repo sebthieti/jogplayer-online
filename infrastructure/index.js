@@ -6,7 +6,6 @@ var os = require('os'),
 	path = require('path'),
 	dependable = require('dependable'),
 	container = dependable.container(),
-	from = require('fromjs'),
 	passport = require('passport'),
 	LocalStategy = require('passport-local').Strategy;
 
@@ -21,8 +20,14 @@ var routes = require('./routes'),
 	Models = require('./models'),
 	Utils = require('./utils');
 
-// Composite root principle
-function registerControllers(app, io) {
+/**
+ * @description
+ *
+ * Register the controller layer (also referred as router) components in IoC
+ *
+ * @param {object} app The application object..
+ */
+function registerControllers(app) {
 	container.register('playMediaController', function (mediaStreamer, routes, authDirector, mediaDirector) {
 		return new Controllers.PlayMediaController(app, routes.media, routes.file, mediaStreamer, authDirector, mediaDirector);
 	});
@@ -47,8 +52,19 @@ function registerControllers(app, io) {
 	container.register('userStateController', function (routes, authDirector, userStateDirector) {
 		return new Controllers.UserStateController (app, routes, authDirector, userStateDirector)
 	});
+	container.register('homeController', function(routes, configDirector) {
+		return new Controllers.HomeController(app, configDirector, routes);
+	});
+	container.register('setupController', function (configDirector, routes) {
+		return new Controllers.SetupController(app, configDirector, routes);
+	});
 }
 
+/**
+ * @description
+ *
+ * Register the business layer components in IoC
+ */
 function registerBusinesses() {
 	container.register('mediaDirector', function (mediaService, mediaSaveService, fileExplorerService) {
 		return new Business.MediaDirector(mediaService, mediaSaveService, fileExplorerService);
@@ -77,12 +93,25 @@ function registerBusinesses() {
 	container.register('userPermissionsDirector', function (userSaveService, Models) {
 		return new Business.UserPermissionsDirector (userSaveService, Models.UserPermissions);
 	});
+	container.register('configDirector', function (configService, userDirector, configSaveService) {
+		return new Business.ConfigDirector(configService, userDirector, configSaveService);
+	});
 }
 
+/**
+ * @description
+ *
+ * Register routes from the config file, given by resource routes, to IoC
+ */
 function registerPaths() {
 	container.register('routes', routes);
 }
 
+/**
+ * @description
+ *
+ * Register a Models object containing all Models serves by the app, to IoC
+ */
 function registerModels() {
 	container.register('Models', function(routes) {
 		return {
@@ -98,6 +127,11 @@ function registerModels() {
 	});
 }
 
+/**
+ * @description
+ *
+ * Register all proxies components, that is all caches, to IoC.
+ */
 function registerProxies() {
 	container.register('userProxy', function(userSaveService) {
 		return new Proxies.UserProxy(userSaveService);
@@ -119,6 +153,11 @@ function registerProxies() {
 	});
 }
 
+/**
+ * @description
+ *
+ * Register all components needed to run the service layer, to IoC.
+ */
 function registerServices() {
 	container.register('mediaService', Services.mediaService);
 	container.register('saveService', function(configService) {
@@ -146,25 +185,14 @@ function registerServices() {
 	container.register('userPermissionsSaveService', function (saveService, Models) {
 		return new Services.Saves.UserPermissionsSaveService(saveService, Models.UserPermissions);
 	});
-	container.register('fileExplorerService', function () {// anyDriveLetterRegex
-		var fileExplorerServices = [
-			new Services.FileExplorers.WinFileExplorerService(),// anyDriveLetterRegex
-			new Services.FileExplorers.DarwinFileExplorerService(),
-			new Services.FileExplorers.LinuxFileExplorerService()
-		];
-		var findFileExplorerForCurrentOs = function (fileExplorerServices) {
-			var currentOs = os.platform();
-			var fileExplorerSvcForCurrentOs;
-			for (var index = 0, fileExplorerSvcCnt = fileExplorerServices.length; index < fileExplorerSvcCnt; index++) {
-				var fileExplorerSvc = fileExplorerServices[index];
-				if (fileExplorerSvc.canHandleOs(currentOs)) {
-					fileExplorerSvcForCurrentOs = fileExplorerSvc;
-					break;
-				}
-			}
-			return fileExplorerSvcForCurrentOs;
-		};
-		return findFileExplorerForCurrentOs(fileExplorerServices);
+	container.register('fileExplorerService', function () {
+		return Services.FileExplorers.buildFileExplorerService();
+	});
+	container.register('configService', function() {
+		return new Services.ConfigService();
+	});
+	container.register('configSaveService', function () {
+		return new Services.Saves.ConfigSaveService();
 	});
 }
 
@@ -202,29 +230,38 @@ function registerOther() {
 	});
 }
 
-function registerHome(app) {
-	container.register('homeController', function(routes, configDirector) {
-		return new Controllers.HomeController(app, configDirector, routes);
-	});
-}
-
-function bootstrap(app, io) {
+function bootstrapForUnitTests() {
 	registerPaths();
-	registerSetupStack(app);
-	registerHome(app);
 
 	registerOther();
 	registerModels();
 	registerServices();
 	registerProxies();
 	registerBusinesses();
-	registerControllers(app, io);
+}
+
+/**
+ * @description
+ *
+ * Register all components needed to run the web application, all using composite root principle
+ *
+ * @param {object} app The application object..
+  */
+function bootstrap(app) {
+	registerPaths();
+
+	registerOther();
+	registerModels();
+	registerServices();
+	registerProxies();
+	registerBusinesses();
+	registerControllers(app);
 	registerAuthenticationStack(app);
 
 	container.resolve(function(
 		setupController,
 		homeController,
-	    playMediaController,
+		playMediaController,
 		playlistController,
 		fileExplorerController,
 		favoriteController,
@@ -250,22 +287,13 @@ function bootstrap(app, io) {
 	});
 }
 
-function registerSetupStack(app) {
-	container.register('setupController', function (configDirector, routes) {
-		return new Controllers.SetupController(app, configDirector, routes);
-	});
-	container.register('configDirector', function (configService, userDirector, configSaveService) {
-		return new Business.ConfigDirector(configService, userDirector, configSaveService);
-	});
-	container.register('configService', function() {
-		return new Services.ConfigService();
-	});
-	container.register('configSaveService', function () {
-		return new Services.Saves.ConfigSaveService();
-	});
-}
-
-function checkRequiredEnvVar() {
+/**
+ * @description
+ *
+ * Check in system's environment for necessary variables, like paths to external programs
+ * If not present, then they're added
+ */
+function checkAndSetRequiredEnvVar() {
 	if (!('FFMPEG_PATH' in process.env)) {
 		// To ensure fluent-ffmpeg will work well
 		process.env.FFMPEG_PATH = path.join(process.cwd(), getFFMpegRelativePath());
@@ -276,21 +304,40 @@ function checkRequiredEnvVar() {
 	}
 }
 
+
+/**
+ * @description
+ *
+ * An helper method to return the appropriate relative path to ffmpeg, depending on environment
+ */
 function getFFMpegRelativePath() {
 	return os.platform() === "win32"
 		? "./ffmpeg/ffmpeg.exe"
 		: "./ffmpeg/ffmpeg";
 }
 
+/**
+ * @description
+ *
+ * An helper method to return the appropriate relative path to ffprobe, depending on environment
+ */
 function getFFProbeRelativePath() {
 	return os.platform() === "win32"
 		? "./ffmpeg/ffprobe.exe"
 		: "./ffmpeg/ffprobe";
 }
 
-exports.init = function (app, io) {
-	//process.env.FFMPEG_PATH
+exports.init = function (app) {
 	// TODO Move ffmpeg/ffprobe to dedicated folder
-	checkRequiredEnvVar();
-	bootstrap(app, io);
+	checkAndSetRequiredEnvVar();
+	bootstrap(app);
+};
+
+exports.initForUnitTests = function () {
+	// TODO Move ffmpeg/ffprobe to dedicated folder
+	bootstrapForUnitTests();
+};
+
+exports.giveContainer = function() {
+	return container;
 };

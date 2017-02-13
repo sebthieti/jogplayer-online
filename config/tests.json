@@ -1,0 +1,7 @@
+{
+	"DbConnection": {
+		"host": "localhost",
+		"port": 27117,
+		"dbName": "JogPlayerOnlineTests"
+	}
+}

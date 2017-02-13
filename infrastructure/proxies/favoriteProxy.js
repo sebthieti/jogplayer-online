@@ -27,10 +27,10 @@ FavoriteProxy.prototype.updateFromFavoriteDtoAsync = function(favoriteId, favori
 		});
 };
 
-FavoriteProxy.prototype.removeFavoriteByIdAsync = function(favorite, user) {
+FavoriteProxy.prototype.removeFavoriteByIdAsync = function(favoriteId, user) {
 	var self = this;
 	return _favoriteSaveService
-		.removeFavoriteByIdAsync(favorite, user)
+		.removeFavoriteByIdAsync(favoriteId, user)
 		.then(function() {
 			self.invalidateFavoritesForUser(user.username);
 		});

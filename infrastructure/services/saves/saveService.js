@@ -9,7 +9,8 @@ var os = require('os'),
 	Rx = require('rx');
 
 var _dbConnection = null,
-	_dbProcess = null;
+	_dbProcess = null,
+	_dbConnectionReadySubject = new Rx.BehaviorSubject();
 
 process.stdin.resume(); //so the program will not close instantly
 
@@ -39,6 +40,14 @@ function SaveService (configObservable) {
 	startDbService();
 	observeConfigAndInit(configObservable);
 }
+
+SaveService.prototype.disconnectFromDb = function() {
+	exitHandler.bind(null, { cleanup: true });
+};
+
+SaveService.prototype.observeDbConnectionReady = function() {
+	return _dbConnectionReadySubject;
+};
 
 function startDbService() {
 	// Following is windows cfg
@@ -89,18 +98,21 @@ function getMongodCwdRelativePath() {
 }
 
 function observeConfigAndInit(configObservable) {
+	var timeout = os.platform() === "win32" ? 0 : 5000;
 	setTimeout(function(){ // TODO In linux we need time before launch. Check for that
 		configObservable
 			.take(1)
 			.do(function(config) {
 				initDbClientAsync(config);
+				_dbConnectionReadySubject.onNext(true);
+				_dbConnectionReadySubject.onCompleted();
 			})
 			.subscribe(
 			function() {},
 			function(err) {console.log(err)},
 			function() {}
 		);
-	}, 5000);
+	}, timeout);
 }
 
 function initDbClientAsync(config) {

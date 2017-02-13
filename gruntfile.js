@@ -1,7 +1,7 @@
 module.exports = function (grunt) {
-    
+
     'use strict';
-    
+
     // load dependencies
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-usemin');
@@ -14,17 +14,17 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-rev');
     grunt.loadNpmTasks('grunt-karma');
     grunt.loadNpmTasks('grunt-aws');
-    
+
     // Project configuration
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
         aws: grunt.file.readJSON('aws-config.json'),
-        
+
         /* clean directories */
         clean: ['build'],
-        
-        /* 
-            prepare for minification 
+
+        /*
+            prepare for minification
             este comando configura as tasks cssmin e uglify
         */
         useminPrepare: {
@@ -33,7 +33,7 @@ module.exports = function (grunt) {
                 dest: 'build'
             }
         },
-        
+
         /* html minification */
         htmlmin: {
             dist: {
@@ -50,7 +50,7 @@ module.exports = function (grunt) {
                 }]
             }
         },
-        
+
         /* image minification */
         imagemin: {
             dist: {
@@ -62,7 +62,7 @@ module.exports = function (grunt) {
                 }]
             }
         },
-        
+
         /* put files not handled in other tasks here */
         copy: {
             dist: {
@@ -75,14 +75,14 @@ module.exports = function (grunt) {
                 }]
             }
         },
-        
+
         /* js file minification */
         uglify: {
             options: {
                 preserveComments: false
             }
         },
-        
+
         /* cache busting */
         rev: {
             options: {
@@ -99,7 +99,7 @@ module.exports = function (grunt) {
                 ]
             }
         },
-        
+
         /* replace links to minificated files */
         usemin: {
             html: ['build/index.html'],
@@ -107,14 +107,14 @@ module.exports = function (grunt) {
                 dirs: ['build']
             }
         },
-        
+
         /* karma test runner */
         karma: {
             unit: {
-                configFile: 'conf/karma.conf.js'
+                configFile: 'karma.conf.js'
             }
         },
-        
+
         // aws
         s3: {
             options: {
@@ -129,12 +129,12 @@ module.exports = function (grunt) {
             }
         }
     });
-    
+
     // tasks
     grunt.registerTask('test', [
         'karma'
     ]);
-    
+
     grunt.registerTask('build', [
         'clean',
         'useminPrepare',
@@ -147,13 +147,13 @@ module.exports = function (grunt) {
         'rev',
         'usemin'
     ]);
-    
+
     grunt.registerTask('deploy', [
         'test',
         'build',
         's3'
     ]);
-    
+
     grunt.registerTask('default', [
         'test',
         'build'

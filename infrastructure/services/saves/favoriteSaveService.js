@@ -25,17 +25,17 @@ FavoriteSaveService.prototype.getSortedFavoritesAsync = function(issuer) {
 };
 
 FavoriteSaveService.prototype.addFavoriteAsync = function (favorite, issuer) {
-	if (!favorite) {
-		throw new Error('FavoriteSaveService.addFavoriteAsync: favorite must be set');
-	}
-	if (!issuer) {
-		throw new Error('FavoriteSaveService.addFavoriteAsync: issuer must be set');
-	}
-	if (favorite._id) {
-		throw new Error('FavoriteSaveService.addFavoriteAsync: favorite.Id should not be set');
-	}
-
 	var defer = Q.defer();
+	if (!favorite || !issuer || favorite._id) {
+		if (!favorite) {
+			defer.reject(new Error('FavoriteSaveService.addFavoriteAsync: favorite must be set'));
+		} else if (!issuer) {
+			defer.reject(new Error('FavoriteSaveService.addFavoriteAsync: issuer must be set'));
+		} else if (favorite._id) {
+			defer.reject(new Error('FavoriteSaveService.addFavoriteAsync: favorite.Id should not be set'));
+		}
+		return defer.promise;
+	}
 
 	var favFields = favorite.getDefinedFields();
 	favFields.ownerId = issuer.id;
@@ -51,14 +51,15 @@ FavoriteSaveService.prototype.addFavoriteAsync = function (favorite, issuer) {
 };
 
 FavoriteSaveService.prototype.updateFromFavoriteDtoAsync = function (favoriteId, favoriteDto, issuer) {
-	if (!favoriteDto) {
-		throw new Error('FavoriteSaveService.updateFromFavoriteDtoAsync: favorite must be set');
-	}
-	if (!favoriteId) {
-		throw new Error('FavoriteSaveService.updateFromFavoriteDtoAsync: favorite.Id should be set');
-	}
-
 	var defer = Q.defer();
+	if (!favoriteDto || !favoriteId) {
+		if (!favoriteDto) {
+			defer.reject(new Error('FavoriteSaveService.updateFromFavoriteDtoAsync: favorite must be set'));
+		} else if (!favoriteId) {
+			defer.reject(new Error('FavoriteSaveService.updateFromFavoriteDtoAsync: favorite.Id should be set'));
+		}
+		return defer.promise;
+	}
 
 	Favorite.findOneAndUpdate(
 		{ _id: favoriteId, ownerId: issuer.id },
@@ -73,11 +74,11 @@ FavoriteSaveService.prototype.updateFromFavoriteDtoAsync = function (favoriteId,
 };
 
 FavoriteSaveService.prototype.removeFavoriteByIdAsync = function (favoriteId, issuer) {
-	if (!favoriteId) {
-		throw new Error('FavoriteSaveService.removeFavoriteByIdAsync: favoriteId must be set');
-	}
-
 	var defer = Q.defer();
+	if (!favoriteId) {
+		defer.reject(new Error('FavoriteSaveService.removeFavoriteByIdAsync: favoriteId must be set'));
+		return defer.promise;
+	}
 
 	Favorite.findOneAndRemove(
 		{ _id: favoriteId, ownerId: issuer.id },

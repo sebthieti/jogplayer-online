@@ -18,10 +18,10 @@ function ConfigDirector(setupService, userDirector, configSaveService) {
 
 function checkFileConfigExistsAsync() {
 	return _setupService
-		.checkFileConfigExistsAsync()
-		 .then(function(exists) {
-		    _configFileIsValidSubject.onNext(exists);
-		 });
+	.checkFileConfigExistsAsync()
+	.then(function(exists) {
+		_configFileIsValidSubject.onNext(exists);
+	});
 }
 
 ConfigDirector.prototype.observeValidConfigFile = function() {

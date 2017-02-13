@@ -113,8 +113,6 @@ UserDirector.prototype.updateUserPermissionsByUserIdAsync = function(userId, use
 		});
 };
 
-
-
 UserDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, issuer) {
 	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) {
 		throw new Error('Not authorized to manage users.');

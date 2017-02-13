@@ -6,11 +6,9 @@ var Q = require('q'),
 	utils = require('../utils'),
 	Rx = require('rx');
 
-var _configFileIsValidSubject = new Rx.BehaviorSubject(),
-	_userService;
+var _configFileIsValidSubject = new Rx.BehaviorSubject();
 
-function ConfigService(userService) {
-	_userService = userService;
+function ConfigService() {
 	checkFileConfigExistsAsyncAndSetSubject.call(this);
 }
 
@@ -47,15 +45,23 @@ ConfigService.prototype.observeConfigFile = function() {
 };
 
 ConfigService.prototype.setDbConfigAsync = function(config) {
-	return Q.nfcall(
-		fs.writeFile,
-		path.join(process.cwd(), 'config/default.json'),
-		buildJsonConfig(config)
-	)
-	.then(function() {
-		_configFileIsValidSubject.onNext(require('config'));
-	});
+	return setDbConfigWithConfigAsync(config, 'config/default.json');
 };
+
+ConfigService.prototype.setDbConfigForTestsAsync = function(config) {
+	return setDbConfigWithConfigAsync(config, 'config/unit-tests.json');
+};
+
+function setDbConfigWithConfigAsync(config, configPath) {
+	return Q.nfcall(
+			fs.writeFile,
+			path.join(process.cwd(), configPath),
+			buildJsonConfig(config)
+		)
+		.then(function() {
+			_configFileIsValidSubject.onNext(require('config'));
+		});
+}
 
 function buildJsonConfig(config) {
 	return JSON.stringify({

@@ -2,7 +2,6 @@
 
 var http = require('http'),
 	path = require('path'),
-	socketio = require('socket.io'),
 	express = require('express'),
 	session = require('express-session'),
 	bodyParser = require('body-parser'),
@@ -29,8 +28,7 @@ app.use(session({
 app.use(serveStatic(path.join(process.cwd(), 'app')));
 
 var server = http.createServer(app);
-var io = null;//socketio.listen(server);
 
-infrastructure.init(app, io);
+infrastructure.init(app);
 
 server.listen(10000);
