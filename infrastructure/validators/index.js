@@ -1,10 +1,3 @@
-var playlistValidation = require('./playlistValidation');
+'use strict';
 
-(function (exports) {
-	'use strict';
-
-	exports.VALIDATORS = {
-		playlistValidation: playlistValidation
-	}
-
-}(module.exports));
+module.exports.playlistValidation = require('./playlistValidation');

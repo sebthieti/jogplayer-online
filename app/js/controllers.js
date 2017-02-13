@@ -1,232 +1,330 @@
 'use strict';
 
 angular.module('jpoApp.controllers', []).
-	controller('mainCtrl', ['$scope', '$window', '$http',
-		function($scope, $window, $http) {
+	controller('mainCtrl', ['$scope', 'favoriteService', 'playlistService', function($scope, favoriteService, playlistService) {
 
+		//$scope.currentDirPath = '';
+		$scope.currentFileExplorerDirPath = '';
+		$scope.explorerSelectedFiles = null;
+		$scope.currentFileExplorerDirTree = null;
+		$scope.breadCrumbDirPath = '';
+		$scope.selectedMediaUrl = null;
+		$scope.selectedPlaylist = null;
+
+		// BEGIN Favorites section
+
+		$scope.favorites = null;
+
+		$scope.addFolderToFavorites = function() {
+			// Get folder name for fav name.
+			var folderPath = $scope.currentFileExplorerDirPath;
+
+			var favCount = 0;
+			if ($scope.favorites) {
+				favCount = $scope.favorites.length;
+			}
+
+			var favorite = {
+				name: _.last(splitFolderPath(folderPath)),
+				folderPath: folderPath,
+				index: favCount
+			};
+
+			favoriteService
+				.addFavorite(favorite)
+				.then(function (newFavorite) {
+					$scope.favorites = $scope.favorites.concat(newFavorite);
+				});
+		};
+
+		// TODO May be moved to helper ?
+		var splitFolderPath = function(folderPath) {
+			var levels = folderPath.split("/");
+			return _.filter(
+				levels,
+				function(lvl) {
+					return lvl !== ''
+				});
+		};
+
+		$scope.deleteFavorite = function(favToDelete) {
+			favoriteService
+				.deleteFavorite(favToDelete._id)
+				.then(function (favoriteResult) {
+					if (favoriteResult.status === 200) {
+
+						$scope.favorites = _.filter($scope.favorites, function(fav) {
+							return fav.index !== favToDelete.index;
+						});
+
+						// Remap indexes
+						var favIndex = 0;
+						_.each($scope.favorites, function(fav) {
+							fav.index = favIndex;
+							favIndex++;
+						});
+					}
+				});
+		};
+
+		$scope.updateFavorite = function(favorite) {
+			var updatingIndex = favorite.index;
+			return favoriteService
+				.updateFavorite(favorite)
+				.then(function(updatedFavorite) {
+					$scope.favorites[updatingIndex] = updatedFavorite;
+					return updatedFavorite;
+				});
+		};
+
+		favoriteService.getFavorites()
+			.then(function (favorites) {
+				$scope.favorites = favorites;
+			});
+
+		// END Favorites section
+
+		// BEGIN Queue section
+
+		var _currentPlayingMedia = null;
+		$scope.selectedFiles = [];
+		$scope.selectedMedia = [];
+		$scope.mediaQueue = [];
+		$scope.currentMediaInQueue = null;
+		$scope.currentMediaIndexInQueue = null;
+		$scope.currentPlaylist = null;
+
+		$scope.addFilesToPlaylist = function() {
+			//$scope.$emit('addFilesToPlaylist', $scope.selectedFiles);
+			if (!$scope.selectedPlaylist) {
+				return;
+			}
+
+			var mediaFilePaths = _.map($scope.selectedFiles, function(file) {
+				return file.filePath;
+			});
+
+			playlistService
+				.addMediaByFilePathToPlaylist($scope.selectedPlaylist._id, mediaFilePaths)
+				.then(function(res) {
+					$scope.$emit('playlist.mediaInserted', res);
+				});
+		};
+
+		$scope.clearQueue = function() {
+			$scope.$emit('stopMedia');
+			$scope.currentMediaInQueue = null;
+			$scope.currentMediaIndexInQueue = -1;
 			$scope.mediaQueue = [];
-			//$scope.selectedMediaFiles = [];
-			$scope.selectedFileName = '';
-			$scope.selectedFile = {};
-			$scope.selectedFiles = [];
-            $scope.currentBtnUrl = "svg/play.svg";
-			$scope.files = [];
-			$scope.currentDirPath = '';
-			$scope.currentFileExplorerDirPath = '';
-			$scope.explorerSelectedFiles = null;
-			$scope.currentFileExplorerDirTree = null;
-			$scope.breadCrumbDirPath = '';
+		};
 
-			//$scope.playMedia = null;
-			//$scope.playMediaToCtrl = null;
-			$scope.selectedMediaUrl = null;
+		$scope.enqueueMediaSelection = function () {
+			var clonedMedia = _.map($scope.selectedMedia, function(media) {
+				return _.clone(media);
+			});
+			$scope.mediaQueue = $scope.mediaQueue.concat(clonedMedia);
+		};
 
+		$scope.enqueueFileSelection = function () {
+			var filesInSelection = _.filter($scope.selectedFiles, function(file) {
+				return file.type === 'F';
+			});
+			var clonedFiles = _.map(filesInSelection, function(media) {
+				return _.clone(media);
+			});
+			$scope.mediaQueue = $scope.mediaQueue.concat(clonedFiles);
+		};
 
-//            var audioPlayer = window.document.getElementById("audioPlayer");
+		$scope.enqueueMediaFromFileExplorer = function (media) {
+			var clonedMedia = _.clone(media);
+			$scope.mediaQueue = $scope.mediaQueue.concat(clonedMedia);
+		};
 
-//            audioPlayer.onprogress = function (_, __) {
-//                console.log(audioPlayer.buffered);
-//            };
-//			audioPlayer.addEventListener(
-//				"progress",
-//				function (_, __) {
-//					console.log(audioPlayer.buffered);
-//				},
-//				true
-//			);
+		/*
+			Called when user clicks a media from the queue
+		*/
+		$scope.playMediaFromQueue = function(media) {
+			// Enqueue and play.
+			if ($scope.mediaQueue.length > 0) {
+				$scope.$emit('playMedia', media);
+				// Set state: change current media
+				$scope.currentMediaInQueue = media;
+				$scope.currentMediaIndexInQueue = _.indexOf($scope.mediaQueue, media);
+				setCurrentMediaState(media);
+			} else { // Enqueue but wait.
+				var clonedFile = _.clone(media);
+				$scope.mediaQueue = $scope.mediaQueue.concat(clonedFile);
+			}
+		};
 
-
-//			audioPlayer.addEventListener("ended",
-//				function () {
-//					// Play next
-//					playNext();
-//				}, true
-//			);
-
-
-            var playingState = "stopped";
-            var playlistsUrl = "/api/playlists/";
-			var mediaUrlPattern = "/api/medias/play/:id:ext";
-			var mediaPlayByPathPattern = "/api/medias/play/byPath/:mediaPath";
-			var explorerPathPattern = "/api/explore/:path";
-			//var currentDirPath = '';
-			var currentFileExplorerFilePath = '';
-
-			var playNext = function () {
-				// Select next media.
-				// Put Url to audio tag
-				// Do play
-			};
-
-//			$scope.$watch('breadCrumbDirPath', function() {
-//				var selectedFiles = $scope.explorerSelectedFiles;
-//				//alert('hey, myVar has changed!');
-//			});
-
-
-//			$scope.onChangeFileExplorerCurrentDir = null;
-
-//			$scope.changeFileExplorerCurrentDir = function(dirPath) {
-//				$scope.onChangeFileExplorerCurrentDir(dirPath);
-//			};
-
-			$scope.selectedFile = function(file) {
-
-			};
-
-			$scope.selectedFiles = function(files) {
-
-			};
-
-			$scope.addToPlaylist = function() {
-
-			};
-
-			$scope.playlistSelected = function(selectedPlaylist) {
-				$scope.selectedPlaylist = selectedPlaylist;
-
-				$http.get(playlistsUrl + selectedPlaylist._id)
-					.then(function (result) {
-						$scope.medias = result.data;
-					}, function (err) {
-					});
-			};
-
-			$scope.mediaSelected = function(selectedMediaUrl) {
-				$scope.selectedMediaUrl = selectedMediaUrl;
-				$scope.selectedMediaUrl = mediaUrlPattern
-					.replace(':id', selectedMediaUrl._id)
-					.replace(':ext', selectedMediaUrl.ext);
-			};
-
-			$scope.goUp = function() {
-				var currentLevelNoLastSlash = $scope.currentDirPath.substring(0, $scope.currentDirPath.length-2);
-				var upOneLevel = currentLevelNoLastSlash.substring(0, currentLevelNoLastSlash.lastIndexOf('/')+1);
-				$http.get(upOneLevel)
-					.then(function (result) {
-						$scope.currentDirPath = upOneLevel;
-						$scope.files = result.data;
-					}, function (err) {
-					}
-				);
-			};
-
-			$scope.enqueueSelection = function () {
-				var files = $scope.files;
-				for (var selectionIndex = 0; selectionIndex < $scope.files.length; selectionIndex++) {
-					var file = files[selectionIndex];
-					if (!file.selected) {
-						continue;
-					}
-					$scope.mediaQueue.push({
-						name: file.name,
-						path: $scope.currentDirPath + file.name
-					});
+		$scope.removeFromQueue = function(media) {
+			if ($scope.currentMediaInQueue && $scope.currentMediaInQueue === media) {
+				$scope.$emit('stopMedia');
+				$scope.currentMediaInQueue = null;
+				$scope.currentMediaIndexInQueue = -1;
+			} else {
+				var mediaToRemoveIndex = _.indexOf($scope.mediaQueue, media);
+				if (mediaToRemoveIndex < $scope.currentMediaIndexInQueue) {
+					$scope.currentMediaIndexInQueue--;
 				}
-				//$scope.mediaQueue.push( {name: '', path: ''} );
-			};
+			}
 
-			$scope.fileSelected = function(file) {
-				$scope.selectedFileName = file.name;
-				$scope.selectedFile = file;
-				$scope.selectedFile.selected = !$scope.selectedFile.selected;
-			};
+			$scope.mediaQueue =_.filter($scope.mediaQueue, function(mediaInQueue) {
+				return mediaInQueue !== media;
+			});
+		};
 
-//			$scope.fileValidated = function(file) {
-//				if (file.type == 'D') {
-//					$scope.selectedFileName = null;
-//					$scope.selectedFile = null;
-//					var pathUrl = $scope.currentDirPath + file.name + '/';
-//					$http.get(pathUrl)
-//						.then(function (result) {
-//							$scope.currentDirPath = pathUrl;
-//							$scope.files = result.data;
-//							//Model.
-//						}, function (err) {
-//						}
-//					);
-//				} else {
-//					currentFileExplorerFilePath = $scope.currentDirPath + file.name;
-//					$scope.selectedFileName = file.name;
-//					$scope.selectedFile = file;
-//
-//					$scope.selectedMediaUrl = currentFileExplorerFilePath;
-//					$scope.playMedia();
-//				}
-//			};
+		// END Queue section
 
-//			$scope.playMedia = function(selectedMediaUrl) {
-//				// TODO Following statement s/b removed afterwards
-//				if (!$scope.selectedMediaUrl) {
-//					return;
-//				}
-//
-//				$scope.selectedMediaUrl = selectedMediaUrl;
-//			};
+		// BEGIN Play media
 
-//			$scope.playMedia = function(mediaUrl) {
-//				$scope.playMediaToCtrl(mediaUrl)
-//			};
+		$scope.playCurrentMediaError = function() {
+			// Notify error playing and try next.
+			$scope.$apply(function () {
+				$scope.currentMediaInQueue.hasError = true;
+			});
+			playNext();
+		};
+
+		$scope.playRequest = function() {
+			// Get media to play from queue. If so, then set as current, emit playMedia
+			var mediaQueue = $scope.mediaQueue;
+			if (mediaQueue.length === 0) {
+				return;
+			}
+			var media = mediaQueue[0];
+
+			$scope.$emit('playMedia', media);
+			// Set state: change current media
+			$scope.currentMediaInQueue = media;
+			$scope.currentMediaIndexInQueue = 0;
+			setCurrentMediaState(media);
+		};
+
+		$scope.playMediaFromFileExplorer = function(media) {
+			$scope.mediaQueue = $scope.mediaQueue.concat(media);
+			$scope.$emit('playMedia', media);
+			// Set state: change current media
+			$scope.currentMediaInQueue = media;
+			$scope.currentMediaIndexInQueue = _.indexOf($scope.mediaQueue, media);
+			setCurrentMediaState(media);
+		};
+
+		// Command being called when media play ends
+		$scope.mediaEnded = function() {
+			playNext();
+		};
+
+		$scope.playNext = function() {
+			playNext();
+		};
+
+		$scope.playPrevious = function() {
+			playPrevious();
+		};
+
+		$scope.exploreFileSystem = function() {
+			$scope.$emit('exploreFileSystem');
+		};
+
+		// BEGIN Playlist section
+
+		$scope.playMediaFromPlaylist = function(media, srcPlaylist) {
+
+			var isCurrentMediumFromPlaylist = $scope.currentMediaInQueue && angular.isDefined($scope.currentMediaInQueue._id);
+			if (isCurrentMediumFromPlaylist) {
+				// ne marchera pas car clone
+				//$scope.currentMediaInQueue.isPlaying = false;
+				if (_currentPlayingMedia) {
+					_currentPlayingMedia.isPlaying = false;
+					media.isPlaying = true;
+				}
+			}
+
+			$scope.currentPlaylist = srcPlaylist;
+			$scope.mediaQueue = $scope.mediaQueue.concat(media);
+			//$scope.$apply();
+
+			$scope.$emit('playMedia', media);
+			// Set state: change current media
+			$scope.currentMediaInQueue = media;
+			$scope.currentMediaIndexInQueue = _.indexOf($scope.mediaQueue, media);
+			setCurrentMediaState(media);
+
+			_currentPlayingMedia = media;
+		};
+
+		// END Playlist section
+
+		var playNext = function() {
+			// si media de playlist, demander next pl, puis play
+			var isMediumFromPlaylist = _currentPlayingMedia && angular.isDefined(_currentPlayingMedia._id);
+			// TODO This is bad if we're changing current playing media to an old one, that will fail
+			var isLastElement = $scope.currentMediaIndexInQueue === $scope.mediaQueue.length - 1;
+			if (isMediumFromPlaylist && isLastElement) {
+				var currentMediumIndex = _currentPlayingMedia.index;
+				_currentPlayingMedia.isPlaying = false;
+				if (currentMediumIndex <= $scope.currentPlaylist.media.length - 1) {
+					// take next
+					var nextMedium = $scope.currentPlaylist.media[currentMediumIndex+1];
+					nextMedium.isPlaying = true;
+					_currentPlayingMedia = nextMedium;
+					// add to queue
+					var clonedMedia = _.clone(nextMedium);
+					$scope.mediaQueue = $scope.mediaQueue.concat(clonedMedia);
+					//$scope.$apply();
+					// play it
+					$scope.currentMediaInQueue = clonedMedia;
+					$scope.currentMediaIndexInQueue = clonedMedia.index;
+
+					$scope.$emit('playMedia', nextMedium);
+					setCurrentMediaState(nextMedium);
+				}
+
+			} else {
+				// Check for next media in queue
+				var currentMediaPos = $scope.currentMediaIndexInQueue;
+				var isLastMediaInQueue = currentMediaPos >= $scope.mediaQueue.length-1;
+				if (isLastMediaInQueue) {
+					return;
+				}
+
+				var nextMediaIndex = currentMediaPos+1;
+				var nextMediaInQueue = $scope.mediaQueue[nextMediaIndex];
+				$scope.currentMediaInQueue = nextMediaInQueue;
+				$scope.currentMediaIndexInQueue = nextMediaIndex;
+				$scope.$emit('playMedia', nextMediaInQueue);
+				setCurrentMediaState(nextMediaInQueue);
+			}
 
 
-//			$scope.playMedia = function(selectedMediaUrl) {
-//				alert('will play');
-//				if (playingState === "stopped") {
-//					$scope.selectedMediaUrl = currentFileExplorerFilePath;
-//					$scope.currentBtnUrl = "svg/pause.svg";
-//
-//					playingState = "playing";
-//				} else if (playingState === "playing") {
-//					audioPlayer.pause();
-//					playingState = "paused";
-//					$scope.currentBtnUrl    = "svg/play.svg";
-//				} else if (playingState === "paused") {
-//					audioPlayer.play();
-//					playingState = "playing";
-//					$scope.currentBtnUrl = "svg/pause.svg";
-//				}
-//			};
-
-//			$scope.$watch('explorerSelectedFiles', function() {
-//				var selectedFiles = $scope.explorerSelectedFiles;
-//				//alert('hey, myVar has changed!');
-//			});
-
-//			$scope.$watch('currentFileExplorerDirTree', function() {
-//				var dirTree = $scope.currentFileExplorerDirTree;
-//				//alert('hey, myVar has changed!');
-//			});
-
-			$scope.addPlaylist = function() {
-
-			};
-
-			$scope.exploreFileSystem = function() {
-				var pathUrl = explorerPathPattern.replace(':path', '');
-
-				$http.get(pathUrl)
-					.then(function (result) {
-						$scope.currentDirPath = pathUrl;
-						$scope.files = result.data;
-					}, function (err) {
-				});
-			};
-
-			$http.get(playlistsUrl)
-				.then(function (result) {
-					$scope.playlists = result.data;
-				}, function (err) {
-				});
 
 
-//			$scope.playMedia = function() {
-//				alert("you clicked playMedia!");
-//			};
-
-		}]).
-	controller('fileExplorerCtrl', ['$scope', '$window', '$http',
-		function($scope, $window, $http) {
+			// si media de fileExplorer, ne pas prendre le suivant de pl
 
 
+		};
 
-		}]);
+		var playPrevious = function() {
+			// Check for previous media in queue
+			var currentMediaPos = $scope.currentMediaIndexInQueue;
+			var isFirstMediaInQueue = currentMediaPos <= 0;
+			if (isFirstMediaInQueue) {
+				return;
+			}
+
+			var previousMediaIndex = currentMediaPos-1;
+			var previousMediaInQueue = $scope.mediaQueue[previousMediaIndex];
+			$scope.currentMediaInQueue = previousMediaInQueue;
+			$scope.currentMediaIndexInQueue = previousMediaIndex;
+			$scope.$emit('playMedia', previousMediaInQueue);
+			setCurrentMediaState(previousMediaInQueue);
+		};
+
+		var setCurrentMediaState = function(media) {
+			$scope.currentMediaInQueue.hasError = false;
+		};
+
+		// END Play media
+
+	}]);

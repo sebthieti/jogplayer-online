@@ -1,9 +1,12 @@
 <ul>
-    <li ng-dblclick="goUp()" class="up">[ Up.. ]</li>
-    <li ng-dblclick="fileValidated(f)"
-        ng-click="fileSelected(f)"
+    <li class="up" ng-click="goUp()"><span>[ Up.. ]</span></li>
+    <li ng-click="fileSelected(f)"
         ng-repeat="f in files | orderBy: ['type','name']"
         ng-class="f.selected ? 'selected' : ''">
-        {{ f.name }}
+        <div class="play" ng-switch="mediaQueueLength">
+            <span ng-click="innerPlayMedia(f)" ng-show="{{ f.type === 'F' }}" ng-switch-when="0" stop-event>&#9654;</span>
+            <span ng-click="innerEnqueueMedia(f)" ng-switch-default stop-event>&#9654;+</span>
+        </div>
+        <span class="name">{{ f.name }}</span>
     </li>
 </ul>

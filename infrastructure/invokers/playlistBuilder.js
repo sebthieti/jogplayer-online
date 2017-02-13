@@ -1,12 +1,10 @@
-var path = require('path');
-var Playlist = require('../entities/playlist');
+'use strict';
 
-var PlaylistBuilder = (function () {
-	'use strict'
+var path = require('path'),
+	Playlist = require('../models').Playlist;
 
-	var PlaylistBuilder = this;
-
-	function buildEmptyPhysicalPlaylist (playlistFilePath, name) {
+module.exports = {
+	buildEmptyPhysicalPlaylist: function (playlistFilePath, name) {
 		var playlistName = '';
 		if (name) {
 			playlistName = name;
@@ -24,30 +22,20 @@ var PlaylistBuilder = (function () {
 			new Date().toUTCString(),
 			null
 		);
+	},
+
+	buildEmptyVirtualPlaylist: function (name, index) {
+		return this.buildVirtualPlaylist(name, index);
+	},
+
+	buildVirtualPlaylist: function (name, index) {
+		return new Playlist({
+			name: name,
+			index: index,
+			filePath: '',
+			checked: true,
+			mustRelocalize: false,
+			createdOn: new Date().toUTCString()
+		});
 	}
-
-//	function buildEmptyVirtualPlaylist (name, index) {
-//		return PlaylistBuilder.buildVirtualPlaylist(null, name, index);
-//	}
-
-	function buildVirtualPlaylist (id, name, index) {
-		return new Playlist(
-			id,
-			index,
-			name,
-			null,
-			true,
-			new Date().toUTCString(),
-			null,
-			[]
-		);
-	}
-
-	return {
-		buildEmptyPhysicalPlaylist: buildEmptyPhysicalPlaylist,
-		//buildEmptyVirtualPlaylist: buildEmptyVirtualPlaylist,
-		buildVirtualPlaylist: buildVirtualPlaylist
-	}
-})();
-
-module.exports = PlaylistBuilder;
+};

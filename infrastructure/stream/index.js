@@ -1,10 +1,3 @@
-var MediaStreamer = require("./mediaStreamer");
+'use strict';
 
-(function(exports) {
-	'use strict';
-
-	exports.STREAM = {
-		MediaStreamer: MediaStreamer
-	}
-
-})(module.exports);
+module.exports.MediaStreamer = require("./mediaStreamer");

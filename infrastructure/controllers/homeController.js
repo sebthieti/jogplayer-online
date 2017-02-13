@@ -1,17 +1,15 @@
-module.exports = (function() {
-	'use strict';
+'use strict';
 
-	var _app;
+var _app;
 
-	function HomeController (app) {
-		_app = app;
-	}
+function HomeController (app) {
+	_app = app;
+}
 
-	HomeController.prototype.init = function() {
-		_app.get("/", function(req, res) {
-			res.render("index");
-		});
-	};
+HomeController.prototype.init = function() {
+	_app.get("/", function(req, res) {
+		res.render("index");
+	});
+};
 
-	return HomeController;
-}());
+module.exports = HomeController;

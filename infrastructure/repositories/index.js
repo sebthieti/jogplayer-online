@@ -1,10 +1,3 @@
-var FileExplorerRepository = require('./fileExplorerRepository');
+'use strict';
 
-(function (exports) {
-	'use strict';
-
-	exports.REPOSITORIES = {
-		FileExplorerRepository: FileExplorerRepository
-	}
-
-}(module.exports));
+module.exports.FileExplorerRepository = require('./fileExplorerRepository');

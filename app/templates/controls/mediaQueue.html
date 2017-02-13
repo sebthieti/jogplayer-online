@@ -1,10 +1,12 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title></title>
-</head>
-<body>
-
-</body>
-</html>
+<div>
+    <span class="button small" title="Clear queue" ng-click="clearQueue()" class="button medium">x</span>
+    <ul id="queue">
+        <li ng-repeat="m in mediaQueue track by $index"
+            ng-click="innerPlayMedia(m)"
+            ng-class="m.isPlaying ? 'active' : ''">
+            <span ng-click="innerRemove(m)" class="remove" stop-event>[x]</span>
+            <span class="error" ng-show="m.hasError" stop-event>[!]</span>
+            <span>{{ m.name || m.title }}</span>
+        </li>
+    </ul>
+</div>

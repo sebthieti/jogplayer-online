@@ -1,18 +1,7 @@
-var HomeController = require("./homeController"),
-	PlaylistController = require("./playlistController"),
-	MediaController = require("./mediaController"),
-	FileExplorerController = require("./fileExplorerController"),
-	FavoriteController = require("./favoriteController");
+'use strict';
 
- (function(exports) {
-	'use strict';
-
-	 exports.CONTROLLERS = {
-		 HomeController: HomeController,
-		 PlaylistController: PlaylistController,
-		 MediaController: MediaController,
-		 FileExplorerController: FileExplorerController,
-		 FavoriteController: FavoriteController
-	 }
-
-})(module.exports);
+module.exports.HomeController = require("./homeController");
+module.exports.PlaylistController = require("./playlistController");
+module.exports.MediaController = require("./mediaController");
+module.exports.FileExplorerController = require("./fileExplorerController");
+module.exports.FavoriteController = require("./favoriteController");

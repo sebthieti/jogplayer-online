@@ -1,14 +1,5 @@
-var DarwinFileExplorerService = require("./darwinFileExplorerService"),
-	LinuxFileExplorerService = require("./linuxFileExplorerService"),
-	WinFileExplorerService = require("./winFileExplorerService");
+'use strict';
 
- (function (exports) {
-	"use strict";
-
-	 exports.FILEEXPLORERS = {
-		 DarwinFileExplorerService: DarwinFileExplorerService,
-		 LinuxFileExplorerService: LinuxFileExplorerService,
-		 WinFileExplorerService: WinFileExplorerService
-	 }
-
-}(module.exports));
+module.exports.DarwinFileExplorerService = require("./darwinFileExplorerService");
+module.exports.LinuxFileExplorerService = require("./linuxFileExplorerService");
+module.exports.WinFileExplorerService = require("./winFileExplorerService");

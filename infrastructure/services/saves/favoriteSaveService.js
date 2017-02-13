@@ -1,127 +1,104 @@
+'use strict';
+
 var Q = require('q'),
-	mongodb = require('mongodb');
+	Favorite = require('../../models').Favorite;
 
-module.exports = (function () {
-	'use strict';
+var _saveService;
 
-	var _saveService;
+function FavoriteSaveService(saveService) {
+	_saveService = saveService;
+}
 
-	function FavoriteSaveService(saveService) {
-		_saveService = saveService;
+FavoriteSaveService.prototype.getSortedFavoritesAsync = function() {
+	var defer = Q.defer();
+
+	Favorite
+		.find({})
+		.sort('index')
+		.exec(function(err, favorites) {
+			if (err) {
+				defer.reject(err);
+			} else {
+				defer.resolve(favorites);
+			}
+		});
+
+	return defer.promise;
+};
+
+FavoriteSaveService.prototype.addFavoriteAsync = function (favorite) {
+	if (!favorite) {
+		throw "FavoriteSaveService.addFavoriteAsync: favorite must be set";
+	}
+	if (favorite._id) {
+		throw "FavoriteSaveService.addFavoriteAsync: favorite.Id should not be set";
 	}
 
-	FavoriteSaveService.prototype.getFavoritesAsync = function() {
-		return _saveService
-			.getFavoritesRepositoryAsync()
-			.then(selectAndSortFavoritesAsync)
-			.then(castFavoriteSetToEntitiesAsync);
-	};
+	var defer = Q.defer();
 
-	FavoriteSaveService.prototype.addFavoriteAsync = function (favorite) {
-		if (!favorite) {
-			throw "FavoriteSaveService.addFavoriteAsync: favorite must be set";
+	Favorite.create({
+		name: favorite.name,
+		index: favorite.index,
+		folderPath: favorite.folderPath
+	}, function(err, favorite) {
+		if (err) {
+			defer.reject(err);
+		} else {
+			defer.resolve(favorite);
 		}
-		if (favorite._id) {
-			throw "FavoriteSaveService.addFavoriteAsync: favorite.Id should not be set";
+	});
+
+	return defer.promise;
+};
+
+FavoriteSaveService.prototype.updateFavoriteAsync = function (favorite) {
+	if (!favorite) {
+		throw "FavoriteSaveService.updateFavoriteAsync: favorite must be set";
+	}
+	if (!favorite._id) {
+		throw "FavoriteSaveService.updateFavoriteAsync: favorite.Id should be set";
+	}
+
+	var defer = Q.defer();
+
+	Favorite.findOneAndUpdate( // TODO Assert on fav not found
+		{ _id: favorite._id },
+		{
+			index: favorite.index,
+			name: favorite.name,
+			folderPath: favorite.folderPath
+		},
+		function(err, favorite) {
+			if (err) {
+				defer.reject(err);
+			} else {
+				defer.resolve(favorite);
+			}
 		}
+	);
 
-		return _saveService
-			.getFavoritesRepositoryAsync()
-			.then(function(favoritesSet) {
-				return Q.promise(function(onSuccess, onError) {
-					favorite.createdOn = new Date().toJSON();
-					favoritesSet.insert(favorite, function (err, newFavorite) {
-						if (err) {
-							onError(err);
-						}
-						else {
-							onSuccess(newFavorite[0]);
-						}
-					})
-				});
-			});
-	};
+	return defer.promise;
+};
 
-	FavoriteSaveService.prototype.updateFavoriteAsync = function (favorite) {
-		if (!favorite) {
-			throw "FavoriteSaveService.updateFavoriteAsync: favorite must be set";
+FavoriteSaveService.prototype.removeFavoriteByIdAsync = function (favId) {
+	if (!favId) {
+		throw "FavoriteSaveService.removeFavoriteByIdAsync: favId must be set";
+	}
+
+	var defer = Q.defer();
+
+	Favorite.findOneAndRemove( // TODO Assert on fav not found
+		{ _id: favId },
+		function(err) {
+			if (err) {
+				defer.reject(err);
+			} else {
+				defer.resolve();
+			}
 		}
-		if (!favorite._id) {
-			throw "FavoriteSaveService.updateFavoriteAsync: favorite.Id should be set";
-		}
+	);
 
-		return _saveService
-			.getFavoritesRepositoryAsync()
-			//.then(assertOnFavoriteNotFound) // TODO
-			.then(function(favoritesSet) {
-				return Q.promise(function(onSuccess, onError) {
-					favorite.updatedOn = new Date().toJSON();
-					favoritesSet.update(
-						{ _id: mongodb.ObjectID(favorite._id) },
-						{ $set: {
-							index: favorite.index,
-							name: favorite.name,
-							folderPath: favorite.folderPath
-						} },
-						function(err, nModified) {
-							if (!err && nModified === 1) {
-								onSuccess(favorite);
-							} else if (err) {
-								onError(err);
-							} else {
-								onError('No favorite could be updated');
-							}
-						}
-					);
-				});
-			});
-	};
+	return defer.promise;
+};
 
-	FavoriteSaveService.prototype.removeFavoriteByIdAsync = function (favId) {
-		return _saveService
-			.getFavoritesRepositoryAsync()
-			.then(function(favoritesSet) {
-				return Q.promise(function(onSuccess, onError) {
-					favoritesSet.remove(
-						{ _id: mongodb.ObjectID(favId) },
-						function (err, nDeleted) {
-							if (!err && nDeleted == 1) {
-								onSuccess();
-							} else if (err) {
-								onError(err);
-							} else {
-								onError('No favorite could be deleted');
-							}
-						}
-					);
-				});
-			});
-	};
-
-	var selectAndSortFavoritesAsync = function (favoritesSet) {
-		return Q.fcall(function() {
-			return favoritesSet
-				.find( {} )
-				.sort( {index: 1} );
-		});
-	};
-
-	var castFavoriteSetToEntitiesAsync = function (favoritesSet) {
-		return Q.promise(function (onSuccess, onError) {
-			favoritesSet.toArray(function (err, favArray) {
-				if (!err) {
-//					var plEntities = from(plArray)
-//						.select(function(dtoPlaylist) {
-//							return playlist.fromDto(dtoPlaylist)
-//						})
-//						.toArray();
-					onSuccess(/*plEntities*/favArray);
-				} else {
-					onError(err);
-				}
-			});
-		});
-	};
-
-	return FavoriteSaveService;
-})();
+module.exports = FavoriteSaveService;

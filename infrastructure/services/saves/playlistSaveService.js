@@ -1,247 +1,282 @@
-var Q = require('q');
-var from = require('fromjs');
-var mongodb = require('mongodb');
-var playlist = require('../../entities/playlist');
+'use strict';
 
-var PlaylistSaveService = (function () {
-	'use strict';
+var Q = require('q'),
+	from = require('fromjs'),
+	Playlist = require('../../models').Playlist;
 
-	var _saveService;
+var _saveService,
+	_mediaSaveService;
 
-	function PlaylistSaveService(saveService) {
-		_saveService = saveService;
+function PlaylistSaveService(saveService, mediaSaveService) {
+	_saveService = saveService;
+	_mediaSaveService = mediaSaveService;
+}
+
+PlaylistSaveService.prototype.getPlaylistsAsync = function() {
+	var defer = Q.defer();
+
+	Playlist
+		.find({})
+		.select('-media')
+		.sort('index')
+		.exec(function(err, playlists) {
+			if (err) { defer.reject(err) }
+			else { defer.resolve(playlists) }
+		});
+
+	return defer.promise;
+};
+
+PlaylistSaveService.prototype.getPlaylistWithMediaAsync = function (playlistId) {
+	var defer = Q.defer();
+
+	Playlist
+		.findOne({ _id: playlistId })
+		.populate('media')
+		.exec(function(err, playlist) {
+			if (err) { defer.reject(err) }
+			else { defer.resolve(playlist) }
+		});
+
+	return defer.promise;
+};
+
+PlaylistSaveService.prototype.getPlaylistsCountAsync = function () {
+	var defer = Q.defer();
+
+	Playlist.count(function(err, playlistCount) {
+		if (err) { defer.reject(err) }
+		else { defer.resolve(playlistCount) }
+	});
+
+	return defer.promise;
+};
+
+PlaylistSaveService.prototype.getPlaylistIdsLowerThanAsync = function (index, includeSelf) {
+	var defer = Q.defer();
+
+	var queryIndex = includeSelf ? index : index + 1;
+	Playlist
+		.where('index').gte(queryIndex)
+		.sort('index')
+		.select('index')
+		.exec(function(err, playlistIdIndexesSet) {
+			if (err) { defer.reject(err) }
+			else { defer.resolve(playlistIdIndexesSet) }
+		});
+
+	return defer.promise;
+};
+
+PlaylistSaveService.prototype.getMediaIdsLowerThanAsync = function (playlistId, mediaIndex, includeSelf) {
+	var defer = Q.defer();
+
+	var queryIndex = includeSelf ? mediaIndex : mediaIndex + 1;
+	Playlist
+		.findOne({ _id: playlistId })
+		.populate({
+			path: 'media',
+			select: '_id',
+			sort: 'index',
+			match: { index: { $gte: queryIndex } }
+		})
+		.select('media')
+		.exec(function(err, playlist) {
+			if (err) { defer.reject(err) }
+			else {
+				defer.resolve(playlist.media.map(function(medium) {return medium._id}))
+			}
+		});
+
+	return defer.promise;
+};
+
+PlaylistSaveService.prototype.getMediaCountForPlaylistByIdAsync = function (playlistId) {
+	var defer = Q.defer();
+
+	Playlist
+		.findOne({ _id: playlistId })
+		.populate({
+			path: 'media',
+			select: '_id'
+		})
+		.exec(function(err, playlist) {
+			if (!err) { defer.resolve(playlist.media.length) }
+			else { defer.reject(err) }
+		});
+
+	return defer.promise;
+};
+
+PlaylistSaveService.prototype.getPlaylistIdIndexesAsync = function () {
+	return this.findIndexesFromPlaylistIdsAsync();
+};
+
+PlaylistSaveService.prototype.findIndexesFromPlaylistIdsAsync = function(playlistIds) {
+	var defer = Q.defer();
+
+	Playlist
+		.whereInOrGetAll('_id', playlistIds)
+		.sort('index')
+		.select('index')
+		.exec(function(err, playlistIdIndexes) {
+			if (err) { defer.reject(err); }
+			else { defer.resolve(playlistIdIndexes); }
+		});
+
+	return defer.promise;
+};
+
+PlaylistSaveService.prototype.insertPlaylistAsync = function(playlist) {
+	if (!playlist) {
+		throw "PlaylistSaveService.insertPlaylistAsync: playlist must be set";
 	}
 
-	PlaylistSaveService.prototype.getPlaylistsAsync = function() {
-		return _saveService
-			.getPlaylistsRepositoryAsync()
-			.then(selectAndSortPlaylistsAsync)
-			.then(castPlaylistSetToEntitiesAsync);
-	};
+	var defer = Q.defer();
 
-	PlaylistSaveService.prototype.getPlaylistAsync = function (playlistId) {
-		return _saveService
-			.getPlaylistsRepositoryAsync()
-			.then(function (playlistSet) { return findPlaylistById(playlistSet, playlistId) })
-			.then(castDbPlaylistToEntityAsync);
-	};
+	playlist.save(function(err, savedPlaylist) {
+		if (!err) { defer.resolve(savedPlaylist) }
+		else { defer.reject(err) }
+	});
 
-	PlaylistSaveService.prototype.getPlaylistsCountAsync = function () {
-		return _saveService.getPlaylistsRepositoryAsync()
-			.then(function(playlists) {
-				return Q.promise(function(onSuccess, onError) {
-					playlists.count(function (err, count) { // TODO Retry change
-						if (!err) {
-							onSuccess(count);
-						}
-						else {
-							onError(err);
-						}
-					});
-				});
-			})
-	};
+	return defer.promise;
+};
 
-	PlaylistSaveService.prototype.insertPlaylistAsync = function(playlist) {
-		if (!playlist) {
-			throw "PlaylistSaveService.insertPlaylistAsync: playlist must be set";
-		}
-		if (playlist._id) {
-			throw "PlaylistSaveService.insertPlaylistAsync: playlist.Id should not be set"
-		}
+PlaylistSaveService.prototype.insertMediaToPlaylistAsync = function (playlistId, mediaArray) {
+	var defer = Q.defer();
 
-		return _saveService
-			.getPlaylistsRepositoryAsync()
-			.then(function(playlists) {
-				return Q.promise(function(onSuccess, onError) {
-					playlist.createdOn = new Date().toJSON();
-					playlists.insert(playlist, function (err, newPlaylist) {
-						if (err) {
-							onError(err);
-						}
-						else {
-							onSuccess(newPlaylist[0]);
-						}
-					})
-				});
-			});
-	};
-
-	PlaylistSaveService.prototype.updatePlaylistIdsPositionAsync = function (plIdIndexesToOffset) {
-		return _saveService
-			.getPlaylistsRepositoryAsync()
-			.then(function(playlistSet) {
-				return Q.promise(function(onSuccess, onError) {
-					for (var index = 0; index < plIdIndexesToOffset.length; index++) {
-						playlistSet.update(
-							{ _id: mongodb.ObjectID(plIdIndexesToOffset[index]._id) },
-							{ $set: {index: plIdIndexesToOffset[index].index} },
-							function(err, nModified) {
-								if (!err && nModified == 1) {
-									onSuccess();
-								} else if (err) {
-									onError(err);
-								} else {
-									onError('No playlist could be updated');
-								}
-							}
-						);
-					}
-				})
-			});
-	};
-
-	PlaylistSaveService.prototype.getPlaylistIdsLowerThanAsync = function (index, includeSelf) {
-		return _saveService
-			.getPlaylistsRepositoryAsync()
-			.then(function (pls) { return filterPlaylistsLowerThanAsync(pls, index, includeSelf) })
-			.then(function (playlistSet) { return Q.nfcall(playlistSet.toArray) })
-			.then(function (playlistIdIndexesSet) {
-				var playlistIdIndexes = [];
-				var playlistIdIndexesLength = playlistIdIndexesSet.length;
-				for (var index = 0; index < playlistIdIndexesLength; index++) {
-					var key = playlistIdIndexesSet[index]._id.toString();
-					playlistIdIndexes.push({_id: key, index: playlistIdIndexesSet[index].index});
-				}
-				return playlistIdIndexes;
-			});
-	};
-
-	PlaylistSaveService.prototype.getPlaylistIdIndexesAsync = function () {
-		return _saveService
-			.getPlaylistsRepositoryAsync()
-			.then(selectAndSortPlaylistIdIndexesAsync)
-			.then(function (playlistSet) { return Q.nfcall(playlistSet.toArray) });
-	};
-
-	PlaylistSaveService.prototype.findIndexesFromPlaylistIdsAsync = function(playlistIds) {
-		return _saveService
-			.getPlaylistsRepositoryAsync()
-			.then(function(playlistSet) {
-				var query = [];
-				var playlistIdsLength = playlistIds.length;
-				for (var paramIndex = 0; paramIndex < playlistIdsLength; paramIndex++) {
-					query.push( {_id: mongodb.ObjectID(playlistIds[paramIndex])} );
-				}
-
-				return Q.promise(function(onSucceed, onError) {
-					playlistSet
-						.find( { $or: query}, {index: 1} )
-						.sort( {index: 1} )
-						.toArray(function (err, plArray) {
-							if (!err) {
-								onSucceed(plArray);
-							} else {
-								onError(err);
-							}
-						});
-				});
-			});
-	};
-
-	PlaylistSaveService.prototype.removePlaylistsByIdAsync = function (playlistIds) {
-		return _saveService
-			.getPlaylistsRepositoryAsync()
-			.then(function(playlistSet) {
-				var query = [];
-				var playlistIdsLength = playlistIds.length;
-				for (var paramIndex = 0; paramIndex < playlistIdsLength; paramIndex++) {
-					query.push( {_id: mongodb.ObjectID(playlistIds[paramIndex])} );
-				}
-
-				return Q.promise(function(onSuccess, onError) {
-					playlistSet.remove(
-						{ $or: query},
-						function (err, nDeleted) {
-							if (!err && nDeleted == query.length) {
-								onSuccess();
-							} else if (err) {
-								onError(err);
-							} else {
-								onError('No playlist could be deleted');
-							}
-						}
-					);
-				});
-			});
-	};
-
-	PlaylistSaveService.prototype.getMediaCountForPlaylistByIdAsync = function (playlistId) {
-		throw "Not implemented";
-	};
-
-	var selectAndSortPlaylistIdIndexesAsync = function (playlistSet) {
-		return Q.fcall(function() {
-			return playlistSet
-				.find( {}, {index: 1} )
-				.sort( {index: 1} );
-		});
-	};
-
-	var selectAndSortPlaylistsAsync = function (playlistSet) {
-		return Q.fcall(function() {
-			return playlistSet
-				.find( {}, {index: 1, name: 1, isSelected: 1, createdOn: 1, updatedOn: 1} )
-				.sort( {index: 1} );
-		});
-	};
-
-	var filterPlaylistsLowerThanAsync = function (playlistSet, index, includeSelf) {
-		return Q.fcall(function() {
-			var query = null;
-			if (includeSelf) {
-				query = {index: {$gte: index }};
+	Playlist
+		.findOne({ _id: playlistId })
+		.populate({ path: 'media', select: '_id' })
+		.exec(function(readError, playlist) {
+			if (readError) {
+				defer.reject(readError);
 			} else {
-				query = {index: {$gt: index }};
+				playlist.media = playlist.media.concat(mediaArray);
+				playlist.save(function(writeError) {
+					if (writeError) { defer.reject(writeError) }
+					else { defer.resolve(mediaArray) }
+				});
 			}
-
-			return playlistSet
-				.find(query, {index: 1} )
-				.sort({index: 1});
 		});
-	};
 
-	var findPlaylistById = function (playlistSet, playlistId) {
-		return Q.promise(function(onSucceed, onError) {
-			playlistSet.findOne(
-				{ _id: mongodb.ObjectID(playlistId)},
-				{ index: 1, name: 1, isSelected: 1, createdOn: 1, updatedOn: 1 },
-				function (err, playlist) {
-					if (!err) {
-						onSucceed(playlist);
-					} else {
-						onError(err);
-					}
-				}
-			);
+	return defer.promise;
+};
+
+PlaylistSaveService.prototype.updatePlaylistIdsPositionAsync = function (plIdIndexesToOffset) {
+	var updatePlaylistIdPositionPromises = plIdIndexesToOffset.map(function(value) {
+		return this.updatePlaylistIdPositionAsync(value._id, value.index);
+	}, this);
+	return Q.all(updatePlaylistIdPositionPromises);
+};
+
+PlaylistSaveService.prototype.updatePlaylistIdPositionAsync = function (playlistId, newIndex) {
+	var defer = Q.defer();
+
+	Playlist
+		.findOne({ _id: playlistId })
+		.select('index')
+		.exec(function(readError, playlist) {
+			if (readError) {
+				defer.reject(readError);
+			} else {
+				playlist.index = newIndex;
+				playlist.save(function(writeError, updatedPlaylist) {
+					if (writeError) { defer.reject(writeError) }
+					else { defer.resolve(updatedPlaylist) }
+				});
+			}
 		});
-	};
 
-	var castDbPlaylistToEntityAsync = function (dbPlaylist) {
-		if (!dbPlaylist) {
-			return null;
+	return defer.promise;
+};
+
+PlaylistSaveService.prototype.updatePlaylistAsync = function (playlistId, playlist) {
+	var defer = Q.defer();
+
+	Playlist.findOneAndUpdate(
+		{ _id: playlistId },
+		{
+			name: playlist.name,
+			index: playlist.index,
+			checked: playlist.checked,
+			filePath: playlist.filePath || ''
+		},
+		function(err, playlist) {
+			if (!err) { defer.resolve(playlist) }
+			else { defer.reject(err) }
 		}
-		return playlist.fromDto(dbPlaylist);
-	};
+	);
 
-	var castPlaylistSetToEntitiesAsync = function (playlistSet) {
-		return Q.promise(function (onSuccess, onError) {
-			playlistSet.toArray(function (err, plArray) {
-				if (!err) {
-					var plEntities = from(plArray)
-						.select(function(dtoPlaylist) {
-							return playlist.fromDto(dtoPlaylist)
-						})
-						.toArray();
-					onSuccess(plEntities);
-				} else {
-					onError(err);
-				}
-			});
+	return defer.promise;
+};
+
+PlaylistSaveService.prototype.removePlaylistsByIdAsync = function (playlistIds) {
+	var removePromises = playlistIds.map(function(playlistId) {
+		return this.removePlaylistByIdAsync(playlistId);
+	}, this);
+
+	return Q.all(removePromises);
+};
+
+PlaylistSaveService.prototype.removePlaylistByIdAsync = function (playlistId) {
+	var defer = Q.defer();
+
+	Playlist
+		.findOne({ _id: playlistId })
+		.populate({ path: 'media', select: '_id' })
+		.exec(function(err, playlist) {
+			if (err) { defer.reject(err) }
+			else {
+				var removePromises = playlist.media.map(function(medium) {
+					return _mediaSaveService.removeMediumAsync(medium);
+				});
+
+				Q.all(removePromises)
+				.then(function() {
+					playlist.remove(function(removeError, removedPlaylits) {
+						if (!err) { defer.resolve(removedPlaylits) }
+						else { defer.reject(err) }
+					});
+				})
+				.catch(function(removeMediaError) {
+					defer.reject(removeMediaError);
+				})
+				.done();
+			}
 		});
-	};
 
-	return PlaylistSaveService;
-})();
+	return defer.promise;
+};
+
+PlaylistSaveService.prototype.removeMediaFromPlaylistAsync = function (playlistId, mediaId) {
+	var defer = Q.defer();
+
+	Playlist
+		.findOne({ _id: playlistId })
+		.populate({
+			path: 'media',
+			select: '_id'
+		})
+		.exec(function(err, playlist) {
+			if (err) {
+				defer.reject(err);
+			} else {
+				_mediaSaveService
+					.removeMediumByIdAsync(mediaId)
+					.then(function () {
+						playlist.media = playlist.media.filter(function(medium) {
+							return String(medium._id) !== mediaId;
+						});
+						playlist.save(function(saveError, savedPlaylist) {
+							if (!err) { defer.resolve(savedPlaylist) }
+							else { defer.reject(saveError) }
+						});
+					});
+			}
+		});
+
+	return defer.promise;
+};
 
 module.exports = PlaylistSaveService;

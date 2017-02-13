@@ -1,3 +1,5 @@
 .idea
 _converted
 node_modules
+build
+aws-config.json

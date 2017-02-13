@@ -2,12 +2,16 @@
 
 jpoApp.factory("pathHelper", function () {
 
-	var mediaPlayByPathPattern = "/api/medias/playByFilePath:mediaPath"; // TODO Handle start with '/' or not
-	//var mediaPlayByPathPattern = "/api/medias/play/byPath:mediaPath"; // TODO Handle start with '/' or not
+	var filePlayByPathPattern = "/api/media/play/path:mediaPath"; // TODO Handle start with '/' or not
+	var mediaPlayByUrlPattern = "/api/media/play/:id:ext"; // TODO Handle start with '/' or not
 
 	return {
-		getFullMediaUrlPathFromMediaPath: function(mediaPath) {
-			return mediaPlayByPathPattern.replace(':mediaPath', mediaPath);
+		getFullMediaUrlPathFromMediaPath: function(mediaOrFile) {
+			if (mediaOrFile._id) {
+				return mediaPlayByUrlPattern.replace(':id', mediaOrFile._id).replace(':ext', mediaOrFile.ext);
+			} else {
+				return filePlayByPathPattern.replace(':mediaPath', mediaOrFile.filePath);
+			}
 		}
 	}
 

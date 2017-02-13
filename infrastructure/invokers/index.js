@@ -1,12 +1,4 @@
-var MediaBuilder = require('./mediaBuilder'),
-	PlaylistBuilder = require('./playlistBuilder');
+'use strict';
 
- (function (exports) {
-	'use strict';
-
-	 exports.INVOKERS = {
-		 MediaBuilder: MediaBuilder,
-		 PlaylistBuilder: PlaylistBuilder
-	 }
-
-}(module.exports));
+module.exports.MediaBuilder = require('./mediaBuilder');
+module.exports.playlistBuilder = require('./playlistBuilder');

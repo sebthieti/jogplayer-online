@@ -1,0 +1,48 @@
+<div id="playlists-container">
+    <ul>
+        <li ng-repeat="pl in playlists | orderBy: 'index'"
+            ng-click="innerPlaylistSelected(pl)"
+            ng-class="selectedPlaylist._id == pl._id ? 'selected' : ''"
+            ng-switch="pl.isEditing">
+
+            <input ng-switch-when="true" type="text" ng-model="pl.name">
+            <span ng-switch-when="true" class="rename" stop-event ng-click="endEditPlaylist(pl)">Done</span>
+            <span ng-switch-when="true" class="cancel" stop-event ng-click="cancel(pl)">Cancel</span>
+
+            <!--<input ng-switch-default type="checkbox" ng-checked="pl.checked">-->
+            <span ng-switch-default class="title">{{ pl.name || 'Empty' }}</span>
+            <span ng-switch-default class="rename" stop-event ng-click="beginEditPlaylist(pl)">Rename</span>
+            <span ng-switch-default class="delete" stop-event ng-click="innerRemovePlaylist(pl)">x</span>
+        </li>
+        <li id="add-playlist" ng-click="beginAddPlaylist()" ng-switch="isAdding">
+
+            <div ng-switch-when="true">
+                <input type="text" ng-model="newPlaylist.name">
+                <span class="rename" stop-event ng-click="endAddPlaylist()">Done</span>
+                <span class="cancel" stop-event ng-click="cancel()">Cancel</span>
+            </div>
+
+            <div ng-switch-default>
+                <span>+ Add playlist</span>
+            </div>
+        </li>
+    </ul>
+</div>
+<div id="media-container">
+    <ul>
+        <!--ng-class="m.selected ? 'selected' : ''"-->
+        <li ng-repeat="m in media | orderBy: 'index'"
+            ng-click="mediaSelected(m)"
+            ng-dblclick="mediaValidated(m)"
+
+            ng-class="m.isPlaying ? 'current' : ''">
+            <!--selectedMedia._id == m._id ? 'selected' : ''-->
+            <!--<input type="checkbox" ng-checked="m.checked">-->
+            <span class="play" ng-click="innerPlayMedia(m)" stop-event>&#9654;</span>
+            <span class="title">{{ m.title || 'Empty' }}</span>
+            <span class="duration">{{ m.duration }}</span>
+
+            <span class="delete" stop-event ng-click="innerDeleteMedia(m)">x</span>
+        </li>
+    </ul>
+</div>

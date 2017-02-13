@@ -1,18 +1,7 @@
-var FILEEXPLORERS = require("./fileExplorers").FILEEXPLORERS,
-	SAVES = require("./saves").SAVES,
-	M3uPlaylistService = require("./m3uPlaylistService"),
-	MediaService = require("./mediaService"),
-	MetaTagId3v1Service = require("./metaTagId3v1Service");
+'use strict';
 
-(function (exports) {
-	"use strict";
-
-	exports.SERVICES = {
-		SAVES: SAVES,
-		FILEEXPLORERS: FILEEXPLORERS,
-		M3uPlaylistService: M3uPlaylistService,
-		MediaService: MediaService,
-		MetaTagId3v1Service: MetaTagId3v1Service
-	}
-
-}(module.exports));
+module.exports.FILEEXPLORERS = require("./fileExplorers");
+module.exports.SAVES = require("./saves");
+module.exports.M3uPlaylistService = require("./m3uPlaylistService");
+module.exports.MediaService = require("./mediaService");
+module.exports.MetaTagId3v1Service = require("./metaTagId3v1Service");

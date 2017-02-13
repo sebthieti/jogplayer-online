@@ -1,16 +1,6 @@
-var SaveService = require("./saveService"),
-	PlaylistSaveService = require("./playlistSaveService"),
-	MediaSaveService = require("./mediaSaveService"),
-	FavoriteSaveService = require("./favoriteSaveService");
+'use strict';
 
- (function (exports) {
-	"use strict";
-
-	 exports.SAVES = {
-		 SaveService: SaveService,
-		 PlaylistSaveService: PlaylistSaveService,
-		 MediaSaveService: MediaSaveService,
-		 FavoriteSaveService: FavoriteSaveService
-	 }
-
-}(module.exports));
+module.exports.SaveService = require("./saveService");
+module.exports.PlaylistSaveService = require("./playlistSaveService");
+module.exports.MediaSaveService = require("./mediaSaveService");
+module.exports.FavoriteSaveService = require("./favoriteSaveService");

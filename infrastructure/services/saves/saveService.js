@@ -1,87 +1,105 @@
+'use strict';
+
 var Q = require('q'),
-	mongodb = require('mongodb');
+	mongodb = require('mongodb'),
+	mongoose = require('mongoose');
 
-module.exports = (function () {
-	'use strict';
+// TODO The following should be a setting instead
+var mongoUrl = "mongodb://localhost:27017/JogPlayerOnline";
 
-	// TODO The following should be a setting instead
-	var mongoUrl = "mongodb://localhost:27017/JogPlayerOnline";
+//	var dbSet = null;
+var _dbConnection = null;
 
-	var dbSet = null;
+var gracefulExit = function() {
+	_dbConnection.disconnect();
+};
 
-	function SaveService () {
-	}
+var initDbClientAsync = function () {
 
-	SaveService.prototype.getPlaylistsRepositoryAsync = function () {
-		return selectDbSubCollectionAsync(function(dbRepo) {
-			return dbRepo.playlists;
-		});
-	};
+	_dbConnection = mongoose.connect(mongoUrl);
 
-	SaveService.prototype.getMediasRepositoryAsync = function () {
-		return selectDbSubCollectionAsync(function(dbRepo) {
-			return dbRepo.medias;
-		});
-	};
+	// If the Node process ends, close the Mongoose connection
+	process.on('SIGINT', gracefulExit).on('SIGTERM', gracefulExit);
 
-	SaveService.prototype.getBookmarksRepositoryAsync = function () {
-		return selectDbSubCollectionAsync(function(dbRepo) {
-			return dbRepo.bookmarks;
-		});
-	};
 
-	SaveService.prototype.getFavoritesRepositoryAsync = function () {
-		return selectDbSubCollectionAsync(function(dbRepo) {
-			return dbRepo.favorites;
-		});
-	};
+//		return Q.promise(function (onSuccess, onError) {
+//			mongodb.MongoClient.connect(mongoUrl, function (err, db) {
+//				if (!err) {
+//					onSuccess(buildDbContext(db));
+//				} else {
+//					onError(err);
+//				}
+//			});
+//		});
+};
+//
 
-	SaveService.prototype.getConfigurationRepositoryAsync = function () {
-		return selectDbSubCollectionAsync(function(dbRepo) {
-			return dbRepo.configuration;
-		});
-	};
+function SaveService () {
+	initDbClientAsync();
+}
 
-	var selectDbSubCollectionAsync = function (selector) {
-		return ensureDbClientAsync()
-			.then(function (dbRepo) {
-				return selector(dbRepo);
-			});
-	};
+module.exports = SaveService;
 
-	var ensureDbClientAsync = function () {
-		if (dbSet) {
-			return Q.promise(function (onSuccess, onError) {
-				onSuccess(dbSet);
-			});
-		} else {
-			return initDbClientAsync();
-		}
-	};
 
-	var initDbClientAsync = function () {
-		return Q.promise(function (onSuccess, onError) {
-			mongodb.MongoClient.connect(mongoUrl, function (err, db) {
-				if (!err) {
-					onSuccess(buildDbContext(db));
-				} else {
-					onError(err);
-				}
-			});
-		});
-	};
+//	SaveService.prototype.getPlaylistsRepositoryAsync = function () {
+//		return selectDbSubCollectionAsync(function(dbRepo) {
+//			return dbRepo.playlists;
+//		});
+//	};
+//
+//	SaveService.prototype.getMediaRepositoryAsync = function () {
+//		return selectDbSubCollectionAsync(function(dbRepo) {
+//			return dbRepo.media;
+//		});
+//	};
+//
+//	SaveService.prototype.getBookmarksRepositoryAsync = function () {
+//		return selectDbSubCollectionAsync(function(dbRepo) {
+//			return dbRepo.bookmarks;
+//		});
+//	};
+//
+//	SaveService.prototype.getFavoritesRepositoryAsync = function () {
+//		return selectDbSubCollectionAsync(function(dbRepo) {
+//			return dbRepo.favorites;
+//		});
+//	};
+//
+//	SaveService.prototype.getConfigurationRepositoryAsync = function () {
+//		return selectDbSubCollectionAsync(function(dbRepo) {
+//			return dbRepo.configuration;
+//		});
+//	};
 
-	var buildDbContext = function (db) {
-		dbSet = {
-			db: db,
-			playlists: db.collection("playlists"),
-			medias: db.collection("medias"),
-			bookmarks: db.collection("bookmarks"),
-			favorites: db.collection("favorites"),
-			configuration: db.collection("configuration")
-		};
-		return dbSet;
-	};
+//	var selectDbSubCollectionAsync = function (selector) {
+//		return ensureDbClientAsync()
+//			.then(function (dbRepo) {
+//				return selector(dbRepo);
+//			});
+//	};
 
-	return SaveService;
-})();
+//	var ensureDbClientAsync = function () {
+//		if (dbSet) {
+//			return Q.promise(function (onSuccess, onError) {
+//				onSuccess(dbSet);
+//			});
+//		} else {
+//			return initDbClientAsync();
+//		}
+//	};
+
+
+//	var buildDbContext = function (db) {
+//		dbSet = {
+//			db: db,
+//			playlists: db.collection("playlists"),
+//			media: db.collection("media"),
+//			bookmarks: db.collection("bookmarks"),
+//			favorites: db.collection("favorites"),
+//			configuration: db.collection("configuration")
+//		};
+//		return dbSet;
+//	};
+
+
+//})();

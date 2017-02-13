@@ -1,6 +1,22 @@
-<div id="play-control">
-    <span id="previous"><img src="svg/small.svg" /></span>
-    <span id="play-pause" ng-click="playOrPause()"><img src="{{ currentBtnUrl }}" /></span>
-    <span id="next"><img src="svg/small-next.svg" /></span>
+<div id="audio-player">
     <audio id="audioPlayer" controls></audio>
+    <div id="play-control">
+        <div id="previous" class="button" ng-click="playPrevious()"><img src="svg/small.svg" /></div>
+        <div id="play-pause" class="button" ng-click="playOrPause()"><img id="btnPlay" src="svg/play.svg" /></div>
+        <div id="next" class="button" ng-click="playNext()"><img src="svg/small-next.svg" /></div>
+    </div>
+    <span id="elapsed-time">0:00</span>
+    <div id="timeline">
+        <div id="timeline-bar">
+            <div id="loaded-chunks"></div>
+        </div>
+        <div id="cursor" title="Cursor"></div>
+    </div>
+    <span id="remaining-time">0:00</span>
+    <div id="volume-container">
+        <div id="volume" class="button"><img src="svg/volume.svg" /></div>
+        <div id="volume-bar">
+            <div id="volume-level"></div>
+        </div>
+    </div>
 </div>

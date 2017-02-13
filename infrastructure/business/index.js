@@ -1,18 +1,7 @@
-var MediaDirector = require("./mediaDirector"),
-	PlaylistDirector = require("./playlistDirector"),
-	PlaylistsDirector = require("./playlistsDirector"),
-	FileExplorerDirector = require("./fileExplorerDirector"),
-	FavoriteDirector = require("./favoriteDirector");
+'use strict';
 
-(function (exports) {
-	"use strict";
-
-	exports.BUSINESS = {
-		 FileExplorerDirector: FileExplorerDirector,
-		 MediaDirector: MediaDirector,
-		 PlaylistDirector: PlaylistDirector,
-		 PlaylistsDirector: PlaylistsDirector,
-		 FavoriteDirector: FavoriteDirector
-	 }
-
-}(module.exports));
+module.exports.FileExplorerDirector = require("./fileExplorerDirector");
+module.exports.MediaDirector = require("./mediaDirector");
+module.exports.PlaylistDirector = require("./playlistDirector");
+module.exports.PlaylistsDirector = require("./playlistsDirector");
+module.exports.FavoriteDirector = require("./favoriteDirector");

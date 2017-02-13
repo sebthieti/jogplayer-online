@@ -1,93 +1,109 @@
+'use strict';
+
 var Q = require('q'),
 	from = require('fromjs'),
-	mongodb = require('mongodb');
+	Models = require('../../models'),
+	Media = Models.Media,
+	Playlist = Models.Playlist;
 
-module.exports = (function () {
-	'use strict';
+var _saveService,
+	_mediaService,
+	_mediaBuilder;
 
-	var _saveService,
-		_mediaService,
-		_mediaBuilder;
+function MediaSaveService(saveService, mediaService, mediaBuilder) {
+	_saveService = saveService;
+	_mediaService = mediaService;
+	_mediaBuilder = mediaBuilder;
+}
 
-	function MediaSaveService(saveService, mediaService, mediaBuilder) {
-		_saveService = saveService;
-		_mediaService = mediaService;
-		_mediaBuilder = mediaBuilder;
-	}
+MediaSaveService.prototype.getMediaByIdAsync = function(mediaId) {
+	var defer = Q.defer();
 
-	MediaSaveService.prototype.getMediasFromPlaylistIdAsync = function(playlistId) {
-		return _saveService
-			.getPlaylistsRepositoryAsync()
-			.then(function (playlistSet) {
-				return getMediaIdsFromPlaylistAsync(playlistSet, playlistId);
-			})
-			.then(function (mediaIds) {
-				return this.getMediasByIdsAsync(mediaIds);
-			}); // TODO updateMustRelocalizeState ?
-	};
+	Media.findOne({ _id: mediaId }, function(err, media) {
+		if (!err) { defer.resolve(media) }
+		else { defer.reject(err) }
+	});
 
-	MediaSaveService.prototype.getMediasByIdsAsync = function (mediaIds) {
-		return _saveService
-			.getMediasRepositoryAsync()
-			.then(function(mediaSet) {
-				var query = [];
-				var mediaIdsLength = mediaIds.length;
-				for (var paramIndex = 0; paramIndex < mediaIdsLength; paramIndex++) {
-					query.push( {_id: mongodb.ObjectID(mediaIds[paramIndex]._id)} );
-				}
+	return defer.promise;
+};
 
-				return Q.promise(function(onSucceed, onError) {
-					mediaSet
-						.find( { $or: query} )
-						.sort( {index: 1} )
-						.toArray(function (err, medias) {
-							if (!err) {
-								onSucceed(medias);
-							} else {
-								onError(err);
-							}
-						});
-				});
-			});
-	};
+MediaSaveService.prototype.findIndexFromMediaIdsAsync = function(mediaId) {
+	var defer = Q.defer();
 
-	MediaSaveService.prototype.getMediaByIdAsync = function(mediaId) {
-		return _saveService
-			.getMediasRepositoryAsync()
-			.then(function (mediaSet) {
-				return findMediaByIdAsync(mediaSet, mediaId);
-			});
-	};
-
-	MediaSaveService.prototype.updateMustRelocalizeOnMedias = function (medias) {
-		// return saveService.getPlaylistsRepositoryAsync()
-	};
-
-	var findMediaByIdAsync = function (mediaSet, mediaId) {
-		return Q.promise(function(onSucceed, onError) {
-			mediaSet.findOne({ _id: mongodb.ObjectID(mediaId) }, function (err, media) {
-				if(!err) {
-					onSucceed(media);
-				} else {
-					onError(err);
-				}
-			});
+	Media
+		.findOne({ _id: mediaId })
+		.select('index')
+		.exec(function(err, medium) {
+			if (err) { defer.reject(err); }
+			else { defer.resolve(medium.index); }
 		});
-	};
 
-	var getMediaIdsFromPlaylistAsync = function (playlistSet, playlistId) {
-		return Q.promise(function(onSucceed, onError) {
-			playlistSet
-				.find({ _id: mongodb.ObjectID(playlistId) })
-				.toArray(function (err, playlist) {
-					if (!err) {
-						onSucceed(playlist[0].medias);
-					} else {
-						onError(err);
-					}
+	return defer.promise;
+};
+
+MediaSaveService.prototype.updateMustRelocalizeOnMedia = function (media) {
+	// return saveService.getPlaylistsRepositoryAsync()
+};
+
+MediaSaveService.prototype.insertMediumAsync = function (medium) {
+	var defer = Q.defer();
+
+	medium.save(function(err, newMedia) {
+		if (!err) { defer.resolve(newMedia) }
+		else { defer.reject(err) }
+	});
+
+	return defer.promise;
+};
+
+MediaSaveService.prototype.updateMediaIndexByIdsAsync = function (mediaIdIndexesToOffset) {
+	var updateMediaIdIndexPromises = mediaIdIndexesToOffset.map(function(value) {
+		return this.updateMediaIndexByIdAsync(value._id, value.index);
+	}, this);
+	return Q.all(updateMediaIdIndexPromises);
+};
+
+MediaSaveService.prototype.updateMediaIndexByIdAsync = function (mediaId, newIndex) {
+	var defer = Q.defer();
+
+	Media
+		.findOne({ _id: mediaId })
+		.select('index')
+		.exec(function(readError, medium) {
+			if (readError) {
+				defer.reject(readError);
+			} else {
+				medium.index = newIndex;
+				medium.save(function(writeError, updatedMedium) {
+					if (writeError) { defer.reject(writeError) }
+					else { defer.resolve(updatedMedium) }
 				});
+			}
 		});
-	};
 
-	return MediaSaveService;
-})();
+	return defer.promise;
+};
+
+MediaSaveService.prototype.removeMediumAsync = function(medium) {
+	var defer = Q.defer();
+
+	medium.remove(function(err, medium) {
+		if (!err) { defer.resolve(medium) }
+		else { defer.reject(err) }
+	});
+
+	return defer.promise;
+};
+
+MediaSaveService.prototype.removeMediumByIdAsync = function(mediumId) {
+	var defer = Q.defer();
+
+	Media.findOneAndRemove({ _id: mediumId }, function(err, medium) {
+		if (!err) { defer.resolve(medium) }
+		else { defer.reject(err) }
+	});
+
+	return defer.promise;
+};
+
+module.exports = MediaSaveService;
