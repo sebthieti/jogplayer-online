@@ -101,6 +101,8 @@ var getFileSizeAsync = function(filePath) {
 		.nfcall(fs.stat, filePath)
 		.then(function(stat) {
 			return stat.size;
+		}, function(err) { // TODO File might not exists at that time
+			console.log(err);
 		});
 };
 

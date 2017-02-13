@@ -397,16 +397,30 @@ jpoApp.factory("AudioPlayerControl", function () {
 			// Ensure cursor is visible
 			_audioPlayerElements.cursor.classList.remove('hidden');
 
+			audioPlayer.removeChild('source');
+
 			// Search for source tag to set medium to read.
-			var sourceTag = audioPlayer.querySelector('source');
+			var allSourceTags = audioPlayer.querySelectorAll('source');
 
-			var isAudioSourceTagPresent = sourceTag !== null;
-			if (!isAudioSourceTagPresent) {
-				sourceTag = document.createElement('source');
-				audioPlayer.appendChild(sourceTag);
+			var areAudioSourceTagsPresent = allSourceTags.length === 3;
+			if (!areAudioSourceTagsPresent) {
+
+
 			}
-
+			var sourceTag = document.createElement('source');
 			sourceTag.src = mediaOrFile.selectSelfPlayFromLinks();//linkHelpers.selectSelfPlayFromLinks(mediaOrFile.links);
+			audioPlayer.appendChild(sourceTag);
+
+			var mp3FallBack = document.createElement('source');
+			var _ = mediaOrFile.selectSelfPlayFromLinks().lastIndexOf(".");
+			mp3FallBack.src = mediaOrFile.selectSelfPlayFromLinks().substring(0, _) + ".mp3";
+			audioPlayer.appendChild(mp3FallBack);
+
+			var oggFallBack = document.createElement('source');
+			_ = mediaOrFile.selectSelfPlayFromLinks().lastIndexOf(".");
+			oggFallBack.src = mediaOrFile.selectSelfPlayFromLinks().substring(0, _) + ".ogg";
+			audioPlayer.appendChild(oggFallBack);
+			//}
 
 			// TODO Type w/ codec should be specified
 			//_currentSourceTag.type = 'audio/mpeg';

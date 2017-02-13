@@ -1,7 +1,7 @@
 'use strict';
 
 var child_process = require('child_process'),
-	Q = require('Q'),
+	Q = require('q'),
 	path = require('path'),
 	FileExplorerService = require('./fileExplorerService'),
 	FileInfo = require('../../models').FileInfo;

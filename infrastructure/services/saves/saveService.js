@@ -40,12 +40,25 @@ function SaveService (configObservable) {
 }
 
 function startDbService() {
-	_dbProcess = child_process.spawn(
-		'.\\bin\\mongod.exe', [
-		'--config',
-		'mongod.conf'
+
+	// Following is windows cfg
+	//_dbProcess = child_process.spawn(
+	//	".\\bin\\mongod", [
+	//		'--config',
+	//		"mongod.conf"
+	//	], {
+	//		cwd: 'C:\\_PROJECTS\\GitHub\\jogplayer-online\\db' // TODO S/b config
+	//
+	//	}
+	//);
+
+	_dbProcess = child_process.spawn( // TODO In linux all directory (logs/db data must exist before runnin script)
+		"mongod", [
+		"--config",
+		"./mongod.conf"
 		], {
-			cwd: 'C:\\_PROJECTS\\GitHub\\jogplayer-online\\db' // TODO S/b config
+			//cwd: 'C:\\_PROJECTS\\GitHub\\jogplayer-online\\db'
+			cwd: "/home/sebthieti/_Projects/jogplayer-online/db/" // TODO S/b config
 		}
 	);
 	_dbProcess.stdout.on('data', function (data) {
@@ -62,16 +75,19 @@ function startDbService() {
 }
 
 function observeConfigAndInit(configObservable) {
-	configObservable
-		.take(1)
-		.do(function(config) {
-			initDbClientAsync(config);
-		})
-		.subscribe(
+	setTimeout(function(){ // TODO In linux we need time before launch. Check for that
+		configObservable
+			.take(1)
+			.do(function(config) {
+				initDbClientAsync(config);
+			})
+			.subscribe(
 			function() {},
 			function(err) {console.log(err)},
 			function() {}
 		);
+	}, 5000);
+
 }
 
 function initDbClientAsync(config) {

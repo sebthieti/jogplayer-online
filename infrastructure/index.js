@@ -2,6 +2,8 @@
 
 // Modules
 var os = require('os'),
+	process = require('process'),
+	path = require('path'),
 	dependable = require('dependable'),
 	container = dependable.container(),
 	from = require('fromjs'),
@@ -263,7 +265,24 @@ function registerSetupStack(app) {
 	});
 }
 
+function checkRequiredEnvVar() {
+	// In windows, fluent-ffmpeg can find by itself ffmpeg/ffprobe
+	if (os.platform() === "win32") {
+		return;
+	}
+
+	if (!('FFMPEG_PATH' in process.env)) {
+		// To ensure fluent-ffmpeg will work well
+		process.env.FFMPEG_PATH = path.join(process.cwd(), "ffmpeg");
+	}
+	if (!('FFPROBE_PATH' in process.env)) {
+		// To ensure fluent-ffmpeg will work well with ffprobe
+		process.env.FFPROBE_PATH = path.join(process.cwd(), "ffprobe");
+	}
+}
+
 exports.init = function (app, io) {
-	// Must be the last one to initialise
+	//process.env.FFMPEG_PATH
+	checkRequiredEnvVar();
 	bootstrap(app, io);
 };

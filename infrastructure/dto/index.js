@@ -1,6 +1,6 @@
 'use strict';
 
-exports.Dto = require('./Dto');
+exports.Dto = require('./dto');
 exports.PlaylistDto = require('./playlistDto');
 exports.FolderContentDto = require('./folderContentDto');
 exports.FileInfoDto = require('./fileInfoDto');

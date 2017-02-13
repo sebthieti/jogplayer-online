@@ -1,6 +1,7 @@
 'use strict';
 
-var Dto = require('../dto');
+let Dto = require('../dto'),
+	os = require('os');
 
 function buildFolderContentDto(urlPath, files) {
 	return new Dto.FolderContentDto()
@@ -44,7 +45,20 @@ function tryMakeFolderSelfPhysLink(folderPath) {
 }
 
 function tryMakeFileSelfPhysLink(parentFolderPath, file) {
-	var fullFilePath = (parentFolderPath || '') + file.name;
+	let fullFilePath = null;
+	if (os.platform() === "linux") { // TODO Stop here: cannot diff when first time show and cliquing to / to show inside
+		parentFolderPath = (parentFolderPath === "/" ? "" : parentFolderPath);
+		if (file.name.startsWith("~/")) {
+			fullFilePath = parentFolderPath + file.name;
+		} else if (file.name === "/") {
+			fullFilePath = file.name;
+		} else {
+			fullFilePath = parentFolderPath + file.name;
+		}
+	} else {
+		fullFilePath = (parentFolderPath || '') + file.name;
+	}
+
 	if (!fullFilePath || fullFilePath === '/') {
 		return;
 	}
@@ -60,9 +74,25 @@ function makeSelfLinkToRes(parentFolderPath, file) {
 	// ^\/api\/explore\/(.*[\/])*$/
 	var fullFilePath;
 	if (file) {
-		fullFilePath = parentFolderPath + file.name;
-		var pathTail = isBrowsableFile(file) ? '/' : '';
-		fullFilePath = fullFilePath + pathTail;
+		if (os.platform() === "linux") {
+			parentFolderPath = (parentFolderPath === "/" ? "" : parentFolderPath);
+			if (file.name.startsWith("~/")) {
+				fullFilePath = parentFolderPath + file.name;
+			} else if (file.name === "/") {
+				fullFilePath = file.name;
+			} else {
+				fullFilePath = parentFolderPath + file.name;
+			}
+
+			if (file.isDirectory()) {
+				fullFilePath += "/";
+			}
+		} else {
+			fullFilePath = parentFolderPath + file.name;
+
+			var pathTail = isBrowsableFile(file) ? '/' : '';
+			fullFilePath = fullFilePath + pathTail;
+		}
 	} else {
 		fullFilePath = parentFolderPath;
 	}
