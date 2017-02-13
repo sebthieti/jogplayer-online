@@ -1,8 +1,8 @@
 'use strict';
 
 var Q = require('q'),
-	Dto = require('./dto'),
-	UserPermissionsDto = require('./userPermissionsDto');
+  Dto = require('./dto'),
+  UserPermissionsDto = require('./userPermissionsDto');
 
 function safeOptions(options) {
   if (!options) return {};
@@ -45,12 +45,12 @@ function assertValidData(data, options) {
 
 var UserDto = function (data, overrideId) {
   this.id = overrideId || data.id;
-	if (data.isActive) this.isActive = data.isActive;
-	if (data.username) this.username = data.username;
-	if (data.fullName) this.fullName = data.fullName;
-	if (data.email) this.email = data.email;
-	if (data.password) this.password = data.password;
-	this.permissions = new UserPermissionsDto(data);
+  if ('isActive' in data) this.isActive = data.isActive;
+  if ('username' in data) this.username = data.username;
+  if ('fullName' in data) this.fullName = data.fullName;
+  if ('email' in data) this.email = data.email;
+  if ('password' in data) this.password = data.password;
+  this.permissions = new UserPermissionsDto(data);
 };
 
 UserDto.prototype = Object.create(Dto.prototype);

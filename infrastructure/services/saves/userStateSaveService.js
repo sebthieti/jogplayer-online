@@ -12,13 +12,13 @@ function UserStateSaveService(saveService, userStateModel) {
 
 UserStateSaveService.prototype.getUserStateAsync = function(ownerId) {
 	var defer = Q.defer();
-	
+
 	UserState.findOne({ ownerId: ownerId})
 		.exec(function(err, user) {
 			if (err) { defer.reject(err) }
 			else { defer.resolve(user) }
 		});
-	
+
 	return defer.promise;
 };
 
@@ -61,9 +61,10 @@ UserStateSaveService.prototype.updateFromUserStateDtoAsync = function (userState
 	UserState.findOneAndUpdate(
 		{ _id: userStateId, ownerId: ownerId },
 		userStateDto.getDefinedFields(),
-		function(err, user) {
+		{ 'new': true }, // Return modified doc.
+		function(err, userState) {
 			if (err) { defer.reject(err) }
-			else { defer.resolve(user) }
+			else { defer.resolve(userState) }
 		}
 	);
 

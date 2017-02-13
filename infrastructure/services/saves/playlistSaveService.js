@@ -233,7 +233,8 @@ PlaylistSaveService.prototype.updatePlaylistDtoAsync = function (playlistId, pla
 
 	Playlist.findOneAndUpdate(
 		{ _id: playlistId, ownerId: issuer.id },
-		playlistDto.getDefinedFields()
+		playlistDto.getDefinedFields(),
+		{ 'new': true } // Return modified doc.
 	)
 	.populate("media")
 	.exec(

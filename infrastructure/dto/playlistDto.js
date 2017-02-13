@@ -1,7 +1,7 @@
 'use strict';
 
 var Q = require('q'),
-	Dto = require('./dto');
+  Dto = require('./dto');
 
 function safeOptions(options) {
   if (!options) return {};
@@ -12,9 +12,9 @@ function safeOptions(options) {
 }
 
 function assertValidData(data, options) {
-	if (data === undefined) {
-		throw new Error('Invalid Playlist');
-	}
+  if (data === undefined) {
+    throw new Error('Invalid Playlist');
+  }
 
   if (options.checkAllRequiredFields && !data.id && !options.overrideId) {
     throw new Error('If data does not contain an Id, you have to use overrideId');
@@ -52,35 +52,35 @@ function assertValidData(data, options) {
 }
 
 var PlaylistDto = function(data, overrideId) {
-	this.id = overrideId || data.id;
-  if (data.name) this.name = data.name;
-  if (data.createdOn) this.createdOn = data.createdOn;
-  if (data.updatedOn) this.updatedOn = data.updatedOn;
-  if (data.index) this.index = data.index;
-  if (data.filePath) this.filePath = data.filePath;
-  if (data.isAvailable) this.isAvailable = data.isAvailable;
-  if (data.media) this.media = data.media;
+  this.id = overrideId || data.id;
+  if ('name' in data) this.name = data.name;
+  if ('createdOn' in data) this.createdOn = data.createdOn;
+  if ('updatedOn' in data) this.updatedOn = data.updatedOn;
+  if ('index' in data) this.index = data.index;
+  if ('filePath' in data) this.filePath = data.filePath;
+  if ('isAvailable' in data) this.isAvailable = data.isAvailable;
+  if ('media' in data) this.media = data.media;
 };
 
 PlaylistDto.prototype = Object.create(Dto.prototype);
 PlaylistDto.prototype.constructor = Dto;
 
 PlaylistDto.prototype.isVirtual = function() {
-	return !this.filePath || this.filePath == null;
+  return !this.filePath || this.filePath == null;
 };
 
 PlaylistDto.prototype.getDefinedFields = function() {
-	var fields = Dto.prototype.getDefinedFields.call(this);
-	// media in playlistDto will cause error on save, so remove it
-	delete fields['media'];
-	return fields;
+  var fields = Dto.prototype.getDefinedFields.call(this);
+  // media in playlistDto will cause error on save, so remove it
+  delete fields['media'];
+  return fields;
 };
 
 PlaylistDto.toDto = function (data, options) {
   options = safeOptions(options);
   assertValidData(data, options);
   // TODO filePath: When i create a new phys. pl, POST send Dto with filePath
-	return new PlaylistDto(data, options.overrideId);
+  return new PlaylistDto(data, options.overrideId);
 };
 
 module.exports = PlaylistDto;

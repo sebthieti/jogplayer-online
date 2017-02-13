@@ -16,11 +16,11 @@ function assertValidData(data, options) {
 
 var BookmarkDto = function(data, overrideId) {
   this.id = overrideId || data.id;
-  if (data.name) this.name = data.name;
-  if (data.index) this.index = data.index;
-  if (data.filePath) this.filePath = data.filePath;
-  if (data.createdOn) this.createdOn = data.createdOn;
-  if (data.folderPath) this.folderPath = data.folderPath;
+  if ('name' in data) this.name = data.name;
+  if ('index' in data) this.index = data.index;
+  if ('filePath' in data) this.filePath = data.filePath;
+  if ('createdOn' in data) this.createdOn = data.createdOn;
+  if ('folderPath' in data) this.folderPath = data.folderPath;
 };
 
 BookmarkDto.prototype = Object.create(Dto.prototype);

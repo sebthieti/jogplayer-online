@@ -1,12 +1,12 @@
 'use strict';
 
 var Q = require('q'),
-	Dto = require('./dto');
+  Dto = require('./dto');
 
 function assertValidData(data) {
-	if (data === undefined) {
-		throw new Error('No data has been provided for userState');
-	}
+  if (data === undefined) {
+    throw new Error('No data has been provided for userState');
+  }
 
   if (data.playedPosition && typeof data.playedPosition !== 'number') {
     throw new Error('playedPosition must be of type Number');
@@ -26,19 +26,19 @@ function assertValidData(data) {
 }
 
 function UserStateDto(data) {
-	if (data.playedPosition) this.playedPosition = data.playedPosition;
-	if (data.mediaQueue) this.mediaQueue = data.mediaQueue;
-	if (data.browsingFolderPath) this.browsingFolderPath = data.browsingFolderPath;
-	if (data.openedPlaylistId) this.openedPlaylistId = data.openedPlaylistId;
-	if (data.playingMediumInQueueIndex) this.playingMediumInQueueIndex = data.playingMediumInQueueIndex;
+  if ('playedPosition' in data) this.playedPosition = data.playedPosition;
+  if ('mediaQueue' in data) this.mediaQueue = data.mediaQueue;
+  if ('browsingFolderPath' in data) this.browsingFolderPath = data.browsingFolderPath;
+  if ('openedPlaylistId' in data) this.openedPlaylistId = data.openedPlaylistId;
+  if ('playingMediumInQueueIndex' in data) this.playingMediumInQueueIndex = data.playingMediumInQueueIndex;
 }
 
 UserStateDto.prototype = Object.create(Dto.prototype);
 UserStateDto.prototype.constructor = Dto;
 
 UserStateDto.toDto = function (data) {
-	assertValidData(data);
-	return new UserStateDto(data);
+  assertValidData(data);
+  return new UserStateDto(data);
 };
 
 module.exports = UserStateDto;

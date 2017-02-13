@@ -1,4 +1,4 @@
-JogPlayer Online
+JogPlayer Online v0.3.10
 ================
 
 JogPlayer Online is a media server web application. You can listen to your music remotely.

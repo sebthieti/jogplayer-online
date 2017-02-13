@@ -44,8 +44,8 @@
 				<div id="right-section">
 					<div id="file-explorer">
 						<file-explorer id="explorer"
-									   bind-to-favorites="true"
-									   explore-when-visible="false">
+										 bind-to-favorites="true"
+										 explore-when-visible="false">
 						</file-explorer>
 					</div>
 					<div id="favorites-container">
@@ -78,6 +78,7 @@
 		<script src="js/controllers.js"></script>
 
 		<script src="js/app.js"></script>
+		<script src="js/mediators.js"></script>
 
 		<script src="js/models/model.js"></script>
 		<script src="js/models/jpo-model-builder.js"></script>

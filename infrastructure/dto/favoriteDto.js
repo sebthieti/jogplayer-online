@@ -1,7 +1,7 @@
 'use strict';
 
 var Q = require('q'),
-	Dto = require('./dto');
+  Dto = require('./dto');
 
 function safeOptions(options) {
   if (!options) return {};
@@ -12,9 +12,9 @@ function safeOptions(options) {
 }
 
 function assertValidData(data, options) {
-	if (data === undefined) {
-		throw new Error('No data has been provided for favorite');
-	}
+  if (data === undefined) {
+    throw new Error('No data has been provided for favorite');
+  }
   if (options.checkAllRequiredFields && !data.id && !options.overrideId) {
     throw new Error('If data does not contain an Id, you have to use overrideId');
   }
@@ -43,10 +43,10 @@ function assertValidData(data, options) {
 
 var FavoriteDto = function (data, overrideId) {
   this.id = overrideId || data.id;
-	if (data.name) this.name = data.name;
-  if (data.createdOn) this.createdOn = data.createdOn;
-  if (data.index) this.index = data.index;
-  if (data.folderPath) this.folderPath = data.folderPath;
+  if ('name' in data) this.name = data.name;
+  if ('createdOn' in data) this.createdOn = data.createdOn;
+  if ('index' in data) this.index = data.index;
+  if ('folderPath' in data) this.folderPath = data.folderPath;
 };
 
 FavoriteDto.prototype = Object.create(Dto.prototype);
@@ -55,8 +55,8 @@ FavoriteDto.prototype.constructor = Dto;
 FavoriteDto.toDto = function (data, options) {
   options = safeOptions(options);
 
-	assertValidData(data, options);
-	return new FavoriteDto(data, options.overrideId);
+  assertValidData(data, options);
+  return new FavoriteDto(data, options.overrideId);
 };
 
 module.exports = FavoriteDto;

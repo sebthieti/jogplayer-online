@@ -5,7 +5,8 @@ jpoApp.factory('mediaQueueBusiness', [
 	'audioService',
 	'authBusiness',
 	'viewModelBuilder',
-	function($q, audioService, authBusiness, viewModelBuilder) {
+	'mediators',
+	function($q, audioService, authBusiness, viewModelBuilder, mediators) {
 	var PlayerState = Jpo.PlayerState;
 
 	var currentMediumInQueueSubject = new Rx.BehaviorSubject();
@@ -119,6 +120,7 @@ jpoApp.factory('mediaQueueBusiness', [
 	function onFirstMediumInQueueStartPlay() {
 		observeMediaQueue()
 			.whereHasValue()
+			.where(function() { return mediators.getIsUserStateInitialized() })
 			.selectWithPreviousValue(function (oldValue, newValue) {
 				return oldValue !== null && _.isEmpty(oldValue) && _.any(newValue);
 			})

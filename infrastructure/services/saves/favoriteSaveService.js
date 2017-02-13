@@ -64,6 +64,7 @@ FavoriteSaveService.prototype.updateFromFavoriteDtoAsync = function (favoriteId,
 	Favorite.findOneAndUpdate(
 		{ _id: favoriteId, ownerId: issuer.id },
 		favoriteDto.getDefinedFields(),
+		{ 'new': true }, // Return modified doc.
 		function(err, favorite) {
 			if (err) { defer.reject(err) }
 			else { defer.resolve(favorite) }

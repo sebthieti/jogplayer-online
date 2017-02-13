@@ -166,6 +166,7 @@ UserSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, is
 	User.findOneAndUpdate(
 		{ _id: userId }, // , ownerId: issuer.id
 		userDto.getDefinedFields(),
+		{ 'new': true }, // Return modified doc.
 		function(err, user) {
 			if (err) { defer.reject(err) }
 			else { defer.resolve(user) }

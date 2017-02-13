@@ -2,6 +2,7 @@
 
 jpoApp.factory('userStateBusiness', [
 	'$q',
+	'mediators',
 	'audioService',
 	'authBusiness',
 	'mediaQueueBusiness',
@@ -10,7 +11,7 @@ jpoApp.factory('userStateBusiness', [
 	'PlaylistMediaModel',
 	'FileModel',
 	'UserStateModel',
-	function($q, audioService, authBusiness, mediaQueueBusiness, fileExplorerBusiness, playlistBusiness, PlaylistMediaModel, FileModel, UserStateModel) {
+	function($q, mediators, audioService, authBusiness, mediaQueueBusiness, fileExplorerBusiness, playlistBusiness, PlaylistMediaModel, FileModel, UserStateModel) {
 		var userStateSubject = new Rx.BehaviorSubject();
 		//var PlayerState = Jpo.PlayerState;
 		var initializingState = false;
@@ -31,9 +32,11 @@ jpoApp.factory('userStateBusiness', [
 						.getCurrentUserStateAsync()
 						.then(function(userState) {
 							initializingState = true;
+							mediators.setIsUserStateInitialized(initializingState);
 							userStateSubject.onNext(userState);
 							if (!userState) {
 								initializingState = false;
+								mediators.setIsUserStateInitialized(initializingState);
 								return;
 							}
 
@@ -45,8 +48,10 @@ jpoApp.factory('userStateBusiness', [
 								loadCurrentPlaylist(userState)
 							]).then(function() {
 								initializingState = false;
+								mediators.setIsUserStateInitialized(initializingState);
 							}, function() {
 								initializingState = false;
+								mediators.setIsUserStateInitialized(initializingState);
 							});
 						});
 				})

@@ -1,12 +1,12 @@
 'use strict';
 
 var Q = require('q'),
-	Dto = require('./dto');
+  Dto = require('./dto');
 
 function assertValidData(data) {
-	if (data === undefined) {
-		throw new Error('No data has been provided for userPermissions');
-	}
+  if (data === undefined) {
+    throw new Error('No data has been provided for userPermissions');
+  }
 
   if (data.isAdmin && typeof data.isAdmin !== 'boolean') {
     throw new Error('isAdmin must be of type Boolean');
@@ -26,11 +26,11 @@ function assertValidData(data) {
 }
 
 function UserPermissionsDto(data) {
-	if (data.isAdmin) this.isAdmin = data.isAdmin;
-	if (data.canWrite) this.canWrite = data.canWrite;
-	if (data.allowPaths) this.allowPaths = data.allowPaths;
-	if (data.denyPaths) this.denyPaths = data.denyPaths;
-	if (data.homePath) this.homePath = data.homePath;
+  if ('isAdmin' in data) this.isAdmin = data.isAdmin;
+  if ('canWrite' in data) this.canWrite = data.canWrite;
+  if ('allowPaths' in data) this.allowPaths = data.allowPaths;
+  if ('denyPaths' in data) this.denyPaths = data.denyPaths;
+  if ('homePath' in data) this.homePath = data.homePath;
 }
 
 UserPermissionsDto.prototype = Object.create(Dto.prototype);
