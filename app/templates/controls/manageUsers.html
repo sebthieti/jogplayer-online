@@ -31,13 +31,16 @@
 							<input placeholder="Email" name="email" type="email" ng-model="userVm.model.email">
 
 							<label for="is-admin-edit">Is Admin</label>
-							<input id="is-admin-edit" name="isAdmin" type="checkbox" ng-model="userVm.model.isAdmin">
+							<input id="is-admin-edit" name="isAdmin" type="checkbox" ng-model="userVm.model.permissions.isAdmin">
 
 							<label for="can-write-edit">Can Write</label>
-							<input id="can-write-edit" name="canWrite" type="checkbox" ng-model="userVm.model.canWrite">
+							<input id="can-write-edit" name="canWrite" type="checkbox" ng-model="userVm.model.permissions.canWrite">
 
-							<input placeholder="AllowedPath" name="allowedPath" type="allowedPath" ng-model="userVm.model.permissions.allowedPaths">
-
+							<ul>
+								<li ng-repeat="allowedPath in userVm.model.permissions.allowedPaths">
+									<input type="text" ng-model="allowedPath">
+								</li>
+							</ul>
 
 							<button type="submit" ng-click="endEditUser(userVm)">Commit</button>
 						</form>
@@ -81,13 +84,13 @@
 								<tr>
 									<td>
 										<label for="is-admin">Is Admin</label>
-										<input id="is-admin" name="isAdmin" type="checkbox" ng-model="newUser.isAdmin">
+										<input id="is-admin" name="isAdmin" type="checkbox" ng-model="newUser.permissions.isAdmin">
 									</td>
 								</tr>
 								<tr>
 									<td>
 										<label for="can-write">Can Write</label>
-										<input id="can-write" name="canWrite" type="checkbox" ng-model="newUser.canWrite">
+										<input id="can-write" name="canWrite" type="checkbox" ng-model="newUser.permissions.canWrite">
 									</td>
 								</tr>
 								<tr>

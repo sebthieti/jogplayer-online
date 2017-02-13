@@ -50,6 +50,9 @@ jpoApp.factory("jpoProxy", function ($q, jpoService) {
 					var apiLink = _.find(apiMap, function(link) {
 						return link.rel === name;
 					});
+					if (angular.isUndefined(apiLink)) {
+						throw 'Api with rel=' + name + ' could not be found;';
+					}
 					deferred.resolve(apiLink.href);
 				});
 

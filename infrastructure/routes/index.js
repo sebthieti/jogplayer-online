@@ -41,7 +41,7 @@ module.exports = function () {
 		},
 		playlists: {
 			selfPath: '/api/playlists/:playlistId',
-			listMedia: '/api/playlists/:playlistId/media/',
+			listMedia: '/api/playlists/:playlistId/media/', // TODO Rename to selfPermissions and use self.media as rel
 			getPath: '/api/playlists/',
 			insertPath: '/api/playlists/',
 			updatePath: "/api/playlists/:playlistId",
@@ -67,17 +67,18 @@ module.exports = function () {
 		},
 		users: {
 			selfPath: '/api/users/:userId',
+			selfPermissionsPath: '/api/users/:userId/permissions/',
 			getPath: '/api/users/',
 			updatePath: '/api/users/:userId',
 			insertPath: '/api/users/',
 			deletePath: '/api/users/:userId'
 		},
 		userPermissions: {
-			selfPath: '/api/users/:userId/permissions/:userPermissionId',
+			//selfPath: '/api/users/:userId/permissions/:userPermissionId',
 			getPath: '/api/users/:userId/permissions/',
-			updatePath: '/api/users/:userId/permissions/:userPermissionId',
-			insertPath: '/api/users/:userId/permissions/',
-			deletePath: '/api/users/:userId/permissions/:userPermissionId'
+			updatePath: '/api/users/:userId/permissions/'
+			//insertPath: '/api/users/:userId/permissions/',
+			//deletePath: '/api/users/:userId/permissions/:userPermissionId'
 		},
 		userStates: {
 			selfPath: '/api/user-states/:userStateId',

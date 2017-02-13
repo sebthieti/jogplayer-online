@@ -3,7 +3,7 @@
 var mongoose = require('mongoose'),
 	Schema = mongoose.Schema;
 
-var _plRoutes;
+var _userStateRoutes;
 
 var userStateSchema = new Schema({
 	ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -28,17 +28,17 @@ userStateSchema.methods.toJSON = function() {
 userStateSchema.virtual('links').get(function() {
 	return [{
 		rel: 'self',
-		href: _plRoutes.selfPath.replace(':userStateId', this.id)
+		href: _userStateRoutes.selfPath.replace(':userStateId', this.id)
 	},{
 		rel: 'update',
-		href: _plRoutes.updatePath.replace(':userStateId', this._id)
+		href: _userStateRoutes.updatePath.replace(':userStateId', this._id)
 	},{
 		rel: 'remove',
-		href: _plRoutes.deletePath.replace(':userStateId', this._id)
+		href: _userStateRoutes.deletePath.replace(':userStateId', this._id)
 	}];
 });
 
-module.exports = function(plRoutes){
-	_plRoutes = plRoutes;
+module.exports = function(userStateRoutes){
+	_userStateRoutes = userStateRoutes;
 	return mongoose.model('UserState', userStateSchema);
 };

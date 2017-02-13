@@ -3,7 +3,7 @@
 var mongoose = require('mongoose'),
 	Schema = mongoose.Schema;
 
-var _plRoutes;
+var _userRoutes;
 
 var userSchema = new Schema({
 	username: { type: String, required: 'Username is mandatory' },
@@ -11,10 +11,6 @@ var userSchema = new Schema({
 	passwordSalt: { type: String, required: 'PasswordSalt is mandatory' },
 	fullName: String,
 	email: String,
-	canWrite: Boolean,
-	isAdmin: Boolean,
-	isRoot: Boolean, // TODO This one must be read only
-	role: String,
 	//state: { type: Schema.Types.ObjectId, ref: 'UserState' }
 	permissions: { type: Schema.Types.ObjectId, ref: 'UserPermission' }
 });
@@ -23,12 +19,13 @@ userSchema.set('toJSON', { virtuals: true });
 userSchema.set('toObject', { virtuals: false });
 userSchema.methods.toJSON = function() {
 	var obj = this.toObject();
-	// TODO This id is used only for client side's ui. Client should rather only use its own ids
-	obj.id = obj._id;
+	//var f = this.permissions.toJSON();
+
 	obj.links = this.links;
-	obj.permissions = obj.permissions.allowedPath || obj.permissions.allowedPaths;
 
 	delete obj._id;
+	delete obj.permissions;
+	obj.permissions = this.permissions.toJSON();
 	//delete obj.canWrite;
 	//delete obj.isAdmin;
 	delete obj.password;
@@ -39,17 +36,20 @@ userSchema.methods.toJSON = function() {
 userSchema.virtual('links').get(function() {
 	return [{
 		rel: 'self',
-		href: _plRoutes.selfPath.replace(':userId', this.id)
-	},{
+		href: _userRoutes.selfPath.replace(':userId', this.id)
+	}/*, {
+		rel: 'self.permissions',
+		href: _userRoutes.selfPermissionsPath.replace(':userId', this.id)
+	}*/, {
 		rel: 'update',
-		href: _plRoutes.updatePath.replace(':userId', this._id)
-	},{
+		href: _userRoutes.updatePath.replace(':userId', this._id)
+	}, {
 		rel: 'remove',
-		href: _plRoutes.deletePath.replace(':userId', this._id)
+		href: _userRoutes.deletePath.replace(':userId', this._id)
 	}];
 });
 
-module.exports = function(plRoutes){
-	_plRoutes = plRoutes;
+module.exports = function(userRoutes){
+	_userRoutes = userRoutes;
 	return mongoose.model('User', userSchema);
 };

@@ -1,13 +1,9 @@
 'use strict';
 
-module.exports = {
+exports.validatePlaylistDto = function(dto) {
+	return dto !== undefined;
+};
 
-	validatePlaylistDto: function(dto) {
-		return dto !== undefined;
-	},
-
-	validateFavoriteDto: function(dto) {
-		return dto !== undefined;
-	}
-
+exports.validateFavoriteDto = function(dto) {
+	return dto !== undefined;
 };

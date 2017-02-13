@@ -7,7 +7,7 @@ function UserPermissionsDirector (userSaveService) {
 	_userSaveService = userSaveService;
 }
 // TODO Check for rights before doing (directory should do not service layer)
-UserPermissionsDirector.prototype.getUsersAsync = function(owner) {
+UserPermissionsDirector.prototype.getUserPermissions = function(userId, owner) {
 	if (owner.role !== 'admin') {
 		throw 'Not authorized no manage users.';
 	}

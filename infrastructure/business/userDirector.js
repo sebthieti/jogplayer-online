@@ -1,8 +1,10 @@
 'use strict';
 
+var Models = require('../models'),
+	utils = require('../utils');
+
 var _userSaveService,
 	_userPermissionsSaveService;
-var Models = require('../models');
 
 function UserDirector (userSaveService, userPermissionsSaveService) {
 	_userSaveService = userSaveService;
@@ -10,21 +12,21 @@ function UserDirector (userSaveService, userPermissionsSaveService) {
 }
 // TODO Check for rights before doing (directory should do not service layer)
 UserDirector.prototype.getUsersAsync = function(owner) {
-	if (owner.role !== 'admin') {
+	if (!owner.permissions.isRoot || !owner.permissions.isAdmin) {
 		throw 'Not authorized no manage users.';
 	}
 	return _userSaveService.getUsersAsync();
 };
 
 UserDirector.prototype.addUserAsync = function(user, owner) {
-	if (owner.role !== 'admin') { // TODO Use role or isAdmin ? There is redundancy
+	if (!owner.permissions.isRoot || !owner.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
 		throw 'Not authorized no manage users.';
 	}
 	return _userSaveService.addUserAsync(user, owner);
 };
 
 UserDirector.prototype.addUserPermissionsAsync = function(userId, allowedPaths, owner) {
-	if (owner.role !== 'admin') { // TODO Use role or isAdmin ? There is redundancy
+	if (!owner.permissions.isRoot || !owner.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
 		throw 'Not authorized no manage users.';
 	}
 
@@ -35,7 +37,15 @@ UserDirector.prototype.addUserPermissionsAsync = function(userId, allowedPaths, 
 		});
 };
 
-UserDirector.prototype.geAllUserPermissionsAsync = function(userId, allowedPaths, owner) {
+UserDirector.prototype.getUserPermissionsByUserId = function(userId, owner) {
+	return _userSaveService
+		.getUserByIdWithPermissionsAsync(userId)
+		.then(function(userPermissionsModel) {
+			return userPermissionsModel.permissions;
+		});
+};
+
+UserDirector.prototype.getAllUserPermissionsAsync = function(userId, allowedPaths, owner) {
 	//if (owner.role !== 'admin') { // TODO Use role or isAdmin ? There is redundancy
 	//	throw 'Not authorized no manage users.';
 	//}
@@ -44,10 +54,27 @@ UserDirector.prototype.geAllUserPermissionsAsync = function(userId, allowedPaths
 		.getAllUserPermissionsAsync();
 };
 
+UserDirector.prototype.updateUserPermissionsByUserIdAsync = function(userId, userDto, owner) {
+	//if (owner.role !== 'admin') {
+	//	throw 'Not authorized no manage users.';
+	//}
+	return _userSaveService
+		.getUserByIdWithPermissionsAsync(userId)
+		.then(function(userPermissionsModel) {
+			for (var key in userDto) { // TODO Is there already some method to update instance model ?
+				if (!userDto.hasOwnProperty(key)) {
+					continue;
+				}
+				userPermissionsModel.permissions[key] = userDto[key];
+			}
+			return utils.saveModelAsync(userPermissionsModel.permissions);
+		});
+};
+
 
 
 UserDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, owner) {
-	if (owner.role !== 'admin') {
+	if (!owner.permissions.isRoot || !owner.permissions.isAdmin) {
 		throw 'Not authorized no manage users.';
 	}
 	return _userSaveService.updateFromUserDtoAsync(userId, userDto, owner);

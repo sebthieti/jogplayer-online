@@ -7,13 +7,19 @@ jpoApp.factory('UserModel', ['jpoModelBuilder', function(jpoModelBuilder) {
 		email: String,
 		role: String,
 		fullName: String,
-		isAdmin: Boolean,
-		isRoot: Boolean,
-		canWrite: Boolean,
-		permissions: [ String ],
+		isAdmin: Boolean, // TODO Remove this later
+		isRoot: Boolean, // TODO Remove this later
+		canWrite: Boolean, // TODO Remove this later
+		permissions: {
+			canWrite: Boolean,
+			isAdmin: Boolean,
+			isRoot: Boolean,
+			allowedPaths: [ String ],
+			links: [{ href: String, rel: String }]
+		},
 		links: [{ href: String, rel: String }],
 		methods: { }
 	};
 
-	return jpoModelBuilder.model('Users', userSchema);
+	return jpoModelBuilder.model('users', userSchema);
 }]);

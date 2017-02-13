@@ -3,11 +3,14 @@
 var mongoose = require('mongoose'),
 	Schema = mongoose.Schema;
 
-var _plRoutes;
+var _userPermissionsRoutes;
 
 var userPermissionsSchema = new Schema({
-	userId: { type: Schema.Types.ObjectId, ref: 'User' },
-	allowedPath: [ String ],
+	//userId: { type: Schema.Types.ObjectId, ref: 'User' },
+	canWrite: Boolean,
+	isAdmin: Boolean,
+	isRoot: Boolean, // TODO This one must be read only
+	//allowedPath: [ String ],
 	allowedPaths: [ String ]
 });
 
@@ -26,24 +29,12 @@ userPermissionsSchema.methods.toJSON = function() {
 };
 userPermissionsSchema.virtual('links').get(function() {
 	return [{
-		rel: 'self',
-		href: _plRoutes.selfPath
-			.replace(':userId', this.id)
-			.replace(':userPermissionId', this.id)
-	}, {
 		rel: 'update',
-		href: _plRoutes.updatePath
-			.replace(':userId', this.id)
-			.replace(':userPermissionId', this.id)
-	}, {
-		rel: 'remove',
-		href: _plRoutes.deletePath
-			.replace(':userId', this.id)
-			.replace(':userPermissionId', this.id)
+		href: _userPermissionsRoutes.updatePath.replace(':userId', this.id)
 	}];
 });
 
-module.exports = function(plRoutes){
-	_plRoutes = plRoutes;
+module.exports = function(userPermissionsRoutes){
+	_userPermissionsRoutes = userPermissionsRoutes;
 	return mongoose.model('UserPermission', userPermissionsSchema);
 };

@@ -140,8 +140,8 @@ jpoApp.factory('Model', ['serviceFactory', function(serviceFactory) {
 		if (!Array.isArray(array)) {
 			throw 'Not array';
 		}
-		_.forEach(array, function (fav) {
-			this.validateSchema(fav, schema);
+		_.forEach(array, function (entity) {
+			this.validateSchema(entity, schema);
 		}, this);
 	};
 
@@ -163,7 +163,10 @@ jpoApp.factory('Model', ['serviceFactory', function(serviceFactory) {
 						if (Array.isArray(type)) { // If schema prop. is array, drill down
 							this.validateArray(value, _.first(type));
 							continue;
-						} else {
+						} else if (angular.isObject(value)) {
+							this.validateSchema(value, type);
+							continue;
+						} else { // Neither array nor object, so native type
 							if (typeof value === getFunctionName(type)) {
 								continue; // Ok, there's a match, we both found the key and type is correct.
 							} else {
