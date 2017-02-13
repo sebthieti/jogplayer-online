@@ -37,8 +37,17 @@
 							<input id="can-write-edit" name="canWrite" type="checkbox" ng-model="userVm.model.permissions.canWrite">
 
 							<ul>
-								<li ng-repeat="allowedPath in userVm.model.permissions.allowedPaths">
+								<li ng-repeat="allowedPath in userVm.model.permissions.allowPaths" ng-show="canShowAddAllowedPathArea">
 									<input type="text" ng-model="allowedPath">
+								</li>
+								<li>
+									<div ng-show="canShowAddAllowedPathArea">
+										<button class="" ng-click="beginAddAllowedPath()">+ Path</button>
+									</div>
+									<div ng-hide="canShowAddAllowedPathArea">
+										<input type="text" ng-model="allowedPath">
+										<button class="icon-arrow-left" ng-click="endAddAllowedPath(userVm)"></button>
+									</div>
 								</li>
 							</ul>
 
@@ -63,34 +72,34 @@
 							<table>
 								<tr>
 									<td>
-										<input placeholder="Username" name="username" type="text" ng-model="newUser.username">
+										<input placeholder="Username" name="username" type="text" ng-model="newUserVm.model.username">
 									</td>
 								</tr>
 								<tr>
 									<td>
-										<input placeholder="Password" name="password" type="password" ng-model="newUser.password">
+										<input placeholder="Password" name="password" type="password" ng-model="newUserVm.model.password">
 									</td>
 								</tr>
 								<tr>
 									<td>
-										<input placeholder="Full Name" name="fullName" type="text" ng-model="newUser.fullName">
+										<input placeholder="Full Name" name="fullName" type="text" ng-model="newUserVm.model.fullName">
 									</td>
 								</tr>
 								<tr>
 									<td>
-										<input placeholder="Email" name="email" type="email" ng-model="newUser.email">
+										<input placeholder="Email" name="email" type="email" ng-model="newUserVm.model.email">
 									</td>
 								</tr>
 								<tr>
 									<td>
 										<label for="is-admin">Is Admin</label>
-										<input id="is-admin" name="isAdmin" type="checkbox" ng-model="newUser.permissions.isAdmin">
+										<input id="is-admin" name="isAdmin" type="checkbox" ng-model="newUserVm.model.permissions.isAdmin">
 									</td>
 								</tr>
 								<tr>
 									<td>
 										<label for="can-write">Can Write</label>
-										<input id="can-write" name="canWrite" type="checkbox" ng-model="newUser.permissions.canWrite">
+										<input id="can-write" name="canWrite" type="checkbox" ng-model="newUserVm.model.permissions.canWrite">
 									</td>
 								</tr>
 								<tr>
@@ -99,6 +108,27 @@
 									</td>
 								</tr>
 							</table>
+							<ul>
+								<li ng-repeat="allowPath in newUserVm.model.permissions.allowPaths">
+									<input type="text" ng-model="allowPath.path">
+								</li>
+								<li>
+									<div>
+										<button type="button" ng-click="addAllowedPathToNewUser(newUserVm)">+ Allow Path</button>
+									</div>
+								</li>
+							</ul>
+							<ul>
+								<li ng-repeat="denyPath in newUserVm.model.permissions.denyPaths">
+									<input type="text" ng-model="denyPath.path">
+								</li>
+								<li>
+									<div>
+										<button type="button" ng-click="addDenyPathToNewUser(newUserVm)">+ Deny Path</button>
+									</div>
+								</li>
+							</ul>
+							<input placeholder="HomePath" type="text" ng-model="newUserVm.model.permissions.homePath">
 						</form>
 					</div>
 				</div>

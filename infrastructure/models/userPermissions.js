@@ -10,8 +10,9 @@ var userPermissionsSchema = new Schema({
 	canWrite: Boolean,
 	isAdmin: Boolean,
 	isRoot: Boolean, // TODO This one must be read only
-	//allowedPath: [ String ],
-	allowedPaths: [ String ]
+	allowPaths: [ String ],
+	denyPaths: [ String ],
+	homePath: String
 });
 
 userPermissionsSchema.set('toJSON', { virtuals: true });

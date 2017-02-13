@@ -5,6 +5,7 @@ jpoApp.factory('UserModel', ['jpoModelBuilder', function(jpoModelBuilder) {
 		id: String, // TODO Import ObjectId ?
 		username: String,
 		email: String,
+		password: String,
 		role: String,
 		fullName: String,
 		isAdmin: Boolean, // TODO Remove this later
@@ -14,7 +15,10 @@ jpoApp.factory('UserModel', ['jpoModelBuilder', function(jpoModelBuilder) {
 			canWrite: Boolean,
 			isAdmin: Boolean,
 			isRoot: Boolean,
-			allowedPaths: [ String ],
+			allowPaths: [ String ],
+			allowedPaths: [ String ], // TODO To be removed
+			denyPaths: [ String ],
+			homePath: String,
 			links: [{ href: String, rel: String }]
 		},
 		links: [{ href: String, rel: String }],

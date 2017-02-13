@@ -1,7 +1,8 @@
 'use strict';
 
 var Q = require('q'),
-	Dto = require('./dto');
+	Dto = require('./dto'),
+	UserPermissionsDto = require('./userPermissionsDto');
 
 var assertDefinedObj = function(obj) {
 	if (obj === undefined) {
@@ -9,14 +10,15 @@ var assertDefinedObj = function(obj) {
 	}
 };
 
-var UserDto = function (id, username, fullName, email, password, isAdmin, canWrite) {
+var UserDto = function (id, isActive, username, fullName, email, password, isAdmin, canWrite, allowPaths, denyPaths, homePath) {
 	this.id = id;
+	this.isActive = isActive;
 	this.username = username;
 	this.fullName = fullName;
 	this.email = email;
 	this.password = password;
-	this.isAdmin = isAdmin;
-	this.canWrite = canWrite;
+
+	this.permissions = new UserPermissionsDto(isAdmin, canWrite, allowPaths, denyPaths, homePath);
 };
 
 UserDto.prototype = Object.create(Dto.prototype);
@@ -27,12 +29,16 @@ UserDto.toDto = function (obj, userId) {
 
 	return new UserDto(
 		userId || obj.id,
+		obj.isActive,
 		obj.username,
 		obj.fullName,
 		obj.email,
 		obj.password,
-		obj.isAdmin,
-		obj.canWrite
+		obj.permissions.isAdmin,
+		obj.permissions.canWrite,
+		obj.permissions.allowPaths,
+		obj.permissions.denyPaths,
+		obj.permissions.homePath
 	);
 };
 

@@ -9,20 +9,26 @@ var assertDefinedObj = function(obj) {
 	}
 };
 
-function UserPermissionsDto(userId, allowedPaths) {
-	this.userId = userId;
-	this.allowedPaths = allowedPaths;
+function UserPermissionsDto(isAdmin, canWrite, allowPaths, denyPaths, homePath) {
+	this.isAdmin = isAdmin;
+	this.canWrite = canWrite;
+	this.allowPaths = allowPaths;
+	this.denyPaths = denyPaths;
+	this.homePath = homePath;
 }
 
 UserPermissionsDto.prototype = Object.create(Dto.prototype);
 UserPermissionsDto.prototype.constructor = Dto;
 
-UserPermissionsDto.toDto = function (obj, userId) {
+UserPermissionsDto.toDto = function (obj) {
 	assertDefinedObj(obj); // TODO Should check for types/size
 
 	return new UserPermissionsDto(
-		userId || obj.userId,
-		obj.allowedPaths
+		obj.isAdmin,
+		obj.canWrite,
+		obj.allowPaths,
+		obj.denyPaths,
+		obj.homePath
 	);
 };
 

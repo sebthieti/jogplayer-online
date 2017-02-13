@@ -1,12 +1,15 @@
 'use strict';
 
 var Models = require('../models'),
-	utils = require('../utils');
+	utils = require('../utils'),
+	hasher = require('../utils/hasher');
 
 var _userSaveService,
+	_userPermissionsDirector,
 	_userPermissionsSaveService;
 
-function UserDirector (userSaveService, userPermissionsSaveService) {
+function UserDirector (userPermissionsDirector, userSaveService, userPermissionsSaveService) {
+	_userPermissionsDirector = userPermissionsDirector;
 	_userSaveService = userSaveService;
 	_userPermissionsSaveService = userPermissionsSaveService;
 }
@@ -18,11 +21,23 @@ UserDirector.prototype.getUsersAsync = function(owner) {
 	return _userSaveService.getUsersAsync();
 };
 
-UserDirector.prototype.addUserAsync = function(user, owner) {
+UserDirector.prototype.addUserAsync = function(userDto, owner) {
 	if (!owner.permissions.isRoot || !owner.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
 		throw 'Not authorized no manage users.';
 	}
-	return _userSaveService.addUserAsync(user, owner);
+	// Generate password salt
+	var passwordSalt = hasher.createSalt();
+	var hashedPassword = hasher.computeHash(userDto.password, passwordSalt);
+
+	// TODO userDto s/not be altered
+	userDto.passwordSalt = passwordSalt;
+	userDto.password = hashedPassword; // TODO Rename in model to hashedPassword
+
+	return _userPermissionsDirector //_userPermissionsSaveService
+		.addUserPermissionsAsync(userDto.permissions, owner)
+		.then(function(userPermissionsModel) {
+			return _userSaveService.addUserAsync(userDto, userPermissionsModel, owner);
+		});
 };
 
 UserDirector.prototype.addUserPermissionsAsync = function(userId, allowedPaths, owner) {

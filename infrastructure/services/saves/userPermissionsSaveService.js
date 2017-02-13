@@ -34,24 +34,24 @@ UserPermissionsSaveService.prototype.getUserPermissionsAsync = function(userId) 
 	return defer.promise;
 };
 
-UserPermissionsSaveService.prototype.addUserPermissionsAsync = function (userPermissions) {
-	if (!userPermissions) {
-		throw "UserPermissionsSaveService.addUserPermissionsAsync: userPermissions must be set";
-	}
-
-	var defer = Q.defer();
-
-	var userPermissionsFields = userPermissions.getDefinedFields();
-
-	UserPermissions.create(
-		userPermissionsFields,
-		function(err, newUserPermissions) {
-			if (err) { defer.reject(err) }
-			else { defer.resolve(newUserPermissions) }
-		});
-
-	return defer.promise;
-};
+//UserPermissionsSaveService.prototype.addUserPermissionsAsync = function (userPermissions) {
+//	if (!userPermissions) {
+//		throw "UserPermissionsSaveService.addUserPermissionsAsync: userPermissions must be set";
+//	}
+//
+//	var defer = Q.defer();
+//
+//	var userPermissionsFields = userPermissions.getDefinedFields();
+//
+//	UserPermissions.create(
+//		userPermissionsFields,
+//		function(err, newUserPermissions) {
+//			if (err) { defer.reject(err) }
+//			else { defer.resolve(newUserPermissions) }
+//		});
+//
+//	return defer.promise;
+//};
 
 UserPermissionsSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, owner) {
 	if (!userDto) {

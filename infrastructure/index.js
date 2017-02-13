@@ -69,14 +69,14 @@ function registerBusinesses() {
 	container.register('authDirector', function (userSaveService) {
 		return new Business.AuthDirector (userSaveService);
 	});
-	container.register('userDirector', function (userSaveService, userPermissionsSaveService) {
-		return new Business.UserDirector (userSaveService, userPermissionsSaveService);
+	container.register('userDirector', function (userPermissionsDirector, userSaveService, userPermissionsSaveService) {
+		return new Business.UserDirector (userPermissionsDirector, userSaveService, userPermissionsSaveService);
 	});
 	container.register('userStateDirector', function (userStateSaveService) {
 		return new Business.UserStateDirector (userStateSaveService);
 	});
-	container.register('userPermissionsDirector', function () {
-		return new Business.UserPermissionsDirector ();
+	container.register('userPermissionsDirector', function (userSaveService, Models) {
+		return new Business.UserPermissionsDirector (userSaveService, Models.UserPermissions);
 	});
 }
 

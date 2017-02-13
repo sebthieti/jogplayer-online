@@ -49,26 +49,32 @@ UserSaveService.prototype.getUserByUsernameAsync = function(username) {
 	return defer.promise;
 };
 
-UserSaveService.prototype.addUserAsync = function (user, owner) {
-	if (!user) {
+UserSaveService.prototype.addUserAsync = function (userDto, userPermissionsModel, owner) {
+	if (!userDto) {
 		throw "UserStateSaveService.addUserAsync: favorite must be set";
 	}
 	if (!owner) {
 		throw "UserStateSaveService.addUserAsync: owner must be set";
 	}
-	if (user._id) {
+	if (userDto._id) {
 		throw "UserStateSaveService.addUserAsync: user.Id should not be set";
 	}
 
 	var defer = Q.defer();
 
-	var userFields = user.getDefinedFields();
+	var userFields = userDto.getDefinedFields();
 
 	User.create(
 		userFields,
 		function(err, newUser) {
 			if (err) { defer.reject(err) }
-			else { defer.resolve(newUser) }
+			else {
+				newUser.permissions = userPermissionsModel;
+				newUser.save(function(writeError) {
+					if (writeError) { defer.reject(writeError) }
+					else { defer.resolve(newUser) }
+				});
+			}
 		});
 
 	return defer.promise;

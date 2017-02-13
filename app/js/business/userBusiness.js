@@ -13,13 +13,13 @@ jpoApp.factory('userBusiness', ['$q', 'UserModel', 'authBusiness', function($q, 
 
 	}
 
-	function addUserAsync(user) {
+	function addUserAsync(userViewModel) {
 		var deferred = $q.defer();
 
 		observeUsers().getValueAsync(function(users) {
 			//var userEntity = UserModel.createEntity(user);
 			UserModel
-				.addAsync(user)
+				.addAsync(userViewModel.model)
 				.then(function (newUser) {
 					deferred.resolve(newUser);
 					users = users.concat(newUser);

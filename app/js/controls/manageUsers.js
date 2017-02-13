@@ -11,20 +11,84 @@ jpoApp.directive("manageUsers", [
 		controller: function($scope) {
 			var _currentIndexEdited = -1;
 
-			$scope.newUser = null;
+			$scope.newUserVm = null;
 			$scope.canShowAddUserArea = false;
+			$scope.canShowAddAllowedPathArea = true;
 
 			$scope.beginAddUser = function() {
-				$scope.newUser = {};
+				$scope.newUserVm = viewModelBuilder.buildEditableViewModel({
+					isActive: true,
+					fullName: '',
+					username: '',
+					password: '',
+					email: '',
+					permissions: {
+						isAdmin: false,
+						canWrite: false,
+						allowPaths: [],
+						denyPaths: [],
+						homePath: ''
+					}
+				});
 				$scope.canShowAddUserArea = true;
 			};
 
-			$scope.submitNewUser = function() {
+			$scope.beginAddAllowedPath = function() {
+				$scope.newAllowedPath = {};
+				//$scope.canShowAddAllowedPathArea = true;
+			};
+
+			$scope.addAllowedPathToNewUser = function() {
+				$scope.newUserVm.model.permissions.allowPaths.push({ path: '' });
+				//$scope.newAllowedPath = {};
+				//$scope.canShowAddUserArea = true;
+			};
+
+			$scope.addDenyPathToNewUser = function() {
+				$scope.newUserVm.model.permissions.denyPaths.push({ path: '' });
+				//$scope.newAllowedPath = {};
+				//$scope.canShowAddUserArea = true;
+			};
+
+
+
+			//$scope.endAddAllowedPath = function(userVm) {
+			//	userVm.model.permissions.allowPaths.push($scope.newAllowedPath);
+			//	userBusiness
+			//		.updateUserAsync(userVm.model)
+			//		.then(function() {
+			//			//$scope.newUser = null;
+			//		});
+			//};
+
+			$scope.endAddAllowedPathNewUser = function(userVm) {
+				userVm.model.permissions.allowPaths.push($scope.newAllowedPath);
 				userBusiness
-					.addUserAsync($scope.newUser)
+					.updateUserAsync(userVm.model)
 					.then(function() {
-						$scope.newUser = null;
+						//$scope.newUser = null;
+						$scope.canShowAddUserArea = false;
 					});
+			};
+
+			$scope.submitNewUser = function() {
+				$scope.newUserVm.model.permissions.allowPaths = $scope.newUserVm.model.permissions.allowPaths.map(function(x) {
+					return x.path;
+				});
+				$scope.newUserVm.model.permissions.denyPaths = $scope.newUserVm.model.permissions.denyPaths.map(function(x) {
+					return x.path;
+				});
+
+				userBusiness
+					.addUserAsync($scope.newUserVm)
+					.then(function() {
+						$scope.newUserVm = null;
+					});
+			};
+
+			$scope.cancelAddAllowedPath = function() {
+				$scope.newAllowedPath = null;
+				//$scope.canShowAddAllowedPathArea = false;
 			};
 
 			$scope.cancelAddUser = function() {
