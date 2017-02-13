@@ -6,6 +6,7 @@
     "start": "node app.js"
   },
   "dependencies": {
+    "config": "^1.2.4",
     "dependable": "^0.2.5",
     "express": "3.4.8",
     "fromjs": "^2.1.7-1",
@@ -20,6 +21,7 @@
     "playlist-parser": "0.0.8",
     "q": "^1.0.1",
     "socket.io": "^0.9.17",
+    "underscore": "^1.7.0",
     "vash": "^0.7.12-1",
     "xmldom": "^0.1.19"
   },

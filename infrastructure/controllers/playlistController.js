@@ -4,10 +4,14 @@ var playlistValidation = require('../validators').playlistValidation;
 
 var _app,
 	_playlistDirector,
-	_playlistsDirector;
+	_playlistsDirector,
+	_plRoutes,
+	_mediaRoutes;
 
-function PlaylistController (app, playlistDirector, playlistsDirector) {
+function PlaylistController (app, plRoutes, mediaRoutes, playlistDirector, playlistsDirector) {
 	_app = app;
+	_plRoutes = plRoutes;
+	_mediaRoutes = mediaRoutes;
 	_playlistDirector = playlistDirector;
 	_playlistsDirector = playlistsDirector;
 }
@@ -18,7 +22,7 @@ PlaylistController.prototype.init = function() {
 };
 
 var registerPlaylistRoutes = function () {
-	_app.get('/api/playlists/', function(req, res) {
+	_app.get(_plRoutes.getPath, function(req, res) {
 		_playlistsDirector
 			.getPlaylistsAsync()
 			.then(function(data) { res.send(data) })
@@ -26,7 +30,7 @@ var registerPlaylistRoutes = function () {
 			.done();
 	});
 
-	_app.put('/api/actions/playlists/move/', function(req, res) {
+	_app.put(_plRoutes.actions.movePath, function(req, res) {
 		var playlistIds = req.body.ids;
 		var steps = req.body.steps;
 
@@ -42,7 +46,7 @@ var registerPlaylistRoutes = function () {
 			.done();
 	});
 
-	_app.put('/api/playlists/:playlistId', function(req, res) {
+	_app.put(_plRoutes.updatePath, function(req, res) {
 		var playlistId = req.params.playlistId;
 
 //			if (!playlistId || !steps) {
@@ -57,8 +61,7 @@ var registerPlaylistRoutes = function () {
 			.done();
 	});
 
-
-	_app.post('/api/playlists/', function(req, res) {
+	_app.post(_plRoutes.insertPath, function(req, res) {
 		var playlist = req.body;
 		if (!playlistValidation.isValidDto(playlist)) { // TODO makeConform
 			res.send(400, "Playlist object doesn't have all mandatory fields.");
@@ -80,7 +83,7 @@ var registerPlaylistRoutes = function () {
 		}
 	});
 
-	_app.delete(/^\/api\/playlists\/(\w+)?$/, function(req, res) {
+	_app.delete(_plRoutes.delete.pattern, function(req, res) {
 		var playlistIds = null;
 		if (req.params.length > 0) {
 			playlistIds = [ req.params[0] ];
@@ -102,7 +105,7 @@ var registerPlaylistRoutes = function () {
 };
 
 var registerPlaylistMediaRoutes = function () {
-	_app.get('/api/playlists/:playlistId', function(req, res) {
+	_app.get(_plRoutes.listMedia, function(req, res) {
 		_playlistDirector
 			.getMediaFromPlaylistByIdAsync(req.params.playlistId)
 			.then(function(data) { res.send(data) })
@@ -110,7 +113,7 @@ var registerPlaylistMediaRoutes = function () {
 			.done();
 	});
 
-	_app.post('/api/playlists/:playlistId/media/', function(req, res) {
+	_app.post(_mediaRoutes.insertPath, function(req, res) {
 //			if (!playlistValidation.isValidDto(playlist)) { // TODO makeConform
 //				res.send(400, "Playlist object doesn't have all mandatory fields.");
 //				return;
@@ -137,11 +140,11 @@ var registerPlaylistMediaRoutes = function () {
 		}
 	});
 
-	_app.put('/api/playlists/:playlistId/media/:mediaId', function(req, res) {
+	_app.put(_mediaRoutes.updatePath, function(req, res) {
 
 	});
 
-	_app.delete('/api/playlists/:playlistId/media/:mediaId', function(req, res) {
+	_app.delete(_mediaRoutes.deletePath, function(req, res) {
 		var playlistId = req.params.playlistId;
 		var mediaId = req.params.mediaId;
 

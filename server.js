@@ -16,7 +16,7 @@ app.use(express.json());
 app.use(express.static(path.join(process.cwd(), 'app')));
 
 var server = http.createServer(app);
-var io = socketio.listen(server);
+var io = null;//socketio.listen(server);
 
 infrastructure.init(app, io);
 

@@ -1,359 +1,132 @@
-html, body {
-    margin: 0;
-    height: 95%;
-    background-color: /*#4E4E4E*/#333333;
-}
-#main-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    margin: 5px 10px;
-}
-#middle-container {
-    display: flex;
-    flex-grow: 1;
-    max-height: 700px;
-}
-/* http://css-tricks.com/equidistant-objects-with-css/ */
-#manager {
-    display: flex;
-    justify-content: space-around;
-    height: 40px;
-}
-.button {
-    border-radius: 50%;
-    border: 2px solid #fff;
-    color: #fff;
-    display: inline-block;
-    text-align: center;
-    cursor: pointer;
-}
-#playlist-manager .button {
-    display: block;
-}
-.button.medium {
-    width: 30px;
-    height: 30px;
-    line-height: 30px;
-}
-.button.small {
-    width: 20px;
-    height: 20px;
-    line-height: 20px;
-}
-#manager span:hover {
-    background-color:#3D8821;
-}
-#manager img{
-    margin-top: 8px;
-    margin-left: 1px;
-}
-#play-pause {
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    border: 2px solid #fff;
-    display: inline-block;
-    text-align: center;
-    line-height: 60px;
-    color: #fff;
-}
-#play-control {
-    width: 140px;
-}
-#previous, #next {
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    border: 2px solid #fff;
-    display: inline-block;
-    text-align: center;
-    line-height: 30px;
-    color: #fff;
-    vertical-align: super;
-}
-#previous img, #next img{
-    margin-top: 4px;
-}
-#previous:hover, #next:hover {
-    background-color:#3D8821;
-}
-#play-pause:hover {
-    background-color:#3D8821;
-}
-#play-pause img{
-    margin-top: 9px;
-    margin-left: 8px;
-}
+@import url(http://fonts.googleapis.com/css?family=Lato);
+*{-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}
+*{font-family:'Lato',sans-serif;}
+html,body{background-color:#f1f1f1}
+.hidden{display:none}
+#main-container{margin:0 auto;width:900px}
 
-#play-pause img.pause {
-    background-image: url(svg/pause.svg);
-}
+/* TODO Should I set a kind of rule (CSS name) */
+ul{padding:0;margin:0;list-style:none}
+.disabled{opacity:.1}
+.btn-enabled{cursor:pointer}
+.btn-rounded{border:2px solid #000;border-radius:50%}
+.btn-small{font-size:.75em}
+.btn-large{font-size:1.5em}
+.btn-larger{font-size:2em}
+.selected{background-color:#959595 !important}
+#add-playlist-virtual,#add-playlist-phys{font-size:1.2em;line-height:15px;font-weight:bold;line-height:15px;margin:0 3px}
 
-#playlists-container, #media-container, #file-explorer {
-    background-color: #cbcbcb;
-    margin-right: 10px;
-}
-#right-section {
-    margin-right: 10px;
-}
+/* Audio control */
+#audioPlayer{display:none}
+#audio-player{display:table;min-width:300px;max-width:570px;padding:10px;border-radius:5px;background-color:#8b8b8b}
+#audio-player>div{display:table-row}
+#audio-player>div>div{display:table-cell}
+#audio-player>div>div>span,#audio-player>div>div>div{vertical-align:middle;line-height:24px}
+#previous-container{width:14px}
+#play-container{width:24px}
+#next-container{width:14px}
+#elapsed-time-container{width:50px}
+#elapsed-time{margin: 0 13px 0 11px}
+#remaining-time-container{width:50px}
+#remaining-time{margin:0 11px 0 13px}
+#btnPlay{margin:0 4px}
+#timeline{display:inline-block;position:relative;height:6px;border:1px solid whitesmoke;width:200px}
+#timeline-container{margin-left:10px}
+.time{font-weight:bold}
+#volume-container{}
+#volume-bar{display:inline-block;vertical-align:middle;width:84px;height:10px;border:1px solid #fff;margin-right:5px}
+#cursor{border-radius:50%;width:10px;height:10px;border:5px solid #fff;left:0;position:absolute;background-color:#acacac;margin-left:-9px;margin-top:-8px}
+#loaded-chunks{background-color:whitesmoke;height:6px;width:0;position:absolute}
+#volume-level{background-color:whitesmoke;height:100%;width:0}
+#command-bar{margin-top:10px;margin-left:20%}
 
-#favorites-container {
-    margin-top: 10px;
-    background-color: #cbcbcb;
-    overflow-y: auto;
-    height: 140px;
-}
-#favorites {
-    margin: 0;
-    padding: 0;
-}
-.playlist-explorer {
-    display: inherit;
-    width: 40%;
-}
-#playlists-container {
-    width: 40%;
-    overflow-y: auto;
-}
-#media-container {
-    width: 55%;
-}
-#file-explorer, #right-section {
-    flex-grow: 1;
+/* BEGIN Layout main sections */
 
-}
-#file-explorer, #media-container {
-    margin-top: 10px;
-    height: 430px;
-    overflow-y: auto;
-}
-#file-explorer-commands {
-    display: flex;
-    flex-direction: column;
-}
-#explorer>ul {
-    margin:0;
-    padding: 0;
-}
-#playlists-container ul, #media-container ul, #file-explorer ul, #favorites {
-    list-style-type: none;
-    padding: 0;
+.clear{clear:both}
+#middle-container{margin-top:10px}
+#middle-container:after{content:'';clear:both;display:block}
+#playlist-manager{display:none}
+#playlist-browser{margin-top:5px}
+#playlist-explorer{width:45%;float:left}
+#file-explorer-commands{float:left;padding:40px 6px 0 6px}
+#file-explorer-commands span{display:block;margin-top:10px}
+#right-section{float:left;margin-top:22px;width:45%}
 
-}
-* {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-#playlists-container li:nth-child(odd), #media-container li:nth-child(odd) {
-    background-color: #8BE2FF;
-}
-#playlists-container li:nth-child(even), #media-container li:nth-child(even), #file-explorer li:nth-child(even), #favorites li:nth-child(even) {
-    background-color: #fff5d6;
-}
-#file-explorer .up {
-    background-color: #ff987b;
-}
-.up span {
-    margin-left: 15px;
-    line-height: 30px;
-    vertical-align: middle;
-}
-#playlists-container li:hover, #file-explorer li:hover, #favorites li:hover {
-    background-color: #de9b46;
-}
-#playlists-container li, #media-container li, #file-explorer li, #favorites li {
-    cursor: pointer;
-    height: 35px;
-}
-.play {
-    cursor: pointer;
-    line-height: 35px;
-    font-size: 20px;
-    padding: 0 15px;
-    display: inline;
-}
-.play:hover {
-    outline: 1px solid green;
-    background-color: #f4f4f4;
-}
-.delete {
-    padding: 3px 7px;
-    background-color: red;
-}
-.rename {
-    padding: 3px 7px;
-    background-color: green;
-}
-.favName {
-    display: inline-block;
-    /*width: 150px;*/
-}
-.cancel {
-    background-color: bisque;
-    padding: 3px 8px;
-}
-#playlists-container li.selected, #media-container li.selected, #media-container li.current, #file-explorer li.selected {
-    background-color: #d6571c;
-}
-#command-bar {
-    height: 80px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-#breadcrumb-container {
-    overflow-x: auto;
-    background-color: #cbcbcb;
-    height: 30px;
-}
-#breadcrumb {
-    display: inline-flex;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-#breadcrumb ul {
-    padding: 0;
-    margin: 0;
-}
-#breadcrumb li {
-    margin: 0 7px;
-    cursor: pointer;
-    padding: 5px 10px;
-    background-color: #fff5d6;
-    display: inline-block;
-}
-#breadcrumb li:after {
-    /*content: '>';*/
-}
-#exploreFileSystem {
-    background-color: #ffffff;
-}
-#exploreFileSystem img{
-    width: 30px;
-    height: 30px;
+/* END Layout main sections */
 
-}
-#queue ul {
-    list-style: none;
-}
-#queue {
-    display: inline-flex;
-    margin: 0;
-    padding: 0;
-}
-#queue-container {
-    overflow-x: auto;
-    display: inline-flex;
+#media-container{height:557px;overflow-y:auto;border:2px solid #b0b0b0;position:relative}
+#media-container li{height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#media-container li:nth-child(odd){background-color:#fbfbfb}
+#media-container li:nth-child(even){background-color:#e3e3e3}
+#media-container li.selected{background-color:#959595}
+#media-container li.current{background-color:#959595}
+#media-container span.title{width:74%;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.duration{width:57px;text-align:right;display:inline-block}
+file-explorer>div{position:relative}
+#file-explorer-overlay{width:100%;height:100%;position:absolute;opacity:0.15;text-align:center}
+#start-browse-icon{font-size:18em;display:block;padding-top:.11em}
+#start-browse-caption{font-size:1.75em}
 
+/* TODO Width: Try with 100% */
+#playlists-container{overflow-x:auto;/*width:280px;*/font-size:.8em}
+#playlists-container li{padding:5px;height:20px;display:inline-block;background-color:#b0b0b0;position:relative;margin-top:18px}
+#playlists-container input{min-width:50px;max-width:70px;margin:0;padding:0;height:12px}
+#playlists-container li:hover{background-color:#8e8e8e}
+#playlists-container li.pl{min-width:30px;margin-right:2px}
+#playlists-container li.selected{background-color: #7d7d7d}
+#playlists-container li:hover>.tab-tools{display:block}
+.rename{padding:1px;border-radius:3px}
+.rename:hover{background-color:#c1c1c1}
+.remove{padding:3px;border-radius:3px;font-size:.8em}
+.remove:hover{background-color:#c1c1c1}
+.delete{padding:3px;border-radius:3px}
+.delete:hover{background-color:#c1c1c1}
+.cancel{font-size:.8em;padding:3px;border-radius:3px}
+.cancel:hover{background-color:#c1c1c1}
+.playFolder{padding:2px;border-radius:5px;border:3px solid #d0d0d0;background-color:#cdcdcd;vertical-align:middle}
+.playFolder.active{border-color:#f4f4f4;background-color:#e8e8e8}
+.playFolder:hover{background-color:#ededed}
+.tab-tools{display:none;position:absolute;top:-19px;left:0;min-width:35px;background-color:#dbdbdb;border-radius:3px;padding:2px 0 0 1px}
+
+/* TODO Usefull ? */
+#breadcrumb{width:280px}
+/* TODO Width: Try with 100% */
+#breadcrumb-container{overflow-x:auto;width:100%;height:26px;font-size:.8em}
+#breadcrumb-container li{padding:3px 9px;display:inline-block;background-color:#b0b0b0;margin-right:5px;height:20px}
+#breadcrumb-container li:hover{background-color:#8e8e8e}
+#folder-up{background-color:#c5c5c5}
+#explorer>div{border:2px solid #b0b0b0}
+#playlistFinderValidation{background-color:white;padding:11px;display:inline-block;position:absolute;right:0;top:0}
+#playlistFinderValidation span{display:block}
+#playlistFinderValidation span{padding:1px;border-radius:3px}
+#playlistFinderValidation span:hover{background-color:#c1c1c1}
+
+#playlistFinderValidationCancel{margin-top:15px}
+#file-explorer-list{height:430px;overflow-y:auto}
+#file-explorer li{height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#file-explorer li:nth-child(odd){background-color:#fbfbfb}
+#file-explorer li:nth-child(even){background-color:#e3e3e3}
+.folder{font-size:.8em;margin-left:2px}
+#favorites-container{border:2px solid #b0b0b0;overflow-y:auto;height:113px}
+.favorite{font-size:.8em;margin-left:2px}
+#favorites li:nth-child(odd){background-color:#fbfbfb}
+#favorites li:nth-child(even){background-color:#e3e3e3}
+#favorites{
+    -webkit-animation: see_me .75s linear 0s infinite alternate;
+    -moz-animation: see_me .75s linear 0s infinite alternate;
+    -o-animation: see_me .75s linear 0s infinite alternate;
+    animation: see_me .75s linear 0s infinite alternate;
 }
-#queue li {
-    margin: 0 5px;
-    overflow-wrap: normal;
-    width: 100px;
-    display: inline-block ;
-    color: #404040;
-    cursor: pointer;
-    background-color: #fff5d6;
-}
-#queue li.active {
-    background-color: #d6571c;
-}
-#queue .remove {
-    background-color: #d15bd1;
-}
-#queue .error {
-    background-color: red;
-}
-#playlists-container .title, #media-container .title {
-    line-height: 30px;
-    vertical-align: middle;
-    min-width: 150px;
-    margin-left: 10px;
-    display: inline-block;
-}
-#volume-container {
-    margin: auto 0;
-}
-#volume-container > div{
-    display: inline-block;
-    vertical-align: middle;
-}
-#volume {
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    border: 2px solid #fff;
-    text-align: center;
-    line-height: 30px;
-    color: #fff;
-    vertical-align: super;
-}
-#volume:hover {
-    background-color:#3D8821;
-}
-#volume img {
-    margin-top: 5px;
-}
-#volume-bar {
-    width: 85px;
-    height: 10px;
-    border: 1px solid #ffffff;
-    cursor: pointer;
-}
-#volume-level {
-    background-color: whitesmoke;
-    height: 100%;
-    width: 0;
-}
-#timeline {
-    position: relative;
-    margin: auto 0;
-    width: 500px;
-}
-#timeline-bar {
-    height: 6px;
-    border: 1px solid whitesmoke;
-}
-#loaded-chunks {
-    background-color: whitesmoke;
-    height: 6px;
-    width: 0;
-    position: absolute;
-}
-#cursor {
-    border-radius: 50%;
-    width: 10px;
-    height: 10px;
-    border: 5px solid #ffffff;
-    left: 0;
-    position: absolute;
-    background-color: #acacac;
-    margin-left: -9px;
-    margin-top: -14px;
-}
-#audio-player {
-    margin: 0 auto;
-    /*width: 870px;
-    margin: 0;
-    height: 64px;*/
-    display: flex;
-}
-#elapsed-time, #remaining-time {
-    color: #ffffff;
-    line-height: 64px;
-    margin: 0 15px 0 10px;
-}
-#audioPlayer {
-    display: none;
-}
-#add-playlist {
-    background: inherit !important;
-    line-height: 30px;
-    border: 1px dashed gray;
-}
+@keyframes see_me{from{}to{}}
+
+#clear-queue{font-size:1.3em}
+#queue-container{width:100%;background-color:#dbdbdb;position:absolute;bottom:0;left:0}
+#queue-container-list{overflow-x:auto;width:100%}
+#queue{}
+#queue .remove,#queue .error{background-color:#e53636}
+#queue ul{list-style:none}
+#queue li{margin:0 5px;overflow:hidden;text-overflow:ellipsis;width:90px;height:90px;display:inline-block;color:#404040;background-color:#fff5d6}
+#queue li:nth-child(odd){background-color:#fbfbfb}
+#queue li:nth-child(even){background-color:#e3e3e3}
+#queue li.active{background-color:#959595}
+#file-explorer li:hover,#media-container li:hover,#favorites li:hover{background-color: #858585}

@@ -1,6 +1,6 @@
 'use strict';
 
-jpoApp.directive("fileExplorer", function ($window) {
+jpoApp.directive("fileExplorer", function ($window, $http, fileExplorerService, jpoProxy) {
 	return {
 		restrict: 'E', // To be used as element (HTML tag)
 		templateUrl: '/templates/controls/fileExplorer.html',
@@ -14,7 +14,16 @@ jpoApp.directive("fileExplorer", function ($window) {
 			selectionMode: '=',
 			mediaQueue: '='
 		},
-		controller: function($scope, $rootScope, fileExplorerService) {
+		controller: function($scope, $rootScope) {
+
+			var currentFolder;
+
+			// canExecuteFolderUp true when user initiate component which load file tree
+			$scope.canExecuteFolderUp = false;
+			$scope.isActive = false;
+
+			//$scope.isVisible = true;
+			//$scope.exploreWhenVisible = false;
 
 			$scope.$watch('mediaQueue.length', function(newValue) {
 				if (newValue) {
@@ -24,6 +33,17 @@ jpoApp.directive("fileExplorer", function ($window) {
 				}
 			});
 
+			this.setBehaviors = function() {
+
+			}
+
+			//$scope.$watch("isVisible", function(isVisible, oldValue) {
+			//	if ($scope.isVisible && $scope.isVisible == true && $scope.exploreWhenVisible && $scope.exploreWhenVisible == true) {
+			//		if (!currentFolder) {
+			//			startExplore();
+			//		}
+			//	}
+			//});
 
 			// TODO Should be put as constant in class
 			var rootPath = '/',
@@ -35,45 +55,91 @@ jpoApp.directive("fileExplorer", function ($window) {
 			var _lastSelectedFile,
 				_fileTree = [];
 
-			$rootScope.$on('exploreFileSystem', function(event) {
-				event.stopPropagation();
-				// Auto start
-				$scope.exploreFileSystem();
-			});
 
-			//$scope.selectedMediaUrl = null;
 			$scope.selectedFiles = [];
 			$scope.files = [];
 
-			$scope.$watch("desiredFolderPath", function(newValue, oldValue) {
-				if (newValue) { //&& newValue !== oldValue
-					loadAndUpdateCurrentWorkingDir(newValue, null);
-				}
+			//changeDirectory
+			$rootScope.$on('changeDirectoryByPhysPath', function(event, physPath) {
+				event.stopPropagation();
+				changeWorkingDirByPath(physPath, null);
 			});
 
+			$rootScope.$on('changeDirectoryByLink', function(event, link) {
+				event.stopPropagation();
+				changeWorkingDirByLink(link, null);
+			});
+			var filterFiles = function (files, filterFiles) {
+				return _.filter(files, function(file) {
+					return file.type === 'D' || file.name.endsWith(filterFiles); // TODO Should handle multi ext.
+				});
+			};
 			$scope.goUp = function() {
-				var upPath = generateUpDirPath();
-				fileExplorerService
-					.exploreFolder(upPath)
-					.then(function (files) {
+				var upPath = selectParentDirFromLinks(currentFolder.links);
+				$http.get(upPath)
+					.then(function(result) {
+						currentFolder = result.data;
+						var files = filterFiles(result.data.files, $scope.filterFiles);
+
+							//var files = currentFolder.files;
+						// TODO To Builder To VM -> To entity/data
+						_.each(files, function(file) {
+							buildViewModel(file);
+						});
+
 						setCurrentWorkingDirUp();
 						setCurrentFolderFiles(files);
-					}, function (err) {
-					}
-				);
+
+						var parentDirPath = selectParentDirFromLinks(currentFolder.links); // TODO Should be an object's method
+						var currentDirPath = selectSelfPhysicalFromLinks(currentFolder.links);// TODO Should be an object's method
+						$scope.currentDirPath = currentDirPath;
+						$scope.canExecuteFolderUp = angular.isDefined(parentDirPath); // TODO weird code because of path bug
+					});
+			};
+
+			var selectParentDirFromLinks = function(links) {
+				var link = _.find(links, function(link) {
+					return link.rel === 'parent';
+				});
+				if (link) {
+					return link.href;
+				}
+			};
+
+			var selectSelfFromLinks = function(links) {
+				return _.find(links, function(link) {
+					return link.rel === 'self';
+				}).href;
+			};
+
+			var selectSelfPhysicalFromLinks = function(links) {
+				var link = _.find(links, function(link) {
+					return link.rel === 'self.phys';
+				});
+				if (link) {
+					return link.href;
+				}
 			};
 
 			$scope.innerPlayMedia = function(file) {
-				$scope.playMedia({ file: file });
+				if ($scope.mediaQueueLength === 0) {
+					$scope.playMedia({ file: file });
+				} else {
+					$scope.enqueueMedia({ file: file });
+				}
 			};
 
-			$scope.innerEnqueueMedia = function(file) {
-				$scope.enqueueMedia({ file: file });
+			this.exploreFileSystem = function() {
+				startExplore();
+			};
+
+			this.updateScope = function(key, value) {
+				$scope[key] = value;
 			};
 
 			// To start file exploration.
 			$scope.exploreFileSystem = function() { // TODO Here may be filePath for start (ex. favorite)
-				loadAndUpdateCurrentWorkingDir(rootPath, rootPath);
+				startExplore();
 			};
 
 // BEGIN File selection system
@@ -81,13 +147,40 @@ jpoApp.directive("fileExplorer", function ($window) {
 			$scope.fileSelected = function(file) {
 				var isFolder = file.type === 'D';
 				if (isFolder) {
-					var newPath = generatePathToDir(file.name);
-					loadAndUpdateCurrentWorkingDir(newPath, file.name);
+					var dirPath = selectSelfFromLinks(file.links);
+					$http.get(dirPath)
+						.then(function(result) {
+							currentFolder = result.data;
+							var files = filterFiles(currentFolder.files, $scope.filterFiles);
+
+							// TODO To Builder To VM -> To entity/data
+							_.each(files, function(file) {
+								buildViewModel(file);
+							});
+
+							var parentDirPath = selectParentDirFromLinks(currentFolder.links); // TODO Should be an object's method
+							var currentPhysicalDirPath = selectSelfPhysicalFromLinks(currentFolder.links); // TODO Should be an object's method
+
+							setCurrentWorkingDir(currentPhysicalDirPath);
+							setCurrentFolderFiles(files);
+
+							$scope.canExecuteFolderUp = angular.isDefined(parentDirPath); // TODO weird code because of path bug
+							$scope.isActive = true;
+						});
+
 					// Reload folder mean we'll lose last file
 					_lastSelectedFile = null;
 				} else {
 					updateFileSelection(file);
 				}
+			};
+
+			$scope.isDirectory = function(file) {
+				return file.type === 'D'
+			};
+
+			$scope.isFile = function(file) {
+				return file.type === 'F'
 			};
 
 			var updateFileSelection = function (file) {
@@ -166,29 +259,63 @@ jpoApp.directive("fileExplorer", function ($window) {
 			};
 
 // END File selection system
-
-			var loadAndUpdateCurrentWorkingDir = function(dirPath, folderName) { // TODO ugly
+			var startExplore = function(){
 				fileExplorerService
-					.exploreFolder(dirPath)
-					.then(function (files) {
+					.startExplore()
+					.then(function(filesResult) {
+						currentFolder = filesResult;
+						var files = filterFiles(currentFolder.files, $scope.filterFiles);
 						// TODO To Builder To VM -> To entity/data
 						_.each(files, function(file) {
 							buildViewModel(file);
 						});
 
-						if (!folderName) {
-							var __ = dirPath.split('/');
-							var rest = _.rest(__, 1);
-							var last = _.first(rest, rest.length-1);
-							var folderNameFromDirPath = pathSeparator + last.join(pathSeparator) + pathSeparator;
+						$scope.currentDirPath = '/';
+						setCurrentFolderFiles(files);
 
-							//var folderNameFromDirPath = dirPath.substr(dirPath.lastIndexOf(pathSeparator));
-							setCurrentWorkingDir(folderNameFromDirPath);
-						} else {
-							setCurrentWorkingDir(folderName);
-						}
+						$scope.isActive = true;
+					});
+			};
+
+			var changeWorkingDirByPath = function(physPath) {
+				fileExplorerService
+					.exploreFolder(physPath)
+					.then(function (result) {
+						currentFolder = result.data;
+						var files = filterFiles(currentFolder.files, $scope.filterFiles);
+						// TODO To Builder To VM -> To entity/data
+						_.each(files, function(file) {
+							buildViewModel(file);
+						});
 
 						setCurrentFolderFiles(files);
+						var currentDirPath = selectSelfPhysicalFromLinks(currentFolder.links);
+						$scope.currentDirPath = currentDirPath;
+						var parentDirPath = selectParentDirFromLinks(currentFolder.links);
+						$scope.canExecuteFolderUp = angular.isDefined(parentDirPath); // TODO weird code because of path bug
+						$scope.isActive = true;
+					}, function (err) {
+					});
+			};
+
+			var changeWorkingDirByLink = function(link) { // dirPath, folderName // TODO ugly
+				var targetLink = link.href;
+
+				$http.get(targetLink)
+					.then(function (result) {
+						currentFolder = result.data;
+						var files = filterFiles(currentFolder.files, $scope.filterFiles);
+						// TODO To Builder To VM -> To entity/data
+						_.each(files, function(file) {
+							buildViewModel(file);
+						});
+
+						setCurrentFolderFiles(files);
+						var currentDirPath = selectSelfPhysicalFromLinks(currentFolder.links);
+						$scope.currentDirPath = currentDirPath;
+						var parentDirPath = selectParentDirFromLinks(currentFolder.links);
+						$scope.canExecuteFolderUp = angular.isDefined(parentDirPath); // TODO weird code because of path bug
+						$scope.isActive = true;
 					}, function (err) {
 					});
 			};
@@ -204,14 +331,16 @@ jpoApp.directive("fileExplorer", function ($window) {
 				} else { // No path, just one dir
 					enteringFolder(folderNameOrPath);
 				}
-				$scope.currentDirPath = getCurrentDirPath();
-				//$scope.folderTree = _fileTree;
+				setCurrentDirPath(getCurrentDirPath());
 			};
 
 			var setCurrentWorkingDirUp = function () {
 				exitingFolder();
-				$scope.currentDirPath = getCurrentDirPath();
-				//$scope.folderTree = _fileTree;
+				setCurrentDirPath(getCurrentDirPath());
+			};
+
+			var setCurrentDirPath = function(dirPath){
+				$scope.currentDirPath = dirPath;
 			};
 
 			var enteringFolder = function (folderName) {
@@ -231,38 +360,16 @@ jpoApp.directive("fileExplorer", function ($window) {
 				$scope.files = files;
 			};
 
-			var generatePathToDir = function (mediaPath) {
-				if (mediaPath === rootPath) {
-					return rootPath;
-				}
-				// Root will be added by join anyway.
-				var noRootDirPath = _.rest(_fileTree, 1);
-				var noRootDirPathLength = noRootDirPath.length;
-				if (noRootDirPathLength === 1) {
-					return pathSeparator + noRootDirPath[0] + pathSeparator + mediaPath + pathSeparator;
-				} else if (noRootDirPathLength > 1) {
-					return pathSeparator + noRootDirPath.join(pathSeparator) + pathSeparator + mediaPath + pathSeparator;
-				} else {
-					return pathSeparator + mediaPath + pathSeparator;
-				}
-			};
-
-			var generateUpDirPath = function() {
-				var noRootDirPath = _.rest(_fileTree, 1);
-				if (noRootDirPath.length === 1) {
-					return rootPath;
-				} else {
-					var upDirPath = _.first(noRootDirPath, noRootDirPath.length - 1);
-					return pathSeparator + upDirPath.join(pathSeparator) + pathSeparator;
-				}
-			};
-
 			var getCurrentDirPath = function () {
 				var noRootDirPath = _.rest(_fileTree, 1);
 				if (noRootDirPath.length === 1) {
 					return pathSeparator + noRootDirPath[0] + pathSeparator;
 				} else {
-					return pathSeparator + noRootDirPath.join(pathSeparator) + '/';
+					var path = pathSeparator + _.filter(noRootDirPath, function(dir) {return dir != ''}).join(pathSeparator);
+					if (!path.endsWith('/')) {
+						path += '/';
+					}
+					return path;
 				}
 			};
 		},
@@ -311,4 +418,42 @@ jpoApp.directive("fileExplorer", function ($window) {
 			updateSelectionMode(_currentMode);
 		}
 	};
+}).directive('isVisible', function() {
+	return {
+		restrict: 'A',
+		require: 'fileExplorer',
+		link: function(scope, jqElement, attr, controller) {
+			scope.$watch(attr.isVisible, function (newValue, oldValue){
+				scope.isVisible = newValue;
+				if (newValue === true) {
+					jqElement[0].classList.remove('ng-hide');
+					if (scope.exploreWhenVisible === true) {
+						controller.exploreFileSystem();
+					}
+				} else {
+					jqElement[0].classList.add('ng-hide');
+				}
+			});
+		}
+	}
+}).directive('exploreWhenVisible', function() {
+	return {
+		restrict: 'A',
+		require: 'fileExplorer',
+		link: function(scope, element, attr, controller) {
+			scope.$watch(attr.exploreWhenVisible, function (newValue, oldValue){
+				scope.exploreWhenVisible = newValue;
+			});
+		}
+	}
+}).directive('filterFiles', function() {
+	return {
+		restrict: 'A',
+		require: 'fileExplorer',
+		link: function(scope, element, attr, controller) {
+			scope.$watch(attr.filterFiles, function (newValue, oldValue){
+				controller.updateScope('filterFiles', newValue || 'm3u');
+			});
+		}
+	}
 });

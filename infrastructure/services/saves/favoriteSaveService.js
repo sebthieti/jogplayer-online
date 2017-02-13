@@ -1,12 +1,13 @@
 'use strict';
 
-var Q = require('q'),
-	Favorite = require('../../models').Favorite;
+var Q = require('q');
 
-var _saveService;
+var _saveService,
+	Favorite;
 
-function FavoriteSaveService(saveService) {
+function FavoriteSaveService(saveService, favoriteModel) {
 	_saveService = saveService;
+	Favorite = favoriteModel;
 }
 
 FavoriteSaveService.prototype.getSortedFavoritesAsync = function() {

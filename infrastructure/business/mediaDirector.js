@@ -1,6 +1,6 @@
 'use strict';
 
-require('../extentions/string-extentions');
+require('../extentions').StringExtentions;
 var Q = require('q'),
 	Media = require('../models').Media,
 	mediaHelper = require('../utils').mediaHelper;

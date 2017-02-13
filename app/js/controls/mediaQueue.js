@@ -14,6 +14,8 @@ jpoApp.directive("mediaQueue", function () {
 		},
 		controller: function($scope) {
 
+			$scope.hasAny = false;
+
 			$scope.innerPlayMedia = function(media) {
 				$scope.playMedia({ media: media });
 			};
@@ -21,6 +23,10 @@ jpoApp.directive("mediaQueue", function () {
 			$scope.innerRemove = function(media) {
 				$scope.remove({ media: media });
 			};
+
+			$scope.$watchCollection('mediaQueue', function(newArray) {
+				$scope.hasAny = newArray.length > 0;
+			});
 
 			// TODO Should this directive change this ?
 			$scope.$watch('currentMediaInQueue', function(newValue, oldValue) {

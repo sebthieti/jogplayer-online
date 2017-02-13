@@ -105,7 +105,7 @@ jpoApp.directive("audioPlayer", function ($window) {
 // END Cursor move media position
 
 // BEGIN Cursor move media position
-				_audioPlayerElements.timelineBar.addEventListener(
+				_audioPlayerElements.timelineContainer.addEventListener(
 					'mousedown',
 					function(event) {
 						if (event.button !== LEFT_BUTTON) {
@@ -157,7 +157,7 @@ jpoApp.directive("audioPlayer", function ($window) {
 					},
 					false
 				);
-				_audioPlayerElements.timelineBar.addEventListener(
+				_audioPlayerElements.timelineContainer.addEventListener(
 					'mouseup',
 					function(event) {
 						if (event.button !== LEFT_BUTTON) {
@@ -203,15 +203,17 @@ jpoApp.directive("audioPlayer", function ($window) {
 				);
 // END Cursor move media position
 
-				var setMediaPosition = function (cursorPercent) {
-					var audioPlayer = _audioPlayerElements.audioPlayer;
-					if (!audioPlayer.duration) {
-						return;
-					}
+				sendPlayableMediaTypes();
+			};
 
-					var newPosition = cursorPercent * audioPlayer.duration;
-					audioPlayer.currentTime = newPosition;
-				};
+			var setMediaPosition = function (cursorPercent) {
+				var audioPlayer = _audioPlayerElements.audioPlayer;
+				if (!audioPlayer.duration) {
+					return;
+				}
+
+				var newPosition = cursorPercent * audioPlayer.duration;
+				audioPlayer.currentTime = newPosition;
 			};
 
 			var updateMediaChunksBuffered = function() {
@@ -248,14 +250,15 @@ jpoApp.directive("audioPlayer", function ($window) {
 				var audioDuration = audioPlayer.duration;
 				var timeRemaining = audioDuration - currentTime;
 
+				var format = getTimeFormatForDuration(currentTime);
 				var currentTimeHHMMSS = (new Date)
 					.clearTime()
 					.addSeconds(currentTime)
-					.toString('H:mm:ss');
+					.toString(format);
 				var timeRemainingHHMMSS = (new Date)
 					.clearTime()
 					.addSeconds(timeRemaining)
-					.toString('H:mm:ss');
+					.toString(format);
 
 				if (!_isDragingCursor) {
 					var cursorPositionPercent = (currentTime / audioDuration) * 100;
@@ -266,20 +269,28 @@ jpoApp.directive("audioPlayer", function ($window) {
 				}
 			};
 
+			var getTimeFormatForDuration = function(time) {
+				if (time < 3600) {
+					return 'm:ss';
+				}
+				return 'H:mm:ss';
+			};
+
 			var updateLandingPosition = function(cursorPercent) {
 				var audioPlayer = _audioPlayerElements.audioPlayer;
 				var currentTime = cursorPercent * audioPlayer.duration;
 				var audioDuration = audioPlayer.duration;
 				var timeRemaining = audioDuration - currentTime;
 
+				var format = getTimeFormatForDuration(currentTime);
 				var currentTimeHHMMSS = (new Date)
 					.clearTime()
 					.addSeconds(currentTime)
-					.toString('H:mm:ss');
+					.toString(format);
 				var timeRemainingHHMMSS = (new Date)
 					.clearTime()
 					.addSeconds(timeRemaining)
-					.toString('H:mm:ss');
+					.toString(format);
 
 				_audioPlayerElements.elapsedTime.innerText = currentTimeHHMMSS;
 				_audioPlayerElements.remainingTime.innerText = '-' + timeRemainingHHMMSS;
@@ -313,11 +324,15 @@ jpoApp.directive("audioPlayer", function ($window) {
 			};
 
 			var turnPlayButtonToPause = function () {
-				_audioPlayerElements.btnPlay.src = "svg/pause.svg";
+				var classes = _audioPlayerElements.btnPlay.classList;
+				classes.remove('icon-play');
+				classes.add('icon-pause');
 			};
 
 			var turnPauseButtonToPlay = function () {
-				_audioPlayerElements.btnPlay.src = "svg/play.svg";
+				var classes = _audioPlayerElements.btnPlay.classList;
+				classes.remove('icon-pause');
+				classes.add('icon-play');
 			};
 
 			var playOrPause = function() {
@@ -342,19 +357,31 @@ jpoApp.directive("audioPlayer", function ($window) {
 
 			$rootScope.$on('playMedia', function(event, args) {
 				playMedia(args);
+				$scope.$apply(); // TODO Needed for the UI to react properly. But causes an error.
 			});
 
 			$rootScope.$on('stopMedia', function() {
 				stopMedia();
 			});
 
+			var selectSelfPlayFromLinks = function(links) {
+				return _.find(links, function(link) {
+					return link.rel === 'self.play';
+				}).href;
+			};
+
 			var playMedia = function(mediaOrFile) {
+				$scope.$parent.displayMediaInTitle(mediaOrFile.name);
+
 				var audioPlayer = _audioPlayerElements.audioPlayer;
 				if (!audioPlayer) {
 					throw 'audioPlayer has not been set.';
 				}
 
-				var src = pathHelper.getFullMediaUrlPathFromMediaPath(mediaOrFile);
+				// Ensure cursor is visible
+				_audioPlayerElements.cursor.classList.remove('hidden');
+
+				var src = selectSelfPlayFromLinks(mediaOrFile.links);//pathHelper.getFullMediaUrlPathFromMediaPath(mediaOrFile);
 				if (!src && !$scope.selectedMediaUrl) {
 					throw 'mediaUrl has not been set.';
 				}
@@ -370,6 +397,8 @@ jpoApp.directive("audioPlayer", function ($window) {
 				}
 
 				_currentSourceTag.src = src;
+				// TODO Type w/ codec should be specified
+				//_currentSourceTag.type = 'audio/mpeg';
 				audioPlayer.load();
 				audioPlayer.play();
 			};
@@ -384,6 +413,29 @@ jpoApp.directive("audioPlayer", function ($window) {
 				audioPlayer.load();
 				_currentSourceTag = null;
 			};
+
+			var sendPlayableMediaTypes = function() {
+				var audioTypes = [
+					'audio/mp4',
+					'audio/mpeg',
+					'audio/ogg',
+					"audio/ogg; codecs='flac'",
+					"audio/x-flac",
+					'audio/vorbis',
+					"audio/ogg; codecs='vorbis'",
+					"audio/ogg; codecs='opus'",
+					'audio/opus',
+					'audio/wav',
+					'audio/vnd.wave'
+				];
+				var audioPlayer = _audioPlayerElements.audioPlayer;
+				var playableTypes = {};
+				_.each(audioTypes, function(audioType){
+					return this[audioType] = audioPlayer.canPlayType(audioType)
+				}, playableTypes);
+
+			};
+
 		},
 		link: function(scope, element, attrs, controller) {
 			var doc = $window.document;
@@ -393,7 +445,7 @@ jpoApp.directive("audioPlayer", function ($window) {
 				elapsedTime: doc.getElementById('elapsed-time'),
 				remainingTime: doc.getElementById('remaining-time'),
 				loadedChunks: doc.getElementById('loaded-chunks'),
-				timelineBar: doc.getElementById('timeline-bar'),
+				timelineContainer: doc.getElementById('timeline-container'),
 				timeline: doc.getElementById('timeline'),
 				volumeLevel: doc.getElementById('volume-level'),
 				volumeBar: doc.getElementById('volume-bar'),

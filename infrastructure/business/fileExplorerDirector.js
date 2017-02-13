@@ -1,32 +1,45 @@
 'use strict';
 
+require('../extentions').StringExtentions;
 var Q = require('q'),
     fs = require('fs'),
     from = require('fromjs');
 
 var _fileExplorerService;
 
-function FileExplorerDirector (fileExplorerService) {
-    _fileExplorerService = fileExplorerService;
-}
-
-FileExplorerDirector.prototype.getFolderContentAsync = function (urlPath) {
-    return exploreFilePathAsync(urlPath);
-};
-
 var exploreFilePathAsync = function (urlPath) {
-    var isRoot = urlPath === '';
+    var isRoot = urlPath === '/';
+
+	var filesAsync;
     // If root, then show all drives. Procedure may depend on os
-    if (isRoot) {
-	    return _fileExplorerService.getAvailableDrivesPathsAsync();
+	if (isRoot) {
+		filesAsync = _fileExplorerService.getAvailableDrivesPathsAsync();
     } else {
 	    var realPath = mapUrlToServerPath(urlPath);
-	    return performFolderReadDirAsync(realPath);
+		filesAsync = performFolderReadDirAsync(realPath, urlPath);
     }
+
+	return filesAsync.then(function(files) {
+		var parentLink = tryMakeParentLink(urlPath);
+		var selfPhys = tryMakeSelfPhysLink(urlPath);
+
+		var fileContent = {
+			links: [ // TODO To builder
+				makeSelfLink(urlPath)
+			],
+			files: addLinkToFiles(files, urlPath)
+		};
+		if (parentLink) {
+			fileContent.links.push(parentLink);
+		} if (selfPhys) {
+			fileContent.links.push(selfPhys);
+		}
+		return fileContent;
+	});
 };
 
 var mapUrlToServerPath = function (urlPath) {
-    var completePath = decodeURI(urlPath);
+    var completePath = urlPath;//decodeURI();
     var realPath = _fileExplorerService.normalizePathForCurrentOs(completePath);
     return realPath;
 };
@@ -89,11 +102,12 @@ var filterBySupportedMediaTypes = function (fileStats) {
 var isSupportedMediaExt = function (ext) {
     switch(ext) {
         case ".mp3":
-            return true;
         case ".flac":
-            return true;
         case ".ogg":
-            return true;
+	    case '.m3u':
+	    case '.m3u8':
+	    case '.pls':
+		    return true;
         default:
             return false;
     }
@@ -122,6 +136,94 @@ var mergeFileStatsAsyncResults = function (fileStats) {
             };
         })
         .toArray();
+};
+
+var tryMakeUpPath = function(urlPath){
+	var noTrailingSlash;
+	if (urlPath.endsWith('/')) {
+		noTrailingSlash = urlPath.substring(0, urlPath.length-1);
+	} else {
+		noTrailingSlash = urlPath;
+	}
+	var upPath = noTrailingSlash.substring(0, noTrailingSlash.lastIndexOf('/') + 1);
+//	if (upPath && upPath !== '/') {
+//		upPath += '/';
+//	}
+//	if (upPath === '/') {
+//		upPath = '';
+//	}
+	return upPath;
+};
+
+var addLinkToFiles = function(files, parentFolderPath) {
+	// encode url, no '/' if just file
+	files.forEach(function(file) {
+		// ^\/api\/explore\/(.*[\/])*$/
+		var fullFilePath = parentFolderPath + file.name;//encodeURI();
+		var pathTail = file.type === 'D' ? '/' : '';
+		fullFilePath = fullFilePath + pathTail;
+		file.links = [{
+			rel: 'self',
+			href: '/api/explore' + fullFilePath
+		}];
+		var selfPlayLink = tryMakeSelfPlayLink(file, parentFolderPath);
+		if (selfPlayLink) {
+			file.links.push(selfPlayLink);
+		}
+		 var selfPhysLink = tryMakeSelfPhysLink(fullFilePath);
+		if (selfPhysLink) {
+			file.links.push(selfPhysLink);
+		}
+	});
+	return files;
+};
+
+var makeSelfLink = function (urlPath) {
+	return {
+		rel: 'self',
+		href: '/api/explore' + urlPath//encodeURI()
+	}
+};
+
+var tryMakeParentLink = function (urlPath) {
+	var upPath = tryMakeUpPath(urlPath);
+	if (!upPath) {
+		return;
+	}
+	return {
+		rel: 'parent',
+		href: '/api/explore' + upPath//encodeURI()
+	}
+};
+
+var tryMakeSelfPlayLink = function (file, parentFolderPath) {
+	if (file.type && file.type === 'F') {
+		var fullFilePath = parentFolderPath + file.name;//encodeURI();
+		return {
+			rel: 'self.play', // TODO only when playable
+			href: '/api/media/play/path' + fullFilePath
+		}
+	}
+};
+
+var tryMakeSelfPhysLink = function (urlPath) {
+	if (!urlPath || urlPath === '/') {
+		return;
+	}
+	return {
+		rel: 'self.phys',
+		href: urlPath//encodeURI()
+	}
+};
+
+function FileExplorerDirector (fileExplorerService) {
+	_fileExplorerService = fileExplorerService;
+}
+
+FileExplorerDirector.prototype = {
+	getFolderContentAsync: function (urlPath) {
+		return exploreFilePathAsync(urlPath);
+	}
 };
 
 module.exports = FileExplorerDirector;

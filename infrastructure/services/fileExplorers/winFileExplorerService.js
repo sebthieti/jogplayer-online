@@ -1,5 +1,6 @@
 'use strict';
 
+require('../../extentions').StringExtentions;
 var child_process = require('child_process'),
 	Q = require('Q');
 
@@ -11,7 +12,10 @@ WinFileExplorerService.prototype.canHandleOs = function(osName) {
 };
 
 WinFileExplorerService.prototype.normalizePathForCurrentOs = function (completePath) {
-    return completePath.replace(/\//g, '\\');
+    if (completePath.startsWith('/')) {
+	    return completePath.substring(1).replace(/\//g, '\\');
+    }
+	return completePath.replace(/\//g, '\\');
 };
 
 WinFileExplorerService.prototype.getAvailableDrivesPathsAsync = function() {

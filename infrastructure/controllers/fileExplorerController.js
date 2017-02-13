@@ -17,7 +17,7 @@ FileExplorerController.prototype.init = function() {
 
 	// Explore path
 	_app.get(/^\/api\/explore\/(.*[\/])*$/, function (req, res) {
-		var extractedUrlPath = req.params[0] || '';
+		var extractedUrlPath = ('/' + (req.params[0] || '')) || '';
 		_fileExplorerRepository
 			.getFolderContentAsync(extractedUrlPath)
 			.then(function(fileDetails) {

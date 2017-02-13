@@ -42,7 +42,7 @@ MediaStreamer.prototype.streamByMediaIdAndExt = function(mediaIdWithExt, request
 };
 
 MediaStreamer.prototype.streamByMediaPath = function(rawPath, request, response) {
-	var completePath = decodeURI(rawPath);
+	var completePath = rawPath;//decodeURI();
     var realPath = _fileService.normalizePathForCurrentOs(completePath);//adaptPathToSystem(completePath);
 
 	var canUseChunkedStratagy = typeof request.headers.range !== 'undefined';
@@ -70,6 +70,10 @@ MediaStreamer.prototype.streamByMediaPath = function(rawPath, request, response)
 
 var prepareBodyResponse = function (useChunkMode, chunckParams, fileSize, mimeType, data, response) {
 	var header = {};
+
+	header["Accept-Ranges"] = "bytes";
+	header["Content-Type"] = mimeType;
+
 	if (useChunkMode) {
 		var fileLength = fileSize;
 		var startOffset = chunckParams.startOffset;
@@ -77,16 +81,17 @@ var prepareBodyResponse = function (useChunkMode, chunckParams, fileSize, mimeTy
 		var chunckLength = (endOffset - startOffset) + 1; // + 1 because 0 index based
 
 		header["Content-Range"] = "bytes " + startOffset + "-" + endOffset + "/" + fileLength;
-		header["Accept-Ranges"] = "bytes";
 		header["Content-Length"] = chunckLength;
 		header['Transfer-Encoding'] = 'chunked';
 		header["Connection"] = "close";
-		header["Content-Type"] = mimeType;
 
 		response.writeHead(206, header);
 		response.write(data, "binary");
 	} else {
 		// reply to normal un-chunked request
+		header["Content-Length"] = fileSize;
+		header["Connection"] = "keep-alive";
+
 		response.writeHead(200, header);
 		response.write(data, "binary");
 	}

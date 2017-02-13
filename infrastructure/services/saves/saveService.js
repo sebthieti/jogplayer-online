@@ -2,104 +2,42 @@
 
 var Q = require('q'),
 	mongodb = require('mongodb'),
-	mongoose = require('mongoose');
+	mongoose = require('mongoose'),
+	util = require('util');
 
-// TODO The following should be a setting instead
-var mongoUrl = "mongodb://localhost:27017/JogPlayerOnline";
-
-//	var dbSet = null;
 var _dbConnection = null;
 
-var gracefulExit = function() {
-	_dbConnection.disconnect();
+process.stdin.resume(); //so the program will not close instantly
+
+function exitHandler(options, err) {
+	if (options.cleanup) {
+		if (_dbConnection) {
+			_dbConnection.disconnect();
+		}
+		console.log('before Gracefull exit');
+	}
+	if (err) console.log(err.stack);
+	if (options.exit) process.exit();
+}
+
+// Do something when app is closing
+process.on('exit', exitHandler.bind(null, { cleanup: true }));
+
+// Catches ctrl+c event
+process.on('SIGINT', exitHandler.bind(null, { exit: true }));
+
+// Catches uncaught exceptions
+process.on('uncaughtException', exitHandler.bind(null, { exit: true }));
+
+var initDbClientAsync = function (config) {
+	var db = config.DbConnection;
+	var dbConnectionString = util.format('mongodb://%s:%d/%s', db.host, db.port, db.dbName);
+
+	_dbConnection = mongoose.connect(dbConnectionString);
 };
 
-var initDbClientAsync = function () {
-
-	_dbConnection = mongoose.connect(mongoUrl);
-
-	// If the Node process ends, close the Mongoose connection
-	process.on('SIGINT', gracefulExit).on('SIGTERM', gracefulExit);
-
-
-//		return Q.promise(function (onSuccess, onError) {
-//			mongodb.MongoClient.connect(mongoUrl, function (err, db) {
-//				if (!err) {
-//					onSuccess(buildDbContext(db));
-//				} else {
-//					onError(err);
-//				}
-//			});
-//		});
-};
-//
-
-function SaveService () {
-	initDbClientAsync();
+function SaveService (config) {
+	initDbClientAsync(config);
 }
 
 module.exports = SaveService;
-
-
-//	SaveService.prototype.getPlaylistsRepositoryAsync = function () {
-//		return selectDbSubCollectionAsync(function(dbRepo) {
-//			return dbRepo.playlists;
-//		});
-//	};
-//
-//	SaveService.prototype.getMediaRepositoryAsync = function () {
-//		return selectDbSubCollectionAsync(function(dbRepo) {
-//			return dbRepo.media;
-//		});
-//	};
-//
-//	SaveService.prototype.getBookmarksRepositoryAsync = function () {
-//		return selectDbSubCollectionAsync(function(dbRepo) {
-//			return dbRepo.bookmarks;
-//		});
-//	};
-//
-//	SaveService.prototype.getFavoritesRepositoryAsync = function () {
-//		return selectDbSubCollectionAsync(function(dbRepo) {
-//			return dbRepo.favorites;
-//		});
-//	};
-//
-//	SaveService.prototype.getConfigurationRepositoryAsync = function () {
-//		return selectDbSubCollectionAsync(function(dbRepo) {
-//			return dbRepo.configuration;
-//		});
-//	};
-
-//	var selectDbSubCollectionAsync = function (selector) {
-//		return ensureDbClientAsync()
-//			.then(function (dbRepo) {
-//				return selector(dbRepo);
-//			});
-//	};
-
-//	var ensureDbClientAsync = function () {
-//		if (dbSet) {
-//			return Q.promise(function (onSuccess, onError) {
-//				onSuccess(dbSet);
-//			});
-//		} else {
-//			return initDbClientAsync();
-//		}
-//	};
-
-
-//	var buildDbContext = function (db) {
-//		dbSet = {
-//			db: db,
-//			playlists: db.collection("playlists"),
-//			media: db.collection("media"),
-//			bookmarks: db.collection("bookmarks"),
-//			favorites: db.collection("favorites"),
-//			configuration: db.collection("configuration")
-//		};
-//		return dbSet;
-//	};
-
-
-//})();

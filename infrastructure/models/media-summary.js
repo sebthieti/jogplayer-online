@@ -1,8 +1,9 @@
 var MediaSummary = (function () {
 	'use strict';
 	
-	function MediaSummary(title, filePath, duration) {
+	function MediaSummary(title, index, filePath, duration) {
 		this.title = title;
+		this.index = index;
 		this.filePath = filePath;
 		this.duration = duration;
 	}

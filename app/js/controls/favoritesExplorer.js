@@ -8,19 +8,39 @@ jpoApp.directive("favoritesExplorer", function () {
 			deleteFavorite: '&',
 			updateFavorite: '&',
 			favorites: '=',
-			currentDirPath: '='
+			changeDirCmd: '&'
+			//currentDirPath: '='
 		},
 		controller: function ($scope) {
 
 			var _currentIndexEdited = -1;
 
+			var selectTargetLinkFromLinks = function(links) {
+				var link = _.find(links, function(link) {
+					return link.rel === 'target';
+				});
+				if (link) {
+					return link;
+				}
+			};
+
+
 			$scope.goToFolder = function (favorite) {
-				$scope.currentDirPath = favorite.folderPath;
+				//$scope.currentDirPath = favorite.folderPath;
+				$scope.changeDirCmd({ link: selectTargetLinkFromLinks(favorite.links) })
 			};
 
 			$scope.editFavorite = function(fav) {
-				_currentIndexEdited = fav.index;
+				if (_currentIndexEdited != -1) {
+					$scope.favorites[_currentIndexEdited].isEditing = false;
+				}
+				_currentIndexEdited = $scope.favorites.indexOf(fav);
 				fav.isEditing = true;
+			};
+
+			$scope.cancel = function(favorite) {
+				_currentIndexEdited = -1;
+				favorite.isEditing = false;
 			};
 
 			$scope.done = function(favorite) {
@@ -31,7 +51,6 @@ jpoApp.directive("favoritesExplorer", function () {
 						updatedFavorite.isEditing = false;
 						_currentIndexEdited = -1;
 					});
-				;
 			};
 
 			$scope.innerDeleteFavorite = function(favorite) {

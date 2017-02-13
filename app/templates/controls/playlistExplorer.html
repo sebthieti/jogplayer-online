@@ -1,48 +1,75 @@
-<div id="playlists-container">
-    <ul>
-        <li ng-repeat="pl in playlists | orderBy: 'index'"
-            ng-click="innerPlaylistSelected(pl)"
-            ng-class="selectedPlaylist._id == pl._id ? 'selected' : ''"
-            ng-switch="pl.isEditing">
+<div id="playlist-browser">
+    <div id="playlists-container">
+        <ul>
+            <li class="btn-enabled pl"
+                ng-repeat="pl in playlists | orderBy: 'index'"
+                ng-class="selectedPlaylist._id == pl._id ? 'selected' : ''"
+                ng-click="innerPlaylistSelected(pl)">
+                <div ng-show="pl.isEditing">
+                    <!-- Editing mode -->
+                    <input type="text" ng-model="pl.name">
+                    <span class="icon-checkmark rename" stop-event ng-click="endEditPlaylist(pl)"></span>
+                    <span class="icon-close cancel" stop-event ng-click="cancel(pl)"></span>
+                </div>
+                <span ng-show="!pl.isEditing"
+                      class="title">
+                    {{ pl.name || 'Empty' }}
+                </span>
+                <div class="tab-tools" ng-show="!pl.isEditing">
+                    <!-- Non editing mode -->
+                    <span class="icon-pencil rename" stop-event ng-click="beginEditPlaylist(pl)"></span>
+                    <span class="icon-remove delete" stop-event ng-click="innerRemovePlaylist(pl)"></span>
+                </div>
+            </li>
+            <li ng-switch="isAdding" class="btn-enabled">
+                <div ng-switch-when="true">
+                    <input type="text" ng-model="newPlaylist.name">
+                    <span class="icon-checkmark rename" stop-event ng-click="endAddVirtualPlaylist()"></span>
+                    <span class="icon-close cancel" stop-event ng-click="cancel()"></span>
+                </div>
 
-            <input ng-switch-when="true" type="text" ng-model="pl.name">
-            <span ng-switch-when="true" class="rename" stop-event ng-click="endEditPlaylist(pl)">Done</span>
-            <span ng-switch-when="true" class="cancel" stop-event ng-click="cancel(pl)">Cancel</span>
+                <div ng-switch-default>
+                    <span id="add-playlist-virtual" ng-click="beginAddVirtualPlaylist()">+</span>
+                    <span id="add-playlist-phys" class="icon-download" ng-click="beginAddPhysicalPlaylist()"></span>
+                </div>
+            </li>
+        </ul>
+    </div>
+    <div id="media-container">
+        <ul>
+            <li ng-repeat="m in media | orderBy: 'index'"
+                ng-click="mediaSelected(m)"
+                ng-dblclick="mediaValidated(m)"
+                ng-class="m.isPlaying ? 'current' : ''"
+                class="btn-enabled">
 
-            <!--<input ng-switch-default type="checkbox" ng-checked="pl.checked">-->
-            <span ng-switch-default class="title">{{ pl.name || 'Empty' }}</span>
-            <span ng-switch-default class="rename" stop-event ng-click="beginEditPlaylist(pl)">Rename</span>
-            <span ng-switch-default class="delete" stop-event ng-click="innerRemovePlaylist(pl)">x</span>
-        </li>
-        <li id="add-playlist" ng-click="beginAddPlaylist()" ng-switch="isAdding">
+                <span class="icon-close remove btn-enabled" stop-event ng-click="innerDeleteMedia(m)"></span>
+                <span class="icon-play btn-enabled" ng-click="innerPlayMedia(m)" stop-event></span>
 
-            <div ng-switch-when="true">
-                <input type="text" ng-model="newPlaylist.name">
-                <span class="rename" stop-event ng-click="endAddPlaylist()">Done</span>
-                <span class="cancel" stop-event ng-click="cancel()">Cancel</span>
-            </div>
+                <span class="title">{{ m.title || 'Empty' }}</span>
+                <div class="duration">{{ m.duration | time}}</div>
+            </li>
+        </ul>
 
-            <div ng-switch-default>
-                <span>+ Add playlist</span>
-            </div>
-        </li>
-    </ul>
-</div>
-<div id="media-container">
-    <ul>
-        <!--ng-class="m.selected ? 'selected' : ''"-->
-        <li ng-repeat="m in media | orderBy: 'index'"
-            ng-click="mediaSelected(m)"
-            ng-dblclick="mediaValidated(m)"
+        <file-explorer is-visible="isPlaylistFinderVisible"
+                       explore-when-visible="true"
+                       filter-files="m3u"
+                       play-media="playMediaFromFileExplorer(file)"
+                       enqueue-media="enqueueMediaFromFileExplorer(file)"
+                       selected-files="selectedFile"
+                       folder-path="currentFileExplorerDirPath"
+                       selection-mode="selectionMode"
+                       media-queue="mediaQueue">
+        </file-explorer>
 
-            ng-class="m.isPlaying ? 'current' : ''">
-            <!--selectedMedia._id == m._id ? 'selected' : ''-->
-            <!--<input type="checkbox" ng-checked="m.checked">-->
-            <span class="play" ng-click="innerPlayMedia(m)" stop-event>&#9654;</span>
-            <span class="title">{{ m.title || 'Empty' }}</span>
-            <span class="duration">{{ m.duration }}</span>
+        <div id="playlistFinderValidation">
+            <span class="icon-checkmark btn-enabled btn-large"
+                  ng-click="endAddPhysicalPlaylist()"></span>
+            <span class="icon-close btn-enabled btn-large"
+                  id="playlistFinderValidationCancel"></span>
+        </div>
 
-            <span class="delete" stop-event ng-click="innerDeleteMedia(m)">x</span>
-        </li>
-    </ul>
+    </div>
+
+
 </div>

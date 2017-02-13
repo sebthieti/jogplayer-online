@@ -1,12 +1,18 @@
 <div>
-    <span class="button small" title="Clear queue" ng-click="clearQueue()" class="button medium">x</span>
-    <ul id="queue">
-        <li ng-repeat="m in mediaQueue track by $index"
-            ng-click="innerPlayMedia(m)"
-            ng-class="m.isPlaying ? 'active' : ''">
-            <span ng-click="innerRemove(m)" class="remove" stop-event>[x]</span>
-            <span class="error" ng-show="m.hasError" stop-event>[!]</span>
-            <span>{{ m.name || m.title }}</span>
-        </li>
-    </ul>
+    <span id="clear-queue"
+          class="icon-remove btn-enabled"
+          title="Clear queue"
+          ng-show="hasAny"
+          ng-click="clearQueue()"></span>
+    <div id="queue-container-list">
+        <ul id="queue">
+            <li ng-repeat="m in mediaQueue track by $index"
+                ng-click="innerPlayMedia(m)"
+                ng-class="m.isPlaying ? 'active btn-enabled' : 'btn-enabled'">
+                <span ng-click="innerRemove(m)" class="remove" stop-event>[x]</span>
+                <span class="error" ng-show="m.hasError" stop-event>[!]</span>
+                <span>{{ m.name || m.title }}</span>
+            </li>
+        </ul>
+    </div>
 </div>

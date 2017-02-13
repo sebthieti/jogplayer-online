@@ -3,6 +3,9 @@
 var mongoose = require('mongoose'),
 	Schema = mongoose.Schema;
 
+var _plRoutes,
+	_plListMediaRoute;
+
 var playlistSchema = new Schema({
 	name: String,
 	createdOn: { type: Date, default: Date.now },
@@ -16,16 +19,41 @@ var playlistSchema = new Schema({
 playlistSchema.virtual('isVirtual').get(function() {
 	return !this.filePath;
 });
-//playlistSchema.virtual('setMedias').set(function (medias) {
-//	this.medias = medias;
-//	return this;
-//});
 playlistSchema.statics.whereInOrGetAll = function (path, whereIn) {
 	return whereIn ? this.where(path).in(whereIn) : this;
 };
+//playlistSchema.virtual('setMedia').set (function (media) {
+//	this.media = media;
+//	//return this;
+//});
+playlistSchema.set('toJSON', { virtuals: true });
+playlistSchema.virtual('links').get(function() {
+	return [{
+		rel: 'self',
+		href: _plRoutes.selfPath.replace(':playlistId', this._id)
+	},{
+		rel: 'media',
+		href: _plRoutes.listMedia.replace(':playlistId', this._id)
+	},{
+		rel: 'media.insert',
+		href: _plListMediaRoute.insertPath.replace(':playlistId', this._id)
+	},{
+		rel: 'update',
+		href: _plRoutes.updatePath.replace(':playlistId', this._id)
+	},{
+		rel: 'remove',
+		href: _plRoutes.delete.path.replace(':playlistId', this._id)
+	},{
+		rel: 'actions.move',
+		href: _plRoutes.actions.movePath.replace(':playlistId', this._id)
+	}];
+});
 
-module.exports = mongoose.model('Playlist', playlistSchema);
-
+module.exports = function(plRoutes, plListMediaRoute){
+	_plRoutes = plRoutes;
+	_plListMediaRoute = plListMediaRoute;
+	return mongoose.model('Playlist', playlistSchema);
+};
 
 //
 //	Playlist.fromDto = function (dtoPlaylist) {

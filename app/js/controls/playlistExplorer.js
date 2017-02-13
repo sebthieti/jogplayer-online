@@ -7,10 +7,13 @@ jpoApp.directive("playlistExplorer", function () {
 		scope: {
 			selectedMedia: '=',
 			selectedPlaylist: '=',
-			playMedia: '&'
-			//addPlaylist: '&',
-			//playlistSelected: '&'
+			playMedia: '&',
+			startExplore: '&'
 		},
+		//link: function (scope, element, attr){
+		//	scope.fileExpExploreWhenVisible = 'rthrth';
+		//	scope.isPlaylistFinderVisible = 'ewrgerg';
+		//},
 		controller: function($scope, $rootScope, $timeout, playlistService) {
 
 			$scope.playlists = null;
@@ -20,7 +23,30 @@ jpoApp.directive("playlistExplorer", function () {
 			$scope.newPlaylist = null;
 			$scope.isAdding = false;
 
-			$scope.beginAddPlaylist = function() {
+			$scope.isPlaylistFinderVisible = false;
+
+
+// TEST
+
+			//$scope.playMediaFromFileExplorer = function(file) {
+			//};
+			//$scope.selectedFiles = null;
+			//$scope.currentFileExplorerDirPath = null;
+			//$scope.selectionMode = null;
+			//$scope.mediaQueue = null;
+
+// TEST
+
+			var selectSelfPhysFromLinks = function(links) {
+				var link = _.find(links, function(link) {
+					return link.rel === 'self.phys';
+				});
+				if (link) {
+					return link.href;
+				}
+			};
+
+			$scope.beginAddVirtualPlaylist = function() {
 				$scope.newPlaylist = {
 					name: '',
 					checked: true,
@@ -30,13 +56,32 @@ jpoApp.directive("playlistExplorer", function () {
 				$scope.isAdding = true;
 			};
 
-			$scope.endAddPlaylist = function() {
+
+			$scope.endAddVirtualPlaylist = function() {
 				playlistService
 					.addPlaylist($scope.newPlaylist)
 					.then(function(newPlaylist) {
 						$scope.newPlaylist = null;
 						$scope.playlists = $scope.playlists.concat(newPlaylist);
 						$scope.isAdding = false;
+					});
+			};
+
+			$scope.selectedFile = null;
+			$scope.beginAddPhysicalPlaylist = function() {
+				// Toggle explorer visibility
+				$scope.isPlaylistFinderVisible = true;
+
+			};
+
+			$scope.endAddPhysicalPlaylist = function() {
+				var toAdd = selectSelfPhysFromLinks($scope.selectedFile[0].links);
+
+				playlistService
+					.addPhysicalPlaylist(toAdd)
+					.then(function (playlist) {
+						//$scope.playlists = playlists;
+					}, function (err) {
 					});
 			};
 
@@ -55,7 +100,7 @@ jpoApp.directive("playlistExplorer", function () {
 
 			$scope.innerDeleteMedia = function(mediumToRemove) {
 				return playlistService
-					.removeMediaFromPlaylist($scope.selectedPlaylist._id, mediumToRemove._id)
+					.removeMediumFromPlaylist(mediumToRemove)
 					.then(function() {
 						$scope.media = _.filter($scope.media, function(medium) {
 							return medium._id !== mediumToRemove._id;
@@ -78,7 +123,7 @@ jpoApp.directive("playlistExplorer", function () {
 //					$scope.playlistSelected({ playlist: selectedPlaylist });
 //				}
 
-				playlistService.getPlaylistMedia(selectedPlaylist._id)
+				playlistService.getPlaylistMedia(selectedPlaylist)
 					.then(function (media) {
 						_.forEach(media, function(medium) {
 							medium.isPlaying = false;
@@ -98,6 +143,9 @@ jpoApp.directive("playlistExplorer", function () {
 						$scope.playlists = _.filter($scope.playlists, function(pl) {
 							return pl._id !== playlist._id;
 						});
+
+						$scope.media = null;
+						$scope.selectedPlaylist = null;
 					});
 			};
 
@@ -128,6 +176,9 @@ jpoApp.directive("playlistExplorer", function () {
 			playlistService
 				.getPlaylists()
 				.then(function (playlists) {
+					_.each(playlists, function(pl) {
+						pl.isEditing = false;
+					});
 					$scope.playlists = playlists;
 				}, function (err) {
 				});

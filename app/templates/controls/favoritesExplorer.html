@@ -1,10 +1,12 @@
 <ul id="favorites">
-    <li ng-repeat="fav in favorites" ng-switch="fav.isEditing">
+    <li ng-repeat="fav in favorites" ng-switch="fav.isEditing" class="btn-enabled">
+        <span class="icon-heart favorite"></span>
         <input ng-switch-when="true" type="text" ng-model="fav.name">
-        <span ng-switch-when="true" class="rename" stop-event ng-click="done(fav)">Done</span>
+        <span ng-switch-when="true" class="icon-checkmark rename" stop-event ng-click="done(fav)"></span>
+        <span ng-switch-when="true" class="icon-close cancel" stop-event ng-click="cancel(fav)"></span>
 
         <span ng-switch-default class="favName" ng-click="goToFolder(fav)">{{ fav.name }}</span>
-        <span ng-switch-default class="rename" stop-event ng-click="editFavorite(fav)">Rename</span>
-        <span ng-switch-default class="delete" stop-event ng-click="innerDeleteFavorite(fav)">x</span>
+        <span ng-switch-default class="icon-pencil rename" stop-event ng-click="editFavorite(fav)"></span>
+        <span ng-switch-default class="icon-remove delete" stop-event ng-click="innerDeleteFavorite(fav)"></span>
     </li>
 </ul>

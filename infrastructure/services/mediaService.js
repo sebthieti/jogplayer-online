@@ -9,109 +9,17 @@ var Q = require('q'),
 var _convertionOutputFolderRelativePath = "./_converted/",
 	_ffmpeg_process = null;
 
-function MediaService() {
-
-}
-
-MediaService.prototype.checkAndUpdateMustRelocalize = function(medias) {
-	//Q.spread(medias, function (unknown) {
-	//	var TODO = true;
-	//});
-
-	return medias;
-
-	//for (var mediaIndex = 0; mediaIndex < medias.length; mediaIndex++) {
-	// return Q.nfcall(fs.exists, path)
-	// 	.then(setMustRelocalize)
-	// 	;
-	//}
-};
-
-MediaService.prototype.getFileSizeAsync = function(filePath) {
-	return Q.promise(function (onSuccess, onError) {
-		fs.stat(filePath, function (err, stats) {
-			if (!err) {
-				onSuccess(stats.size);
-			} else {
-				onError(err);
-			}
-		});
-	});
-};
-
-MediaService.prototype.getFileChunkAsync = function(filePath, fromOffset, toOffset) {
-	return Q.promise(function(onSuccess, onError) {
-		fs.open(filePath, 'r', function(status, fd) { // TODO Beautifull pyramid of doom!
-			if (status) {
-				console.log(status.message);
-				return;
-			}
-
-//				fs.readFile(filePath, "binary", function(err, file) {
-//					onSuccess(file.slice(fromOffset, toOffset)/*+'0'*/);
-//					//response.write(file.slice(start, end)+'0', "binary");
-//				});
-
-            var bufferSize = (toOffset - fromOffset) + 1;
-
-            //console.log('bufferSize:' + bufferSize + '!fromOffset:' + fromOffset + '!toOffset:' + toOffset);
-
-			var buffer = new Buffer(bufferSize);
-			fs.read(fd, buffer, 0, buffer.length/*bufferSize*/, fromOffset, // append '0' ?
-				function(err, bytesRead, buffer) {
-					fs.close(fd, function() {
-						if (!err) {
-							onSuccess(buffer)
-						} else {
-							onError(err)
-						}
-					});
-				}
-			);
-		});
-	});
-};
-
-MediaService.prototype.convertMediaToAsync = function (mediaFilePath, outputFormat) {
-    return ensureConvertionOutputFolderExistsAsync()
-        .then(function () {
-            return convertMediaToAsync (mediaFilePath, outputFormat)
-        });
-};
-
-MediaService.prototype.getMediaInfosAsync = function (mediaFilePath) {
-	var deferred = Q.defer();
-
-	// Only one convertion at a time
-	if (_ffmpeg_process) {
-		_ffmpeg_process.kill();
-	}
-
-	var cleanMediaFilePath = mediaFilePath.substring(1);
-
-	probe(cleanMediaFilePath, function(err, probeData) {
-		if (err) {
-			deferred.reject(err);
-		} else {
-			deferred.resolve(probeData);
-		}
-	});
-
-	return deferred.promise;
-
-};
-
 var ensureConvertionOutputFolderExistsAsync = function () {
 	return Q.promise(function(onSuccess, _) {
 		fs.exists(getConvertionOutputFolderPath(), function(folderExists) {
 			onSuccess(folderExists);
 		});
 	})
-	.then(function (folderExists) {
-		if (!folderExists) {
-			return createConvertionOutputFolderAsync();
-		}
-	});
+		.then(function (folderExists) {
+			if (!folderExists) {
+				return createConvertionOutputFolderAsync();
+			}
+		});
 };
 
 var createConvertionOutputFolderAsync = function () {
@@ -119,12 +27,12 @@ var createConvertionOutputFolderAsync = function () {
 };
 
 var generateConvertedMediaFilePath = function (mediaFilePath, outputFormat) {
-    var ext = path.extname(mediaFilePath);
+	var ext = path.extname(mediaFilePath);
 
-    var convertionFolderPath = getConvertionOutputFolderPath();
-    var mediaFileNameNoExt = path.basename(mediaFilePath, ext);
+	var convertionFolderPath = getConvertionOutputFolderPath();
+	var mediaFileNameNoExt = path.basename(mediaFilePath, ext);
 
-    return path.join(convertionFolderPath, mediaFileNameNoExt + outputFormat);
+	return path.join(convertionFolderPath, mediaFileNameNoExt + outputFormat);
 };
 
 var getConvertionOutputFolderPath = function () {
@@ -169,4 +77,94 @@ var convertMediaToAsync = function (mediaFilePath, outputFormat) { // TODO Code 
 	return deferred.promise;
 };
 
-module.exports = MediaService;
+var setMustRelocalize = function(medium, fileExists) {
+	medium.mustRelocalize = fileExists;
+	return medium;
+};
+
+module.exports = {
+
+	checkAndUpdateMustRelocalizeAsync: function(media) {
+		var checkAndUpdatePromises = media.map(function(medium) {
+			return Q.nfcall(fs.exists, medium.filePath)
+				.then(function (fileExists) {
+					return setMustRelocalize(medium, fileExists);
+				});
+		});
+		return Q.all(checkAndUpdatePromises);
+	},
+
+	getFileSizeAsync: function(filePath) {
+		return Q.promise(function (onSuccess, onError) {
+			fs.stat(filePath, function (err, stats) {
+				if (!err) {
+					onSuccess(stats.size);
+				} else {
+					onError(err);
+				}
+			});
+		});
+	},
+
+	getFileChunkAsync: function(filePath, fromOffset, toOffset) {
+		return Q.promise(function(onSuccess, onError) {
+			fs.open(filePath, 'r', function(status, fd) { // TODO Beautifull pyramid of doom!
+				if (status) {
+					console.log(status.message);
+					return;
+				}
+
+//				fs.readFile(filePath, "binary", function(err, file) {
+//					onSuccess(file.slice(fromOffset, toOffset)/*+'0'*/);
+//					//response.write(file.slice(start, end)+'0', "binary");
+//				});
+
+				var bufferSize = (toOffset - fromOffset) + 1;
+
+				//console.log('bufferSize:' + bufferSize + '!fromOffset:' + fromOffset + '!toOffset:' + toOffset);
+
+				var buffer = new Buffer(bufferSize);
+				fs.read(fd, buffer, 0, buffer.length/*bufferSize*/, fromOffset, // append '0' ?
+					function(err, bytesRead, buffer) {
+						fs.close(fd, function() {
+							if (!err) {
+								onSuccess(buffer)
+							} else {
+								onError(err)
+							}
+						});
+					}
+				);
+			});
+		});
+	},
+
+	convertMediaToAsync: function (mediaFilePath, outputFormat) {
+		return ensureConvertionOutputFolderExistsAsync()
+			.then(function () {
+				return convertMediaToAsync (mediaFilePath, outputFormat)
+			});
+	},
+
+	getMediaInfosAsync: function (mediaFilePath) {
+		var deferred = Q.defer();
+
+		// Only one convertion at a time
+		if (_ffmpeg_process) {
+			_ffmpeg_process.kill();
+		}
+
+		//var cleanMediaFilePath = mediaFilePath.substring(1);
+
+		probe(mediaFilePath, function(err, probeData) {
+			if (err) {
+				deferred.reject(err);
+			} else {
+				deferred.resolve(probeData);
+			}
+		});
+
+		return deferred.promise;
+	}
+
+};

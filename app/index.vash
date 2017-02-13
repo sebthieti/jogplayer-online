@@ -1,40 +1,25 @@
 <!DOCTYPE html>
 
-<html ng-app="jpoApp">
-    <head>  
+<html ng-app="jpoApp" ng-controller="mainCtrl">
+    <head>
         <!-- meta content -->
         <meta charset="utf-8">
         <meta name="description" content="">
         <meta name="keywords" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>JogPlayer Online</title>
+        <title ng-bind="pageTitle"></title>
         <!-- build:css ../build/css/app.min.css -->
+        <link rel="stylesheet" href="lib/normalize-css/normalize.css">
+        <link rel="stylesheet" href="css/fonts.css">
         <link rel="stylesheet" href="css/app.css">
         <!-- endbuild -->
     </head>
-    <body >
+    <body>
         <!--[if lt IE 7]>
             <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
         <![endif]-->
 
-        <!--<div ng-view></div>-->
-
-        <div id="main-container" ng-controller="mainCtrl">
-
-            <!--<div id="manager">-->
-                <!--<span id="add" ng-click="addPlaylist(elm)"><img src="svg/plus.svg" /></span>-->
-                <!--<span id="remove"><img src="svg/minus.svg" /></span>-->
-                <!--<span id="down"><img src="svg/down.svg" /></span>-->
-                <!--<span id="up"><img src="svg/up.svg" /></span>-->
-                <!--<span id="copy">Copy</span>-->
-                <!--<span id="cut">Cut</span>-->
-                <!--<span id="paste">Paste</span>-->
-                <!--<span id="undo">Undo</span>-->
-                <!--<span id="redo">Redo</span>-->
-                <!--<span id="settings">Settings</span>-->
-                <!--<span id="about">About</span>-->
-            <!--</div>-->
-
+        <div id="main-container">
             <div id="command-bar">
                 <audio-player media-url="selectedMediaUrl"
                               play-media="playMediaToCtrl(mediaUrl)"
@@ -45,65 +30,52 @@
                               current-media-error="playCurrentMediaError()">
                 </audio-player>
             </div>
-
             <div id="middle-container">
-
-                <div id="playlist-manager">
-                    <!--<span id="add" class="button medium" ng-click="addPlaylist()"><img src="svg/plus.svg" /></span>-->
-                    <!--<span id="remove" class="button medium"><img src="svg/minus.svg" /></span>-->
-                    <span id="up" class="button medium"><img src="svg/up.svg" /></span>
-                    <span id="down" class="button medium"><img src="svg/down.svg" /></span>
-                </div>
-
-                <playlist-explorer class="playlist-explorer"
+                <playlist-explorer id="playlist-explorer"
                                    selected-playlist="selectedPlaylist"
                                    selected-media="selectedMedia"
                                    play-media="playMediaFromPlaylist(media,srcPlaylist)"
                                    add-playlist="addPlaylist(name)">
                 </playlist-explorer>
-
                 <div id="file-explorer-commands">
-                    <span id="exploreFileSystem" class="button medium" ng-click="exploreFileSystem()"><img src="img/Hard_Disk-128.png"></span>
-                    <span id="addToPlaylist" class="button medium" title="Add files to current playlist" ng-click="addFilesToPlaylist()">< P</span>
-                    <span id="addMediaToQueue" class="button medium" title="Add media to queue (left panel)" ng-click="enqueueMediaSelection()">> Q</span>
-                    <span id="addFilesToQueue" class="button medium" title="Add files to queue (right panel)" ng-click="enqueueFileSelection()">Q <</span>
-                    <span id="addFolderToFavorites" class="button medium" title="Add folder to favorites" ng-click="addFolderToFavorites()">&#9829;+</span>
+                    <span id="addToPlaylist"
+                          class="button medium btn-rounded btn-enabled"
+                          title="Add files to current playlist"
+                          ng-disabled="canUseAddToPlaylist"
+                          ng-click="addFilesToPlaylist()">< P</span>
+                    <span id="addMediaToQueue" class="button medium btn-rounded btn-enabled" title="Add media to queue (left panel)" ng-click="enqueueMediaSelection()">> Q</span>
+                    <span id="addFilesToQueue" class="button medium btn-rounded btn-enabled" title="Add files to queue (right panel)" ng-click="enqueueFileSelection()">Q <</span>
+                    <span id="addFolderToFavorites" class="button medium btn-rounded btn-enabled" title="Add folder to favorites" ng-click="addFolderToFavorites()">&#9829;+</span>
                 </div>
-
                 <div id="right-section">
-
                     <div id="breadcrumb-container">
                         <bread-crumb id="breadcrumb"
+                                     change-dir-cmd="changeDirByPhysPathCmd(folderPath)"
                                      folder-path="currentFileExplorerDirPath"
-                                     desired-folder-path="breadCrumbDirPath">
+                                     play-folder="playFolder(folderPath)">
                         </bread-crumb>
                     </div>
-
                     <div id="file-explorer">
                         <file-explorer id="explorer"
+                                       is-visible="true"
+                                       explore-when-visible="false"
                                        play-media="playMediaFromFileExplorer(file)"
                                        enqueue-media="enqueueMediaFromFileExplorer(file)"
                                        selected-files="selectedFiles"
                                        folder-path="currentFileExplorerDirPath"
-                                       desired-folder-path="breadCrumbDirPath"
                                        selection-mode="selectionMode"
                                        media-queue="mediaQueue">
                         </file-explorer>
-
                     </div>
-
                     <div id="favorites-container">
                         <favorites-explorer favorites="favorites"
                                             delete-favorite="deleteFavorite(favorite)"
-                                            current-dir-path="breadCrumbDirPath"
-                                            update-favorite="updateFavorite(favorite)">
+                                            update-favorite="updateFavorite(favorite)"
+                                            change-dir-cmd="changeDirByLinkCmd(link)">
                         </favorites-explorer>
                     </div>
-
                 </div>
-
             </div>
-
             <div id="queue-container">
                 <media-queue queued-media="mediaQueue"
                              play-media="playMediaFromQueue(media)"
@@ -112,13 +84,11 @@
                              clear-queue="clearQueue()">
                 </media-queue>
             </div>
-
         </div>
 
-        <!--<div>Angular seed app: v<span app-version></span></div>-->
         <!-- In production use:-->
         <!--<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>-->
-
+        <script src="js/polyfill.js"></script>
         <script src="lib/underscore/underscore.js"></script>
         <script src="lib/datejs/build/production/date.min.js"></script>
         <script src="lib/angular/angular.js"></script>
@@ -135,6 +105,7 @@
         <script src="js/services/favoriteService.js"></script>
         <script src="js/helpers/pathHelper.js"></script>
         <script src="js/services/playlistService.js"></script>
+        <script src="js/services/mediaService.js"></script>
 
         <script src="js/stop-event.js"></script>
         <script src="js/controls/playlistExplorer.js"></script>
@@ -143,8 +114,10 @@
         <script src="js/controls/mediaQueue.js"></script>
         <script src="js/controls/audioPlayer.js"></script>
         <script src="js/controls/fileExplorer.js"></script>
+        <script src="js/services/jpoService.js"></script>
 
         <script src="js/filters.js"></script>
+        <script src="js/filters/time.js"></script>
         <script src="js/directives.js"></script>
         <!-- endbuild -->        
     </body>

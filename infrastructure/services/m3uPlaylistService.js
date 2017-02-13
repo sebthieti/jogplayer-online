@@ -11,22 +11,6 @@ var fs = require('fs'),
 var EXTENDED = "#EXTM3U",
 	_mediaBuilder;
 
-function M3UPlaylistService(mediaBuilder) {
-	_mediaBuilder = mediaBuilder;
-}
-
-M3UPlaylistService.prototype.loadMediasFromPlaylistAsync = function (filePath) {
-	return readPlaylistAsync(filePath)
-		.then(function(playlistContent) {
-			return parsePlaylist(playlistContent, filePath)
-		});
-};
-
-M3UPlaylistService.prototype.isOfType = function(filePath) {
-	var ext = path.extname(filePath).toLowerCase();
-	return ext == ".m3u" || ext == ".m3u8";
-};
-
 var readPlaylistAsync = function (filePath) {
 	return Q.nfcall(fs.readFile, filePath, { encoding: "utf8" })
 };
@@ -63,12 +47,33 @@ var parsePlaylist = function (playlistContent, filePath) {
 		var media = _mediaBuilder.buildMediaSummary(
 			pathBuilder.toAbsolutePath(filePath, mediaPath),
 			title,
+			medias.length,
 			duration);
 
 		medias.push(media);
 	}
 
 	return medias;
+};
+
+function M3UPlaylistService(mediaBuilder) {
+	_mediaBuilder = mediaBuilder;
+}
+
+M3UPlaylistService.prototype = {
+
+	loadMediaFromPlaylistAsync: function (filePath) {
+		return readPlaylistAsync(filePath)
+			.then(function(playlistContent) {
+				return parsePlaylist(playlistContent, filePath)
+			});
+	},
+
+	isOfType: function(filePath) {
+		var ext = path.extname(filePath).toLowerCase();
+		return ext == ".m3u" || ext == ".m3u8";
+	}
+
 };
 
 module.exports = M3UPlaylistService;

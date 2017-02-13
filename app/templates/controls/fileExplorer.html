@@ -1,12 +1,21 @@
-<ul>
-    <li class="up" ng-click="goUp()"><span>[ Up.. ]</span></li>
-    <li ng-click="fileSelected(f)"
-        ng-repeat="f in files | orderBy: ['type','name']"
-        ng-class="f.selected ? 'selected' : ''">
-        <div class="play" ng-switch="mediaQueueLength">
-            <span ng-click="innerPlayMedia(f)" ng-show="{{ f.type === 'F' }}" ng-switch-when="0" stop-event>&#9654;</span>
-            <span ng-click="innerEnqueueMedia(f)" ng-switch-default stop-event>&#9654;+</span>
-        </div>
-        <span class="name">{{ f.name }}</span>
-    </li>
-</ul>
+<div>
+    <div id="file-explorer-overlay"
+         class="btn-enabled"
+         ng-click="exploreFileSystem()"
+         ng-show="!isActive">
+        <span id="start-browse-icon" class="icon-drive"></span>
+        <span id="start-browse-caption">Click to browse your files</span>
+    </div>
+    <div id="folder-up" ng-show="canExecuteFolderUp" class="icon-folder btn-enabled" ng-click="goUp()"> ...</div>
+    <ul id="file-explorer-list">
+        <li ng-click="fileSelected(f)"
+            ng-repeat="f in files | orderBy: ['type','name']"
+            ng-class="f.selected ? 'selected' : ''"
+            class="btn-enabled">
+            <span class="icon-folder-open folder" ng-show="isDirectory(f)" stop-event></span>
+            <span class="icon-play play-file" ng-show="isFile(f)" ng-click="innerPlayMedia(f)" stop-event>{{ mediaQueueLength === 0 ? '' : '+' }}</span>
+
+            <span class="name">{{ f.name }}</span>
+        </li>
+    </ul>
+</div>

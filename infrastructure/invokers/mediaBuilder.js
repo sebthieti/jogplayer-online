@@ -2,50 +2,112 @@
 
 var Q = require('q'),
 	//fs = require('fs'),
-	//path = require('path'),
+	path = require('path'),
 	//from = require('fromjs'),
-	//MediaSummary = require('../models/medias/media-summary'),
-	Media = require('../models').Media,
+	MediaSummary = require('../models').MediaSummary,
 	mediaHelper = require('../utils').mediaHelper/*,
 	MediaType = require('../models/').MediaType*/;
 
 var _metaTagServices,
-	_mediaService;
+	_mediaService,
+	Media;
 
-function MediaBuilder (metaTagServices, mediaService) {
+var MediaBuilder = function (metaTagServices, mediaService, mediaModel) {
 	_metaTagServices = metaTagServices;
 	_mediaService = mediaService;
+	Media = mediaModel;
 }
 
-MediaBuilder.prototype.buildMediaAsync = function (filePath, index) {
-	if (!filePath) {
-		throw "MediaBuilder.buildMedia: filePath not set";
+MediaBuilder.prototype = {
+
+	toMediaAsync: function (mediaSummary) {
+		if (!mediaSummary) {
+			throw "MediaBuilder.toMedia error: mediaSummary must be set";
+		}
+		return this.buildMediaAsync(null, mediaSummary.filePath, mediaSummary.index);
+	},
+
+	buildMediaAsync: function (playlistId, filePath, index) {
+		if (!filePath) {
+			throw "MediaBuilder.buildMedia: filePath not set";
+		}
+
+		var mimeType = mediaHelper.getMimeTypeFromPath(filePath);
+		return _mediaService
+			.getMediaInfosAsync(filePath)
+			.then(function (mediaInfos) {
+				return new Media({
+					_playlistId: playlistId,
+					duration: Math.round(mediaInfos.format.duration),
+					ext: mediaInfos.fileext,
+					name: mediaInfos.filename,
+					index: index,
+					filePath: mediaInfos.file,
+					checked: true,
+					mimeType: mimeType,
+					mustRelocalize: false,
+					title: mediaInfos.filename,
+					metadatas: [],
+					bookmarks: []
+				});
+			}, function(err) { // Can happen when loading a playlist where media are not found
+				var ext = path.extname(filePath);
+				var name = path.basename(filePath, ext);
+				return new Media({
+					_playlistId: playlistId,
+					duration: 0,
+					ext: ext,
+					name: name,
+					index: index,
+					filePath: filePath,
+					checked: true,
+					mimeType: mimeType,
+					mustRelocalize: true,
+					title: name
+				});
+			});
+	},
+
+	buildMediaSummary: function (filePath, title, index, duration) {
+		if (!filePath) {
+			throw "MediaBuilder.buildMediaSummary: filePath not set";
+		}
+		return new MediaSummary(
+			title,
+			index,
+			filePath,
+			duration
+		);
 	}
 
-	var defer = Q.defer();
+};
 
-	_mediaService
-		.getMediaInfosAsync(filePath)
-		.then(function(mediaInfos) {
-			var mimeType = mediaHelper.getMimeTypeFromPath(mediaInfos.filename);
+module.exports = MediaBuilder;
 
-			var medium = new Media({
-				duration: Math.round(mediaInfos.format.duration),
-				ext: mediaInfos.fileext,
-				name: mediaInfos.filename,
-				index: index,
-				filePath: mediaInfos.file,
-				checked: true,
-				mimeType: mimeType,
-				mustRelocalize: false,
-				title: mediaInfos.filename,
-				metadatas: [],
-				bookmarks: []
-			});
-			defer.resolve(medium);
-		});
-
-	return defer.promise;
+//var determineMediaType = function (filePath) {
+//	if (isAudioExtention(filePath)) {
+//		return MediaType.AUDIO;
+//	}
+//	throw "Unhandled media extention (video files not supported)";
+//};
+//
+//var isAudioExtention = function (filePath) {
+//	if (!filePath) {
+//		return false;
+//	}
+//	var fileExt = path.extname(filePath).toLowerCase();
+//	switch (fileExt) {
+//		case ".cda":
+//		case ".flac":
+//		case ".ogg":
+//		case ".mp3":
+//		case ".wav":
+//		case ".wma":
+//			return true;
+//		default:
+//			return false;
+//	}
+//};
 
 //var metadatas = loadTags(filePath);
 //
@@ -66,55 +128,8 @@ MediaBuilder.prototype.buildMediaAsync = function (filePath, index) {
 //	null
 //)
 //.SetMetadatas(metadatas)
-};
 
-module.exports = MediaBuilder;
 
-//	this.buildMediaSummary = function (filePath, title, duration) {
-//		if (!filePath) {
-//			throw "MediaBuilder.buildMediaSummary: filePath not set";
-//		}
-//		return new MediaSummary(
-//			title,
-//			filePath,
-//			duration
-//		);
-//	}
-//
-//	this.toMedia = function (mediaSummary) {
-//		if (!mediaSummary) {
-//			throw "MediaBuilder.toMedia error: mediaSummary must be set";
-//		}
-//		return Media.fromMediaSummary(
-//			mediaSummary,
-//			determineMediaType(mediaSummary.filePath)
-//		);
-//	}
-//
-//	 function determineMediaType (filePath) {
-//		 if (isAudioExtention(filePath)) {
-//			 return MediaType.AUDIO;
-//		 }
-//		 throw "Unhandled media extention (video files not supported)";
-//	 }
-//
-//	 function isAudioExtention(filePath) {
-//		 if (!filePath) {
-//			 return false;
-//		 }
-//		 var fileExt = path.extname(filePath).toLowerCase()
-//		 switch (fileExt) {
-//			 case ".cda":
-//			 case ".flac":
-//			 case ".ogg":
-//			 case ".mp3":
-//			 case ".wav":
-//			 case ".wma":
-//				 return true;
-//			 default:
-//				 return false;
-//		 }
-//	 }
 //
 //	 function findTitleFromTag(metadatas) {
 //		 return from(metadatas)

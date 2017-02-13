@@ -1,22 +1,32 @@
 <div id="audio-player">
     <audio id="audioPlayer" controls></audio>
-    <div id="play-control">
-        <div id="previous" class="button" ng-click="playPrevious()"><img src="svg/small.svg" /></div>
-        <div id="play-pause" class="button" ng-click="playOrPause()"><img id="btnPlay" src="svg/play.svg" /></div>
-        <div id="next" class="button" ng-click="playNext()"><img src="svg/small-next.svg" /></div>
-    </div>
-    <span id="elapsed-time">0:00</span>
-    <div id="timeline">
-        <div id="timeline-bar">
-            <div id="loaded-chunks"></div>
+    <div>
+        <div id="previous-container">
+            <span class="icon-previous btn btn-enabled" ng-click="playPrevious()"></span>
         </div>
-        <div id="cursor" title="Cursor"></div>
-    </div>
-    <span id="remaining-time">0:00</span>
-    <div id="volume-container">
-        <div id="volume" class="button"><img src="svg/volume.svg" /></div>
-        <div id="volume-bar">
-            <div id="volume-level"></div>
+        <div id="play-container">
+            <span id="btnPlay" class="icon-play btn btn-enabled btn-large" ng-click="playOrPause()"></span>
+        </div>
+        <div id="next-container">
+            <span class="icon-next btn btn-enabled" ng-click="playNext()"></span>
+        </div>
+        <div id="elapsed-time-container">
+            <span id="elapsed-time" class="time">0:00</span>
+        </div>
+        <div id="timeline-container">
+            <div id="timeline">
+                <div id="loaded-chunks"></div>
+                <div id="cursor" title="Cursor" class="btn-enabled hidden"></div>
+            </div>
+        </div>
+        <div id="remaining-time-container">
+            <span id="remaining-time" class="time">0:00</span>
+        </div>
+        <div id="volume-container">
+            <span class="icon-volume-high btn btn-enabled"></span>
+            <div id="volume-bar">
+                <div id="volume-level" class="btn-enabled"></div>
+            </div>
         </div>
     </div>
 </div>

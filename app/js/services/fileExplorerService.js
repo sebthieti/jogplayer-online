@@ -1,33 +1,26 @@
 'use strict';
 
-jpoApp.factory("fileExplorerService", function ($http, $q) {
-
-	var EXPLORER_PATH_PATTERN = "/api/explore:path";
-
-	var exploreFolder = function (folderPath) {
-		var deferred = $q.defer();
-
-		var pathUrl = EXPLORER_PATH_PATTERN.replace(':path', folderPath);
-
-		$http.get(pathUrl)
-			.then(function (result) {
-				_.each(result.data, function(file) {
-					insertfilePathToFile(file, folderPath);
-				});
-				deferred.resolve(result.data);
-			}, function (err) {
-				deferred.reject(err);
-			});
-
-		return deferred.promise;
-	};
-
-	var insertfilePathToFile = function(file, dirPath) {
-		file.filePath = dirPath + file.name;
-	};
-
+jpoApp.factory("fileExplorerService", function ($http, $q, jpoProxy) {
 	return {
-		exploreFolder: exploreFolder
-	}
+		startExplore: function() {
+			return jpoProxy.getApiLink('explore')
+				.then(function(link) {
+					return $http.get(link);
+				})
+				.then(function(result) {
+					return result.data;
+				});
+		},
 
+		exploreFolder: function (physFolderPath) {
+			return jpoProxy.getApiLink('explore')
+				.then(function(link) {
+					if (link.endsWith('/')){
+						link = link.substring(0, link.length-1);
+					}
+					var fullLink = link + physFolderPath;
+					return $http.get(fullLink);
+				});
+		}
+	}
 });

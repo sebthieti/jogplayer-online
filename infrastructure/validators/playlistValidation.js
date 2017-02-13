@@ -6,11 +6,20 @@ module.exports = {
 		if (pl.index === undefined) {
 			pl.index = null;
 		}
-		return pl !== undefined &&
+
+		var isValidVirtual =
+			pl !== undefined &&
 			pl._id === undefined &&
 			pl.name !== undefined &&
-			pl.checked !== undefined &&
 			pl.media !== undefined; // TODO Have to validate medias
+
+		var isValidPhys =
+			pl !== undefined &&
+			pl._id === undefined &&
+			pl.filePath !== undefined &&
+			pl.media === undefined;
+
+		return isValidPhys || isValidVirtual;
 	}
 
 };

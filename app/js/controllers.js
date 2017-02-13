@@ -7,13 +7,23 @@ angular.module('jpoApp.controllers', []).
 		$scope.currentFileExplorerDirPath = '';
 		$scope.explorerSelectedFiles = null;
 		$scope.currentFileExplorerDirTree = null;
-		$scope.breadCrumbDirPath = '';
+//		$scope.breadCrumbDirPath = '';
 		$scope.selectedMediaUrl = null;
 		$scope.selectedPlaylist = null;
+		$scope.canUseAddToPlaylist = true;
 
 		// BEGIN Favorites section
 
 		$scope.favorites = null;
+
+		$scope.pageTitle = 'JogPlayer Online';
+		$scope.displayMediaInTitle = function(mediaTitle) {
+			if (!mediaTitle) {
+				$scope.pageTitle = 'JogPlayer Online';
+			} else {
+				$scope.pageTitle = mediaTitle + " - JogPlayer Online";
+			}
+		};
 
 		$scope.addFolderToFavorites = function() {
 			// Get folder name for fav name.
@@ -49,22 +59,19 @@ angular.module('jpoApp.controllers', []).
 
 		$scope.deleteFavorite = function(favToDelete) {
 			favoriteService
-				.deleteFavorite(favToDelete._id)
-				.then(function (favoriteResult) {
-					if (favoriteResult.status === 200) {
+				.deleteFavorite(favToDelete)
+				.then(function () {
+					$scope.favorites = _.filter($scope.favorites, function(fav) {
+						return fav.index !== favToDelete.index;
+					});
 
-						$scope.favorites = _.filter($scope.favorites, function(fav) {
-							return fav.index !== favToDelete.index;
-						});
-
-						// Remap indexes
-						var favIndex = 0;
-						_.each($scope.favorites, function(fav) {
-							fav.index = favIndex;
-							favIndex++;
-						});
-					}
-				});
+					// Remap indexes
+					var favIndex = 0;
+					_.each($scope.favorites, function(fav) {
+						fav.index = favIndex;
+						favIndex++;
+					});
+				});//.catch()
 		};
 
 		$scope.updateFavorite = function(favorite) {
@@ -101,11 +108,11 @@ angular.module('jpoApp.controllers', []).
 			}
 
 			var mediaFilePaths = _.map($scope.selectedFiles, function(file) {
-				return file.filePath;
+				return selectSelfPhysicalFromLinks(file.links);
 			});
 
 			playlistService
-				.addMediaByFilePathToPlaylist($scope.selectedPlaylist._id, mediaFilePaths)
+				.addMediaByFilePathToPlaylist($scope.selectedPlaylist, mediaFilePaths)
 				.then(function(res) {
 					$scope.$emit('playlist.mediaInserted', res);
 				});
@@ -223,9 +230,9 @@ angular.module('jpoApp.controllers', []).
 			playPrevious();
 		};
 
-		$scope.exploreFileSystem = function() {
-			$scope.$emit('exploreFileSystem');
-		};
+		//$scope.exploreFileSystem = function() {
+		//	$scope.$emit('exploreFileSystem');
+		//};
 
 		// BEGIN Playlist section
 
@@ -297,10 +304,32 @@ angular.module('jpoApp.controllers', []).
 				setCurrentMediaState(nextMediaInQueue);
 			}
 
-
-
-
 			// si media de fileExplorer, ne pas prendre le suivant de pl
+
+		};
+
+		var selectSelfPhysicalFromLinks = function(links) {
+			var link = _.find(links, function(link) {
+				return link.rel === 'self.phys';
+			});
+			if (link) {
+				return link.href;
+			}
+		};
+
+		$scope.changeDirByPhysPathCmd = function(physPath){
+			$scope.$emit('changeDirectoryByPhysPath', physPath);
+		};
+
+		$scope.changeDirByLinkCmd = function(link){
+			$scope.$emit('changeDirectoryByLink', link);
+		};
+
+		$scope.playFolder = function(folderPath) {
+
+			// Start play folder mode
+
+
 
 
 		};

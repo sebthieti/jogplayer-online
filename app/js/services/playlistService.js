@@ -1,75 +1,66 @@
 'use strict';
 
-jpoApp.factory("playlistService", function ($http, $q) {
-	var PLAYLISTS_URL_PATTERN = "/api/playlists/:playlistId";
-	var PLAYLISTS_MEDIA_URL_PATTERN = "/api/playlists/:playlistId/media/:mediaId";
-	var PARAM_PLAYLIST_ID = ':playlistId';
-	var PARAM_MEDIA_ID = ':mediaId';
+jpoApp.factory("playlistService", function ($http, $q, jpoProxy) {
+	var selectActionFromLinks = function(action, links) {
+		var link = _.find(links, function(link) {
+			return link.rel === action;
+		});
+		if (link) {
+			return link.href;
+		}
+	};
 
-	var addOrInsertMediaByFilePathToPlaylist = function (playlistId, mediaFilePaths, index) {
-		var deferred = $q.defer();
-		var pathUrl = PLAYLISTS_MEDIA_URL_PATTERN
-			.replace(PARAM_PLAYLIST_ID, playlistId)
-			.replace(PARAM_MEDIA_ID, '');
-
-		$http.post(pathUrl, { index: index, mediaFilePaths: mediaFilePaths })
+	var addOrInsertMediaByFilePathToPlaylist = function (playlist, mediaFilePaths, index) {
+		return $http
+			.post(selectActionFromLinks('media.insert', playlist.links), { index: index, mediaFilePaths: mediaFilePaths })
 			.then(function (result) {
-				deferred.resolve({ playlistId: playlistId, newMedia: result.data});
-			}, function (err) {
-				deferred.reject(err);
+				return { playlist: playlist, newMedia: result.data};
 			});
-
-		return deferred.promise;
 	};
 
 	return {
 		getPlaylists: function () {
-			var deferred = $q.defer();
-			var pathUrl = PLAYLISTS_URL_PATTERN.replace(PARAM_PLAYLIST_ID, '');
-
-			$http.get(pathUrl)
+			return jpoProxy.getApiLink('playlists')
+				.then(function(link) {
+					return $http.get(link);
+				})
 				.then(function (result) {
-					deferred.resolve(result.data);
-				}, function (err) {
-					deferred.reject(err);
+					return result.data;
 				});
-
-			return deferred.promise;
 		},
 
 		addPlaylist: function(playlist) {
-			var deferred = $q.defer();
-			var pathUrl = PLAYLISTS_URL_PATTERN.replace(PARAM_PLAYLIST_ID, '');
-
-			$http.post(pathUrl, playlist)
+			return jpoProxy.getApiLink('playlists')
+				.then(function(link) {
+					return $http.post(link, playlist)
+				})
 				.then(function (result) {
-					deferred.resolve(result.data);
-				}, function (err) {
-					deferred.reject(err);
+					return result.data;
 				});
+		},
 
-			return deferred.promise;
+		addPhysicalPlaylist: function(filePath) {
+			return jpoProxy.getApiLink('playlists')
+				.then(function(link) {
+					return $http.post(link, {filePath: filePath})
+				})
+				.then(function (result) {
+					return result.data;
+				});
 		},
 
 		updatePlaylist: function (playlist) {
-			var deferred = $q.defer();
-			var pathUrl = PLAYLISTS_URL_PATTERN.replace(PARAM_PLAYLIST_ID, playlist._id);
-
-			$http.put(pathUrl, playlist)
+			return $http
+				.put(selectActionFromLinks('update', playlist.links), playlist)
 				.then(function (result) {
-					deferred.resolve(result.data);
-				}, function (err) {
-					deferred.reject(err);
+					return result.data;
 				});
-
-			return deferred.promise;
 		},
 
 		removePlaylist: function(playlist) {
 			var deferred = $q.defer();
-			var pathUrl = PLAYLISTS_URL_PATTERN.replace(PARAM_PLAYLIST_ID, playlist._id);
 
-			$http.delete(pathUrl)
+			$http.delete(selectActionFromLinks('remove', playlist.links))
 				.then(function (result) {
 					var removeSuccess = result.status === 204;
 					if (removeSuccess) { deferred.resolve() }
@@ -81,41 +72,31 @@ jpoApp.factory("playlistService", function ($http, $q) {
 			return deferred.promise;
 		},
 
-		addMediaByFilePathToPlaylist: function (playlistId, mediaFilePaths) {
-			return addOrInsertMediaByFilePathToPlaylist(playlistId, mediaFilePaths, 'end');
+		addMediaByFilePathToPlaylist: function (playlist, mediaFilePaths) {
+			return addOrInsertMediaByFilePathToPlaylist(playlist, mediaFilePaths, 'end');
 		},
 
-		insertMediaByFilePathToPlaylist: function (playlistId, mediaFilePaths, index) {
-			return addOrInsertMediaByFilePathToPlaylist(playlistId, mediaFilePaths, index);
+		insertMediaByFilePathToPlaylist: function (playlist, mediaFilePaths, index) {
+			return addOrInsertMediaByFilePathToPlaylist(playlist, mediaFilePaths, index);
 		},
 
-		getPlaylistMedia: function (playlistId) {
-			var deferred = $q.defer();
-			var pathUrl = PLAYLISTS_URL_PATTERN.replace(PARAM_PLAYLIST_ID, playlistId);
-
-			$http.get(pathUrl)
+		getPlaylistMedia: function (playlist) {
+			return $http
+				.get(selectActionFromLinks('media', playlist.links))
 				.then(function (result) {
-					deferred.resolve(result.data);
-				}, function (err) {
-					deferred.reject(err);
+					return result.data;
 				});
-
-			return deferred.promise;
 		},
 
-		removeMediaFromPlaylist: function (playlistId, mediaId) {
+		removeMediumFromPlaylist: function (media) {
 			var deferred = $q.defer();
-			var pathUrl = PLAYLISTS_MEDIA_URL_PATTERN
-				.replace(PARAM_PLAYLIST_ID, playlistId)
-				.replace(PARAM_MEDIA_ID, mediaId);
 
-			$http.delete(pathUrl)
+			return $http
+				.delete(selectActionFromLinks('remove', media.links))
 				.then(function (result) {
 					var removeSuccess = result.status === 204;
 					if (removeSuccess) { deferred.resolve() }
-					else { deferred.reject("Media " + mediaId + " from playlist " + playlistId + " hasn't be deleted" ) }
-				}, function (err) {
-					deferred.reject(err);
+					else { deferred.reject("Media " + media._id + " from playlist " + media._playlistId + " hasn't be deleted" ) }
 				});
 
 			return deferred.promise;
