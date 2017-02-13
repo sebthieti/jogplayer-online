@@ -13,9 +13,10 @@ window.Jpo.PlayerState = {
 	Play: 'play',
 	Previous: 'previous',
 	Next: 'next',
-	Ended: 'ended'
+	Ended: 'ended',
+	LoadStart: 'loadstart',
+	LoadedData: 'loadeddata'
 };
-
 
 window.Jpo.ButtonMap = {
 	Left: 0

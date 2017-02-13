@@ -22,7 +22,7 @@ jpoApp.factory('Model', ['serviceFactory', function(serviceFactory) {
 		}
 	}
 
-	Model.prototype.getAllAsync = function() {
+	Model.prototype.getAsync = function() {
 		var self = this;
 		return this.service
 			.getAsync()

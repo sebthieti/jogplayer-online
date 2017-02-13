@@ -58,3 +58,15 @@ Rx.Observable.prototype.doAsync = Rx.Observable.prototype.getValueAsync = functi
 Rx.Observable.prototype.whereIsAdminOrRootUser = function() {
 	return this.where(function(user) {return user && user.permissions && user.permissions.isRoot || user.permissions.isAdmin});
 };
+
+//Rx.Observable.$watch = function (scope, watchExpression, objectEquality) {
+//	return Rx.Observable.create(function (observer) {
+//		// Create function to handle old and new Value
+//		function listener (newValue, oldValue) {
+//			observer.onNext({ oldValue: oldValue, newValue: newValue });
+//		}
+//
+//		// Returns function which disconnects the $watch expression
+//		return scope.$watch(watchExpression, listener, objectEquality);
+//	});
+//};

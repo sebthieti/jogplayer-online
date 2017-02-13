@@ -39,6 +39,14 @@ jpoApp.factory('UserStateModel', ['jpoModelBuilder', 'Model', function(jpoModelB
 					setBrowsingFolderPath: function(browsingFolderPath) {
 						this.browsingFolderPath = browsingFolderPath;
 						return this;
+					},
+					setPlayingMediumInQueueIndex: function(mediumInQueueIndex) {
+						this.playingMediumInQueueIndex = mediumInQueueIndex;
+						return this;
+					},
+					setOpenedPlaylistId: function(playlistId) {
+						this.openedPlaylistId = playlistId;
+						return this;
 					}
 				};
 			}

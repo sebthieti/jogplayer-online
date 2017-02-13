@@ -5,11 +5,14 @@ jpoApp.factory('userStateBusiness', [
 	'audioPlayerBusiness',
 	'authBusiness',
 	'mediaQueueBusiness',
+	'fileExplorerBusiness',
+	'playlistBusiness',
 	'PlaylistMediaModel',
 	'FileModel',
 	'UserStateModel',
-	function($q, audioPlayerBusiness, authBusiness, mediaQueueBusiness, PlaylistMediaModel, FileModel, UserStateModel) {
+	function($q, audioPlayerBusiness, authBusiness, mediaQueueBusiness, fileExplorerBusiness, playlistBusiness, PlaylistMediaModel, FileModel, UserStateModel) {
 		var userStateSubject = new Rx.BehaviorSubject();
+		//var PlayerState = Jpo.PlayerState;
 
 		function observeUserState() {
 			return userStateSubject;
@@ -18,8 +21,10 @@ jpoApp.factory('userStateBusiness', [
 		function loadStateOnUserAuthenticated(){ // TODO Move to service
 			authBusiness
 				.observeAuthenticatedUser()
-				.asAsyncValue()
+				.whereHasValue()
 				.do(function(__) {
+					audioPlayerBusiness.updateVolume(tryLoadVolumeState());
+
 					UserStateModel
 						.getCurrentUserStateAsync()
 						.then(function(userState) {
@@ -28,20 +33,51 @@ jpoApp.factory('userStateBusiness', [
 								return;
 							}
 
-							var mediaInQueuePromises = userState.mediaQueue.map(function(mediumLinkUrl) {
-								if (mediumLinkUrl.startsWith('/api/playlists/')) {
-									return PlaylistMediaModel.getMediumFromLinkUrl(mediumLinkUrl);
-								} else {
-									return FileModel.getMediumFromLinkUrl(mediumLinkUrl);
-								}
-							});
-							$q.all(mediaInQueuePromises)
-								.then(function(mediaInQueue) {
-									mediaQueueBusiness.enqueueMedia(mediaInQueue);
+							loadMediaQueueAsync(userState)
+								.then(function() {
+									return loadCurrentMediumAsync(userState);
 								});
+							loadCurrentPlaylist(userState);
 						});
 				})
 				.silentSubscribe();
+		}
+
+		function loadCurrentPlaylist(userState) {
+			return playlistBusiness.selectPlaylistByIdAsync(userState.openedPlaylistId);
+		}
+
+		function loadMediaQueueAsync(userState) {
+			var deferred = $q.defer();
+
+			var mediaInQueuePromises = userState.mediaQueue.map(function(mediumLinkUrl) {
+				if (mediumLinkUrl.startsWith('/api/playlists/')) {
+					return PlaylistMediaModel.getMediumFromLinkUrl(mediumLinkUrl);
+				} else {
+					return FileModel.getMediumFromLinkUrl(mediumLinkUrl);
+				}
+			});
+			$q.all(mediaInQueuePromises)
+				.then(function(mediaInQueue) {
+					return mediaQueueBusiness.enqueueMediaAndStartQueue(mediaInQueue);
+				})
+				.then(function() {
+					deferred.resolve();
+				});
+
+			return deferred.promise;
+		}
+
+		function loadCurrentMediumAsync(userState) {
+			// Search medium at index
+			return mediaQueueBusiness
+				.getMediumVmAtIndexAsync(userState.playingMediumInQueueIndex)
+				.then(function(mediumInQueueVm) {
+					//audioPlayerBusiness.playMedium(mediumInQueueVm);
+					if (mediumInQueueVm) {
+						audioPlayerBusiness.setMediumAndSetCursorAt(mediumInQueueVm, userState.playedPosition);
+					}
+				});
 		}
 
 		function observeMediumQueueSelectLinkUrl() {
@@ -62,61 +98,114 @@ jpoApp.factory('userStateBusiness', [
 				});
 		}
 
-		function observeMediaVolumeChangeByInterval(interval) {
-			var obs = authBusiness.observeAuthenticatedUser();
-			return Rx.Observable
-				.timer(interval, interval)
-				.selectMany(function() {return obs})
+		function observeMediaVolumeChange() {
+			return authBusiness
+				.observeAuthenticatedUser()
 				.whereIsNotNull() // TODO Stop when user disconnect
-				.select(function() {return audioPlayerBusiness.getVolume()})
-				.distinctUntilChanged(function(x) {return x});
+				.selectMany(function() {
+					return audioPlayerBusiness
+						.observeVolume()
+						.debounce(500);
+				});
 		}
 
 		function observeMediumPositionChangeByInterval(interval){
-			var obs = authBusiness.observeAuthenticatedUser();
-			return Rx.Observable
-				.timer(interval, interval)
-				.selectMany(function() {return obs})
+			return authBusiness
+				.observeAuthenticatedUser()
 				.whereIsNotNull() // TODO Stop when user disconnect
-				.select(function() {return audioPlayerBusiness.getMediumPosition()})
-				.distinctUntilChanged(function(x) {return x});
+				.select(function() {
+					return Rx.Observable
+						.timer(interval, interval)
+						.withLatestFrom(
+							audioPlayerBusiness.observeMediumPosition(),
+							function(t, m) { return m }
+						)
+						.distinctUntilChanged(function(x) { return x });
+				})
+				.selectMany(function(x) { return x });
+		}
+
+		function observeFileExplorerPathChangeByInterval(interval) {
+			return authBusiness
+				.observeAuthenticatedUser()
+				.whereIsNotNull() // TODO Stop when user disconnect
+				.select(function() {
+					return Rx.Observable
+						.timer(interval, interval)
+						.withLatestFrom(
+							fileExplorerBusiness.observeCurrentFolderContent(),
+							function(t, m) { return m.selectSelfFromLinks() }
+						)
+						.distinctUntilChanged(function(x) { return x });
+				})
+				.selectMany(function(x) { return x });
+		}
+
+		function observePlaylistSelectionChangeByInterval(interval) {
+			return authBusiness
+				.observeAuthenticatedUser()
+				.whereIsNotNull() // TODO Stop when user disconnect
+				.select(function() {
+					return Rx.Observable
+						.timer(interval, interval)
+						.withLatestFrom(
+							playlistBusiness.observeCurrentPlaylist(),
+							function(t, m) { return m }
+						)
+						.distinctUntilChanged(function(x) { return x });
+				})
+				.selectMany(function(x) { return x });
+		}
+
+		function observeCurrentMediumIndexInQueue() {
+			return mediaQueueBusiness.observeCurrentMediumIndexInQueue();
 		}
 
 		function observeControlsForStateChange() {
 			return Rx.Observable.combineLatest(
-				observeMediumPositionChangeByInterval(10000).select(function(x) {
-					return x;
-				}),
-				observeMediumQueueSelectLinkUrl().select(function(x) {
-					return x;
-				}),
-				observeMediaVolumeChangeByInterval(10000).select(function(x) {
-					return x;
-				}),
-				function (mediumPosition, mediumQueueLinks, mediumVolume) {
+				observeMediumPositionChangeByInterval(5000),
+				observePlaylistSelectionChangeByInterval(5000),
+				observeFileExplorerPathChangeByInterval(5000),
+				observeMediumQueueSelectLinkUrl(),
+				observeCurrentMediumIndexInQueue(),
+				function (mediumPosition, currentPlaylistVm, currentFileExplorerPath, mediumQueueLinks, playingMediumInQueueIndex) {
 					return {
 						playedPosition: mediumPosition,
+						currentPlaylistVm: currentPlaylistVm,
+						currentFileExplorerPath: currentFileExplorerPath,
 						mediaQueueLinks: mediumQueueLinks,
-						mediumVolume: mediumVolume
+						playingMediumInQueueIndex: playingMediumInQueueIndex
 					}
 				}
 			);
 		}
 
 		function onControlsStateChangeUpdate() {
+			observeMediaVolumeChange()
+				.do(function(vol) {
+					tryStoreVolumeState(vol);
+				})
+				.silentSubscribe();
+
 			observeControlsForStateChange()
 				.do(function (controlsStates) {
 					observeUserState().getValueAsync(function(userState) {
 						if (userState) { // Just update
 							userState.playedPosition = controlsStates.playedPosition;
-							userState.volume = controlsStates.mediumVolume;
 							userState.mediaQueue = controlsStates.mediaQueueLinks;
+							userState.playingMediumInQueueIndex = controlsStates.playingMediumInQueueIndex;
+							userState.openedPlaylistId = controlsStates.currentPlaylistVm.model.id;
+							userState.browsingFolderPath = controlsStates.currentFileExplorerPath;
 							userState.updateAsync();
+
 						} else { // Insertion
 							var newUserState = UserStateModel
 								.createEmptyUserStateEntity()
 								.setMediaQueue(controlsStates.mediaQueueLinks)
-								.setPlayedPosition(controlsStates.playedPosition);
+								.setPlayedPosition(controlsStates.playedPosition)
+								.setBrowsingFolderPath(controlsStates.currentFileExplorerPath)
+								.setPlayingMediumInQueueIndex(controlsStates.playingMediumInQueueIndex)
+								.setOpenedPlaylistId(controlsStates.currentPlaylistVm.model.id);
 							UserStateModel
 								.addAsync(newUserState)
 								.then(function (userState) {
@@ -126,6 +215,24 @@ jpoApp.factory('userStateBusiness', [
 					});
 				})
 				.silentSubscribe();
+		}
+
+		function tryStoreVolumeState(volume) {
+			if(typeof(Storage) !== "undefined") {
+				// Code for localStorage/sessionStorage.
+				localStorage.setItem('state', JSON.stringify({ volume: volume }));
+			}
+		}
+
+		function tryLoadVolumeState() {
+			if(typeof(Storage) !== "undefined") {
+				// Code for localStorage/sessionStorage.
+				var state = JSON.parse(localStorage.getItem('state'));
+				if (state) {
+					return state.volume
+				}
+				return 0;
+			}
 		}
 
 		loadStateOnUserAuthenticated();

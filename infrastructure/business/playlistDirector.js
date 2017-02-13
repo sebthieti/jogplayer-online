@@ -121,7 +121,9 @@ function updatePlaylistDateReloadMediaAndSaveAsync(playlist, lastUpdateOn, issue
 		.then(function(cleanPlUpdated) {
 			return utils.saveModelAsync(cleanPlUpdated);
 		})
-		.then(innerFeedPhysicalPlaylistWithMediaAndSaveAsync);
+		.then(function(savedPlaylist) {
+			return innerFeedPhysicalPlaylistWithMediaAndSaveAsync(savedPlaylist, issuer);
+		});
 }
 
 function playlistHasChanged(currentPlaylistUpdateDate, lastUpdateDate) {

@@ -112,7 +112,7 @@ jpoApp.factory('favoriteBusiness', ['FavoriteModel', 'authBusiness', function(Fa
 			.whereHasValue()
 			.do(function(__) {
 				FavoriteModel
-					.getAllAsync()
+					.getAsync()
 					.then(function(favorites) {
 						favoritesSubject.onNext(favorites);
 					});

@@ -8,8 +8,8 @@ jpoApp.directive("mediaQueue", ['mediaQueueBusiness', function (mediaQueueBusine
 		controller: function($scope, $timeout) {
 			$scope.hasAny = false;
 
-			$scope.playMedium = function(medium) {
-				mediaQueueBusiness.playMedium(medium);
+			$scope.playMedium = function(mediumVm) {
+				mediaQueueBusiness.playMedium(mediumVm);
 			};
 
 			$scope.innerRemove = function(medium) {

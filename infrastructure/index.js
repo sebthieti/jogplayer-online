@@ -95,7 +95,7 @@ function registerModels() {
 			Playlist: Models.Playlist(routes.playlists, routes.media),
 			User: Models.User(routes.users),
 			UserState: Models.UserState(routes.userStates),
-			UserPermissions: Models.UserPermissions(routes.userPermissions)
+			UserPermissions: Models.UserPermissions(routes)
 		}
 	});
 }

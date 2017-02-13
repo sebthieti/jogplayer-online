@@ -25,7 +25,57 @@ jpoApp.directive("audioPlayer", [
 			replace: true,
 			templateUrl: '/templates/controls/audioPlayer.html',
 			controller: function($scope) {
-				audioPlayerControl.init($window.document);
+				var ctxMediumQueueVm = null;
+
+				audioPlayerControl.init({
+					setCurrentStateHandler: function(state) {
+						audioPlayerBusiness.playStateChanged(state);
+					},
+					setCurrentMediumHandler: function(mediumModel) { // TODO Revamp ?
+						audioPlayerBusiness.setCurrentMedium(ctxMediumQueueVm);
+					},
+					setCurrentVolume: function(volume) {
+						audioPlayerBusiness.volumeChanged(volume);
+					},
+					controlDomElement: $window.document
+				});
+
+				audioPlayerBusiness.init({
+					setUpdateVolumeHandler: function(vol) {
+						audioPlayerControl.setVolumeFromCode(vol);
+					},
+					setMediumHandler: function(mediumQueueVm) {
+						ctxMediumQueueVm = mediumQueueVm;
+						audioPlayerControl.setMediumToPlayAndPlay(ctxMediumQueueVm.model);
+					},
+					setMediumPositionHandler: function(position) {
+						audioPlayerControl.setMediumTimePosition(position);
+					},
+					playFirstHandler: function() {
+
+					},
+					playNextHandler: function playNext() {
+
+					},
+					playPreviousHandler: function() {
+
+					},
+					//playMediumHandler: function(mediumToPlay) {
+					//	audioPlayerControl.playMedium(mediumToPlay);
+					//},
+					stopHandler: function() {
+						audioPlayerControl.stopMedium();
+					},
+					playHandler: function() {
+						audioPlayerControl.playMedium();
+					},
+					setMediumAndSetCursorAt: function(mediumQueueVm, position) {
+						ctxMediumQueueVm = mediumQueueVm;
+						audioPlayerControl.setMediumToPlay(mediumQueueVm.model);
+						audioPlayerControl.setMediumTimePosition(position);
+						audioPlayerControl.playOrPause();
+					}
+				});
 
 				$scope.playNext = function() {
 					audioPlayerBusiness.playNext();
@@ -36,64 +86,92 @@ jpoApp.directive("audioPlayer", [
 				};
 
 				$scope.playOrPause = function() {
-					audioPlayerControl.observeCurrentState().getValueAsync(function(currentState) {
-						if (currentState === PlayerState.Unknown) {
-							audioPlayerBusiness.playFirst();
-						} else {
-							audioPlayerControl.playOrPause();
-						}
-					});
+					if (audioPlayerControl.getState() === PlayerState.Unknown) {
+						audioPlayerBusiness.playFirst();
+					} else {
+						audioPlayerControl.playOrPause();
+					}
 				};
 
-				audioPlayerControl
-					.observeCurrentState()
-					.do(function(currentState) {
-						switch (currentState) {
-							case PlayerState.Ended:
-								audioPlayerBusiness.playEnded();
-								break;
-							case PlayerState.Error:
-								audioPlayerBusiness.mediumError();
-								break;
-						}
-					})
-					.silentSubscribe();
+				//audioPlayerControl
+				//	.observeCurrentState()
+				//	.do(function(currentState) {
+				//		switch (currentState) {
+				//			case PlayerState.Ended:
+				//				audioPlayerBusiness.playEnded();
+				//				break;
+				//			case PlayerState.Error:
+				//				audioPlayerBusiness.mediumError();
+				//				break;
+				//		}
+				//	})
+				//	.silentSubscribe();
 
 				audioPlayerControl
 					.observeMediumPosition()
 					.do(function(pos) {
-						audioPlayerBusiness.setMediumPosition(pos);
+						audioPlayerBusiness.mediumPositionChanged(pos);
 					})
 					.silentSubscribe();
 
-				audioPlayerControl
-					.observeVolume()
-					.do(function(volume) {
-						audioPlayerBusiness.setVolume(volume);
-					})
-					.silentSubscribe();
+				//audioPlayerControl
+				//	.observeCurrentState()
+				//	.do(function(state) {
+				//		audioPlayerBusiness.playStateChanged(state);
+				//	})
+				//	.silentSubscribe();
 
-				audioPlayerBusiness
-					.observePlayingMedium()
-					.select(function(x) {return x.model})
-					.do(function(mediumToPlay) {
-						audioPlayerControl.playMedium(mediumToPlay);
-					})
-					.silentSubscribe();
+				//audioPlayerBusiness
+				//	.observeMediumPosition()
+				//	.where(function() {return !userUpdate})
+				//	// where not called from a user notif
+				//	.do(function(vol) {
+				//		audioPlayerControl.setMediumTimePosition(vol);
+				//	})
+				//	.silentSubscribe();
 
-				audioPlayerBusiness
-					.getAndObservePlayControl()
-					.where(function(state) {
-						return state === PlayerState.Stop;// && _currentState !==  '';
-					})
-					.do(function(playState) {
-						switch (playState) {
-							case 'stop':
-								audioPlayerControl.stopMedium();
-								break;
-						}
-					})
-					.silentSubscribe();
+
+
+				//audioPlayerControl // From user change
+				//	.observeVolume()
+				//	.do(function(vol) {
+				//		//userUpdate = true;
+				//		audioPlayerBusiness.volumeChanged(vol);
+				//		//userUpdate = false;
+				//		//audioPlayerControl.setVolumeFromControl(vol);
+				//	})
+				//	.silentSubscribe();
+
+				//audioPlayerBusiness
+				//	.observeVolume()
+				//	.where(function() {return !userUpdate})
+				//	// where not called from a user notif
+				//	.do(function(vol) {
+				//		audioPlayerControl.setVolumeFromCode(vol);
+				//	})
+				//	.silentSubscribe();
+
+				//audioPlayerBusiness
+				//	.observePlayingMedium()
+				//	.select(function(x) {return x.model})
+				//	.do(function(mediumToPlay) {
+				//		audioPlayerControl.playMedium(mediumToPlay);
+				//	})
+				//	.silentSubscribe();
+
+				//audioPlayerBusiness
+				//	.getAndObservePlayControl()
+				//	.where(function(state) {
+				//		return state === PlayerState.Stop;// && _currentState !==  '';
+				//	})
+				//	.do(function(playState) {
+				//		switch (playState) {
+				//			case 'stop':
+				//				audioPlayerControl.stopMedium();
+				//				break;
+				//		}
+				//	})
+				//	.silentSubscribe();
 
 	//			var sendPlayableMediaTypes = function() {
 	//				var audioTypes = [

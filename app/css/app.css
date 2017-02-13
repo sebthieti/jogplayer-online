@@ -63,7 +63,7 @@ ul{padding:0;margin:0;list-style:none}
 
 /* END Layout main sections */
 
-#media-container{height:557px;overflow-y:auto;border:2px solid #b0b0b0;position:relative}
+#media-container{height:557px;overflow-y:auto;border:2px solid #b0b0b0;position:relative;}
 #media-container li{height:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #media-container li:nth-child(odd){background-color:#fbfbfb}
 #media-container li:nth-child(even){background-color:#e3e3e3}

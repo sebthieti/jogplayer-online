@@ -3,7 +3,7 @@
 var mongoose = require('mongoose'),
 	Schema = mongoose.Schema;
 
-var _userPermissionsRoutes;
+var _routes;
 
 var userPermissionsSchema = new Schema({
 	//userId: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -31,11 +31,17 @@ userPermissionsSchema.methods.toJSON = function() {
 userPermissionsSchema.virtual('links').get(function() {
 	return [{
 		rel: 'update',
-		href: _userPermissionsRoutes.updatePath.replace(':userId', this.id)
-	}];
+		href: _routes.userPermissions.updatePath.replace(':userId', this.id)
+	},(function(self){
+		return self.homePath
+			? {
+			rel: 'self.browsingFolderPath',
+			href: _routes.explore.fileInfoPathPattern.replace(':relativePath', self.homePath)
+		} : {}
+	}(this)) ];
 });
 
-module.exports = function(userPermissionsRoutes){
-	_userPermissionsRoutes = userPermissionsRoutes;
+module.exports = function(routes){
+	_routes = routes;
 	return mongoose.model('UserPermission', userPermissionsSchema);
 };

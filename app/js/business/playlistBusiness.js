@@ -2,6 +2,7 @@
 
 jpoApp.factory('playlistBusiness', [
 	'$q',
+//	'$timeout',
 	'mediaQueueBusiness',
 	'audioPlayerBusiness',
 	'PlaylistsModel',
@@ -87,7 +88,7 @@ jpoApp.factory('playlistBusiness', [
 				if (currentMediumIndex < playingPlaylist.media.length - 1) {
 					// take next
 					var nextMedium = playingPlaylist.media[currentMediumIndex+1];
-					mediaQueueBusiness.enqueueMedium(nextMedium.model);
+					mediaQueueBusiness.enqueueMediumAndStartQueue(nextMedium.model);
 				}
 			});
 		}
@@ -110,7 +111,7 @@ jpoApp.factory('playlistBusiness', [
 				.whereHasValue()
 				.do(function() {
 					PlaylistsModel
-						.getAllAsync()
+						.getAsync()
 						.then(function(playlists) {
 							return playlists.map(viewModelBuilder.buildEditableViewModel)
 						})
@@ -140,9 +141,30 @@ jpoApp.factory('playlistBusiness', [
 			}
 			return loadMediaAsync(playlistViewModel.model)
 				.then(function(media) {
-					playlistViewModel.media = media.map(viewModelBuilder.buildMediumViewModel);
-					currentPlaylistSubject.onNext(playlistViewModel);
+					//$timeout(function() {
+						playlistViewModel.media = media.map(viewModelBuilder.buildMediumViewModel);
+						currentPlaylistSubject.onNext(playlistViewModel);
+					//});
+
 				});
+		}
+
+		function selectPlaylistByIdAsync(playlistId) {
+			return $q(function(resolve, reject) {
+				observePlaylistViewModels().getValueAsync(function (playlistVms) {
+					var vm = _.find(playlistVms, function(vm) {
+						return vm.model.id === playlistId;
+					});
+
+					if (vm) {
+						playlistSelected(vm).then(function() {
+							resolve(vm);
+						});
+					} else {
+						reject('Playlist not found:' + playlistId);
+					}
+				});
+			});
 		}
 
 		function loadMediaAsync(playlistModel) {
@@ -252,7 +274,7 @@ jpoApp.factory('playlistBusiness', [
 		}
 
 		function playMedium(mediumViewModel){
-			mediaQueueBusiness.enqueueMedium(mediumViewModel.model);
+			mediaQueueBusiness.enqueueMediumAndStartQueue(mediumViewModel.model);
 		}
 
 		function addFilesToSelectedPlaylist(fileViewModels) {
@@ -306,6 +328,7 @@ jpoApp.factory('playlistBusiness', [
 			//loadPlaylists: loadPlaylistsOnUserLogon,
 			observePlaylistViewModels: observePlaylistViewModels,
 			playlistSelected: playlistSelected,
+			selectPlaylistByIdAsync: selectPlaylistByIdAsync,
 			updatePlaylistAsync: updatePlaylistAsync,
 			removePlaylistAsync: removePlaylistAsync,
 			addVirtualPlaylistAsync: addVirtualPlaylistAsync,

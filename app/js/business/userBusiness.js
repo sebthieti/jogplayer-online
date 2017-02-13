@@ -22,7 +22,7 @@ jpoApp.factory('userBusiness', ['$q', 'UserModel', 'authBusiness', function($q, 
 			.whereIsAdminOrRootUser()
 			.do(function() {
 				UserModel
-					.getAllAsync()
+					.getAsync()
 					.then(function(users) {
 						usersSubject.onNext(users);
 					});

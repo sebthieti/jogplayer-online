@@ -167,7 +167,7 @@ jpoApp.directive("manageUsers", [
 				.observeAuthenticatedUser()
 				.where(function(user) {
 					return user.permissions.isAdmin || user.permissions.isRoot})
-				.select(function() {
+				.selectMany(function() {
 					return userBusiness.observeUsers();
 				})
 				.do(function(users) {

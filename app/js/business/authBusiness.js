@@ -1,6 +1,12 @@
 'use strict';
 
-jpoApp.factory('authBusiness', ['$http', 'UserModel', 'serviceFactory', function($http, UserModel, serviceFactory) {
+jpoApp.factory('authBusiness', [
+	'$http',
+	'AuthenticatedUserModel',
+	'LogUserModel',
+	'UserModel',
+	'serviceFactory',
+	function($http, AuthenticatedUserModel, LogUserModel, UserModel, serviceFactory) {
 	var authenticationStatusSubject = new Rx.BehaviorSubject(JpoAuthenticationStatus.Undetermined);
 	var currentUserAuthSubject = new Rx.BehaviorSubject();
 
@@ -19,10 +25,11 @@ jpoApp.factory('authBusiness', ['$http', 'UserModel', 'serviceFactory', function
 	function login(username, password) {
 		authenticationStatusSubject.onNext(JpoAuthenticationStatus.LoggingIn);
 
-		return $http.post('/api/login', { username: username, password: password })
+		return LogUserModel
+			.login(username, password)
 			.then(function(user) {
 				authenticationStatusSubject.onNext(JpoAuthenticationStatus.LoggedIn);
-				currentUserAuthSubject.onNext(user.data)
+				currentUserAuthSubject.onNext(user)
 			}, function(err) { // TODO May be another error than 401
 				authenticationStatusSubject.onNext(JpoAuthenticationStatus.InvalidCredentials);
 			});
@@ -36,9 +43,10 @@ jpoApp.factory('authBusiness', ['$http', 'UserModel', 'serviceFactory', function
 	}
 
 	function verifyCurrentUser() {
-		return $http.get('/api/is-authenticated')
+		return AuthenticatedUserModel
+			.getAsync()
 			.then(function(user) {
-				currentUserAuthSubject.onNext(user.data);
+				currentUserAuthSubject.onNext(user);
 			}, function() {
 				currentUserAuthSubject.onNext(null);
 				authenticationStatusSubject.onNext(JpoAuthenticationStatus.InvalidCredentials);

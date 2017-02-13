@@ -1,10 +1,11 @@
 'use strict';
 
 jpoApp.factory('mediaQueueBusiness', [
+	'$q',
 	'audioPlayerBusiness',
 	'authBusiness',
 	'viewModelBuilder',
-	function(audioPlayerBusiness, authBusiness, viewModelBuilder) {
+	function($q, audioPlayerBusiness, authBusiness, viewModelBuilder) {
 	var PlayerState = Jpo.PlayerState;
 
 	var currentMediumInQueueSubject = new Rx.BehaviorSubject();
@@ -65,8 +66,17 @@ jpoApp.factory('mediaQueueBusiness', [
 		return mediumOnErrorSubject;
 	}
 
-	function playMedium(medium) {
-		audioPlayerBusiness.playMedium(medium);
+	function playMedium(mediumVm) {
+		audioPlayerBusiness.playMedium(mediumVm);
+	}
+
+	function getMediumVmAtIndexAsync(index) {
+		var deferred = $q.defer();
+		observeMediaQueue().getValueAsync(function (mediaQueue) {
+			var vm = mediaQueue[index];
+			deferred.resolve(vm);
+		});
+		return deferred.promise;
 	}
 
 	function playNext() {
@@ -179,11 +189,17 @@ jpoApp.factory('mediaQueueBusiness', [
 	}
 
 	function enqueueMediaAndStartQueue(mediaModels) {
+		var deferred = $q.defer();
+
 		var mediaVm = mediaModels.map(viewModelBuilder.buildQueuedMediumViewModel);
 		observeMediaQueue().getValueAsync(function (mediaQueue) {
 			var mediaQueueWithMedia = mediaQueue.concat(mediaVm);
 			mediaQueueSubject.onNext(mediaQueueWithMedia);
+
+			deferred.resolve();
 		});
+
+		return deferred.promise;
 	}
 
 	function removeMedium(medium) {
@@ -222,12 +238,22 @@ jpoApp.factory('mediaQueueBusiness', [
 			);
 	}
 
-	function observeMediaQueue() {
-		return mediaQueueSubject;
-	}
-
 	function observeCurrentMediumInQueue() {
 		return currentMediumInQueueSubject.whereIsDefined();
+	}
+
+	function observeCurrentMediumIndexInQueue() {
+		return observeMediaQueue()
+			.combineLatest(
+				observeCurrentMediumInQueue(),
+				function(mediaQueue, currentMediumInQueue) {
+					return mediaQueue.indexOf(currentMediumInQueue);
+				}
+			);
+	}
+
+	function observeMediaQueue() {
+		return mediaQueueSubject;
 	}
 
 	function clearQueue() {
@@ -240,20 +266,22 @@ jpoApp.factory('mediaQueueBusiness', [
 		return observeQueueEndedWithMediumSubject;
 	}
 
-	onFirstMediumInQueueStartPlay();
+	//onFirstMediumInQueueStartPlay();
 	onLastMediumEndAndNewOneAppendedStartPlay();
 
 	return {
 		observeMediaQueue: observeMediaQueue,
 		observeQueueEndedWithMedium: observeQueueEndedWithMedium,
-		enqueueMedium: enqueueMediumAndStartQueue,
-		enqueueMedia: enqueueMediaAndStartQueue,
+		enqueueMediumAndStartQueue: enqueueMediumAndStartQueue,
+		enqueueMediaAndStartQueue: enqueueMediaAndStartQueue,
 		playMedium: playMedium,
 		removeMedium: removeMedium,
 		clearQueue: clearQueue,
 		playNext: playNext,
 		playPrevious: playPrevious,
+		getMediumVmAtIndexAsync: getMediumVmAtIndexAsync,
 		observeCurrentMediumInQueue: observeCurrentMediumInQueue,
+		observeCurrentMediumIndexInQueue: observeCurrentMediumIndexInQueue,
 		observeIsCurrentMediumLast: observeIsCurrentMediumLast,
 		observeMediumError: observeMediumError
 	}

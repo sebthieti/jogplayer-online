@@ -65,14 +65,15 @@ jpoApp.factory('playlistExplorerBusiness', ['explorerBusinessFactory', function(
 
 			var startExplore = function() {
 				authBusiness.observeAuthenticatedUser().getValueAsync(function(user) {
-					if (user.permissions.homePath) {
-						loadFolderContentAsync(user.permissions.homePath)
+					var homePath = user.selectBrowsingHomePathFromLinks() || '';
+					if (homePath) {
+						loadFolderContentAsync(homePath)
 							.then(function(filesResult) {
 								folderContentSubject.onNext(filesResult);
 							});
 					} else {
 						FileExplorerModel
-							.getAllAsync()
+							.getAsync()
 							.then(filterAndOrderFiles)
 							.then(function(filesResult) {
 								folderContentSubject.onNext(filesResult);
@@ -115,7 +116,7 @@ jpoApp.factory('playlistExplorerBusiness', ['explorerBusinessFactory', function(
 
 			// TODO Should be in fileExplorerBusiness, not ExplorerBusiness
 			var playMedium = function(medium) {
-				mediaQueueBusiness.enqueueMedium(medium.model);
+				mediaQueueBusiness.enqueueMediumAndStartQueue(medium.model);
 			};
 
 			// TODO Think about: filter s/b business side or controller ? Shoulnd't be, because only where filter on endpoint

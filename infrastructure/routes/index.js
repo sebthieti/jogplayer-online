@@ -5,6 +5,12 @@ module.exports = function () {
 				rel: 'explore',
 				href: '/api/explore/'
 			},{
+				rel: 'login',
+				href: '/api/login/'
+			},{
+				rel: 'is-authenticated',
+				href: '/api/is-authenticated/'
+			},{
 				rel: 'favorites',
 				href: '/api/favorites/'
 			},{
@@ -64,6 +70,11 @@ module.exports = function () {
 		},
 		file: {
 			selfPlayPattern: /^\/api\/media\/play\/path\/(.*[^\/])$/
+		},
+		explore: {
+			fileInfoPathPattern: '/api/explore:relativePath',
+			directoryPattern: /^\/api\/explore\/(.*[\/])*$/,
+			fileInfoPattern: /^\/api\/explore\/(.*[\/].*)*$/
 		},
 		users: {
 			selfPath: '/api/users/:userId',

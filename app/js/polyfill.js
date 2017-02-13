@@ -24,6 +24,22 @@ Object.prototype.mapOwnProperties = function(callback) {
 	return objectMap;
 };
 
+Object.prototype.forEachOwnProperties = function(callback) {
+	for (var method in this) {
+		if (!this.hasOwnProperty(method)) {
+			continue;
+		}
+		callback(this[method]);
+	}
+};
+
+Object.prototype.getName = function() {
+	if (this.name) {
+		return this.name.toLowerCase();
+	}
+	return (this.toString().toLowerCase().trim().match(/^function\s*([^\s(]+)/) || [])[1];
+};
+
 Object.prototype.updateFieldsFrom = function (obj) { // TODO doesn't compare well Arrays
 	for (var objField in obj) {
 		if (this[objField] !== undefined && this.hasOwnProperty(objField)) {

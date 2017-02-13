@@ -101,9 +101,17 @@ jpoApp.directive("playlistExplorer", [
 				};
 
 				$scope.innerPlaylistSelected = function(playlistVm) {
-					$scope.selectedPlaylist = playlistVm;
 					playlistBusiness.playlistSelected(playlistVm); // TODO Rename to fireAndForget
 				};
+
+				playlistBusiness
+					.observeCurrentPlaylist()
+					.do(function(playlistVm) {
+						$timeout(function() {
+							$scope.selectedPlaylist = playlistVm;
+						});
+					})
+					.silentSubscribe();
 
 				$scope.beginAddVirtualPlaylist = function() {
 					$scope.newPlaylist = playlistBuilder.buildEmptyPlaylist();
@@ -139,7 +147,9 @@ jpoApp.directive("playlistExplorer", [
 					.observePlaylistViewModels()
 					.whereHasValue()
 					.do(function (playlistsVm) {
-						$scope.playlistsVm = playlistsVm;
+						$timeout(function() {
+							$scope.playlistsVm = playlistsVm;
+						});
 					})
 					.silentSubscribe();
 
@@ -147,7 +157,9 @@ jpoApp.directive("playlistExplorer", [
 					.observePlaylistViewModels()
 					.whereIsNull()
 					.do(function () {
-						$scope.playlistsVm = null;
+						$timeout(function() {
+							$scope.playlistsVm = null;
+						});
 					})
 					.silentSubscribe();
 
@@ -174,7 +186,9 @@ jpoApp.directive("playlistExplorer", [
 					.whereHasValue()
 					.select(function(x) {return _.any(x)})
 					.do(function(hasMediaQueueAny) {
-						$scope.hasMediaQueueAny = hasMediaQueueAny;
+						$timeout(function() {
+							$scope.hasMediaQueueAny = hasMediaQueueAny;
+						});
 					})
 					.silentSubscribe();
 			}

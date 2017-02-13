@@ -6,6 +6,7 @@ var Q = require('q'),
 	from = require('fromjs'),
 	path = require('path'),
 	_ = require('underscore'),
+	routes = require('../routes'),
 	linkBuilder = require('../utils/linkBuilder');
 
 var _fileExplorerService;
@@ -18,8 +19,7 @@ FileExplorerDirector.prototype.getFolderContentAsync = function (urlPath, issuer
 	if (!acceptPath(urlPath, issuer.permissions)) {
 		throw 'Unauthorized access'; // TODO Should become HTTP 403
 	}
-	var urlPathOrDefault = urlPath || issuer.permissions.homePath;
-	return exploreFilePathAsync(urlPathOrDefault, issuer);
+	return exploreFilePathAsync(urlPath, issuer);
 };
 
 function exploreFilePathAsync(urlPath, issuer) {

@@ -70,7 +70,7 @@ jpoApp.directive("controlBar", [
 						.observeMediaSelection()
 						.select(function(mediaViewModelsSelection) {return mediaViewModelsSelection.map(function(m){return m.model})})
 						.getValueAsync(function(mediaModelsSelection) {
-							mediaQueueBusiness.enqueueMedia(mediaModelsSelection);
+							mediaQueueBusiness.enqueueMediaAndStartQueue(mediaModelsSelection);
 						});
 				};
 
@@ -80,7 +80,7 @@ jpoApp.directive("controlBar", [
 						.select(function(fileViewModel) {
 							return fileViewModel.map(function(f){return f.model})})
 						.getValueAsync(function(fileModels) {
-							mediaQueueBusiness.enqueueMedia(fileModels);
+							mediaQueueBusiness.enqueueMediaAndStartQueue(fileModels);
 						});
 				};
 			}

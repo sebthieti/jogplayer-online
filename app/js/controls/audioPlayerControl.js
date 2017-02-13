@@ -5,24 +5,31 @@ jpoApp.factory("AudioPlayerControl", function () {
 		var ButtonMap = Jpo.ButtonMap;
 		var PlayerState = Jpo.PlayerState;
 		var mediumPositionSubject = new Rx.Subject();
-		var volumeSubject = new Rx.Subject();
+		//var volumeSubject = new Rx.Subject();
 
-		var _currentStateSubject = new Rx.BehaviorSubject(PlayerState.Unknown);
+		//var _currentStateSubject = new Rx.BehaviorSubject(PlayerState.Unknown);
+		var _currentState = PlayerState.Unknown;
 		var _isDraggingCursor = false;
 
-		var _audioPlayerElements;
+		var _audioPlayerElements,
+			_setup;
+
+		//function observeCurrentState() {
+		//	return _currentStateSubject;
+		//}
 
 		function observeMediumPosition() {
 			return mediumPositionSubject;
 		}
 
-		function observeVolume() {
-			return volumeSubject;
-		}
+		//function observeVolume() {
+		//	return volumeSubject;
+		//}
 
-		function init(controlDomElement) {
+		function init(setup) {
+			_setup = setup;
 			var audioPlayerElements = controlElements.mapOwnProperties(function(controlElement) {
-				return controlDomElement.getElementById(controlElement);
+				return _setup.controlDomElement.getElementById(controlElement);
 			});
 			setAndInitAudioPlayer(audioPlayerElements);
 		}
@@ -39,30 +46,56 @@ jpoApp.factory("AudioPlayerControl", function () {
 			initCursor();
 		}
 
+		function getState() {
+			return _currentState;
+		}
+
+		function updateState(state) {
+			_currentState = state;
+			_setup.setCurrentStateHandler(state);
+		}
+
 		function initEvents() {
 			var audioPlayer = _audioPlayerElements.audioPlayer;
 
+
+			audioPlayer.addEventListener("loadstart", function() {
+				updateState(PlayerState.LoadStart);
+				//_currentStateSubject.onNext(PlayerState.LoadStart);
+			}, true);
+
+			audioPlayer.addEventListener("loadeddata", function() {
+				updateState(PlayerState.LoadedData);
+				//_currentStateSubject.onNext(PlayerState.LoadedData);
+			}, true);
+
+
 			audioPlayer.addEventListener("playing", function() {
-				_currentStateSubject.onNext(PlayerState.Play);
+				//_currentStateSubject.onNext(PlayerState.Play);
+				updateState(PlayerState.Play);
 				turnPlayButtonToPause();
 			}, true);
 
 			audioPlayer.addEventListener("pause", function() {
-				_currentStateSubject.onNext(PlayerState.Pause);
+				//_currentStateSubject.onNext(PlayerState.Pause);
+				updateState(PlayerState.Pause);
 				turnPauseButtonToPlay();
 			}, true);
 
 			audioPlayer.addEventListener("ended", function() {
-				_currentStateSubject.onNext(PlayerState.Ended);
+				//_currentStateSubject.onNext(PlayerState.Ended);
+				updateState(PlayerState.Ended);
 			}, true);
 
 			audioPlayer.addEventListener("abort", function() {
-				_currentStateSubject.onNext(PlayerState.Unknown);
+				//_currentStateSubject.onNext(PlayerState.Unknown);
+				updateState(PlayerState.Unknown);
 				turnPauseButtonToPlay();
 			}, true);
 
 			audioPlayer.addEventListener("error", function() {
-				_currentStateSubject.onNext(PlayerState.Error);
+				//_currentStateSubject.onNext(PlayerState.Error);
+				updateState(PlayerState.Error);
 			}, true);
 
 			audioPlayer.addEventListener("timeupdate", function() {
@@ -134,18 +167,23 @@ jpoApp.factory("AudioPlayerControl", function () {
 		}
 
 		function playOrPause() {
-			_currentStateSubject.getValueAsync(function(currentState) {
-				// If media is set, play it. otherwise, ask the queue
-				switch (currentState) {
-					case PlayerState.Ended:
-					case PlayerState.Pause:
-						_audioPlayerElements.audioPlayer.play();
-						break;
-					case PlayerState.Play:
-						_audioPlayerElements.audioPlayer.pause();
-						break;
-				}
-			});
+			// If media is set, play it. otherwise, ask the queue
+			switch (_currentState) {
+				case PlayerState.Ended:
+				case PlayerState.Pause:
+					_audioPlayerElements.audioPlayer.play();
+					break;
+				case PlayerState.Play:
+					_audioPlayerElements.audioPlayer.pause();
+					break;
+				case PlayerState.Error:
+					break;
+				case PlayerState.Unknown:
+					break;
+				default:
+					_audioPlayerElements.audioPlayer.play();
+					break;
+			}
 		}
 
 		function turnPauseButtonToPlay() {
@@ -261,15 +299,16 @@ jpoApp.factory("AudioPlayerControl", function () {
 			}, false);
 		}
 
-		function updateVolume(mouseX) {
+		function setVolumeFromCode(volumePercent) {
+			var safeVolumePerOne = Math.min(Math.max(volumePercent, 0), 1);
+
 			var volumeBar = _audioPlayerElements.volumeBarContainer;
 			var volumeBarWidth = volumeBar.clientWidth;
-			var volumePercent = mouseX / volumeBarWidth;
-			var safeVolumePerOne = Math.min(Math.max(volumePercent, 0), 1);
+			var mouseX = volumeBarWidth * volumePercent;
 
 			_audioPlayerElements.audioPlayer.volume = safeVolumePerOne;
 
-			volumeSubject.onNext(safeVolumePerOne);
+			//volumeSubject.onNext(safeVolumePerOne);
 
 			var volumeOffset = -volumeBarWidth + mouseX;
 			_audioPlayerElements.volumeBar.style.transform = 'translateX(' + volumeOffset + 'px)';
@@ -286,13 +325,29 @@ jpoApp.factory("AudioPlayerControl", function () {
 			observeElementEvent(volumeBarContainer, 'mousedown')
 				.where(function(event) { return event.button === ButtonMap.Left })
 				.do(function(event) { updateVolume(event.layerX) })
-				.selectMany(function(__) {
+				.selectMany(function() {
 					return observeElementEvent(volumeBarContainer, 'mousemove');
 				})
 				.do(function(event) { updateVolume(event.layerX) })
 				.takeUntil(observeElementEvent(volumeBarContainer, 'mouseup'))
 				.repeat()
 				.silentSubscribe();
+		}
+
+		function updateVolume(mouseX) {
+			//console.log(mouseX);
+			var volumeBar = _audioPlayerElements.volumeBarContainer;
+			var volumeBarWidth = volumeBar.clientWidth;
+			var volumePercent = mouseX / volumeBarWidth;
+			var safeVolumePerOne = Math.min(Math.max(volumePercent, 0), 1);
+
+			_audioPlayerElements.audioPlayer.volume = safeVolumePerOne;
+
+			var volumeOffset = -volumeBarWidth + mouseX;
+			_audioPlayerElements.volumeBar.style.transform = 'translateX(' + volumeOffset + 'px)';
+
+			//volumeSubject.onNext(safeVolumePerOne);
+			_setup.setCurrentVolume(safeVolumePerOne);
 		}
 
 		function relativeXFromDirectParent(event) {
@@ -309,6 +364,18 @@ jpoApp.factory("AudioPlayerControl", function () {
 			);
 		}
 
+		function setMediumTimePosition(timePosition) {
+			var audioPlayer = _audioPlayerElements.audioPlayer;
+			//audioPlayer.play();
+			audioPlayer.currentTime = timePosition;
+			if (!audioPlayer.duration) {
+				return;
+			}
+			if (!timePosition || timePosition > audioPlayer.duration) {
+				return;
+			}
+		}
+
 		function setMediumPosition (cursorPercent) {
 			var audioPlayer = _audioPlayerElements.audioPlayer;
 			if (!audioPlayer.duration) {
@@ -319,7 +386,12 @@ jpoApp.factory("AudioPlayerControl", function () {
 			audioPlayer.currentTime = newPosition;
 		}
 
-		function playMedium(mediaOrFile) {
+		function setMediumToPlayAndPlay(mediaOrFile) {
+			setMediumToPlay(mediaOrFile);
+			_audioPlayerElements.audioPlayer.play();
+		}
+
+		function setMediumToPlay(mediaOrFile) {
 			var audioPlayer = _audioPlayerElements.audioPlayer;
 
 			// Ensure cursor is visible
@@ -339,7 +411,9 @@ jpoApp.factory("AudioPlayerControl", function () {
 			// TODO Type w/ codec should be specified
 			//_currentSourceTag.type = 'audio/mpeg';
 			audioPlayer.load();
-			audioPlayer.play();
+
+			_setup.setCurrentMediumHandler(mediaOrFile);
+			//audioPlayer.play();
 		}
 
 		function stopMedium() {
@@ -353,18 +427,20 @@ jpoApp.factory("AudioPlayerControl", function () {
 			audioPlayer.load();
 		}
 
-		function observeCurrentState() {
-			return _currentStateSubject;
-		}
-
 		return { //scope, element, attrs, controller
 			init: init,
-			playMedium: playMedium,
+			//playMedium: playMedium,
+			getState: getState,
+			setMediumToPlayAndPlay: setMediumToPlayAndPlay,
+			setMediumToPlay: setMediumToPlay,
 			playOrPause: playOrPause,
 			stopMedium: stopMedium,
-			observeCurrentState: observeCurrentState,
+			//observeCurrentState: observeCurrentState,
 			observeMediumPosition: observeMediumPosition,
-			observeVolume: observeVolume
+			//observeVolume: observeVolume,
+			//setMediumPositionAndPause: setMediumPositionAndPause,
+			setVolumeFromCode: setVolumeFromCode,
+			setMediumTimePosition: setMediumTimePosition
 		}
 	}
 	return AudioPlayerControl;
