@@ -6,6 +6,7 @@ jpoApp.factory('audioPlayerBusiness', function() {
 	var playingMediumSubject = new Rx.BehaviorSubject();
 	var playControlSubject = new Rx.BehaviorSubject(PlayerState.Unknown);
 	var lastMediumPosition = 0;
+	var lastVolumeValue = 0;
 
 	function observePlayingMedium() {
 		return playingMediumSubject.whereIsDefined();
@@ -19,8 +20,16 @@ jpoApp.factory('audioPlayerBusiness', function() {
 		return lastMediumPosition;
 	}
 
+	function getVolume() {
+		return lastVolumeValue;
+	}
+
 	function setMediumPosition(pos) {
 		lastMediumPosition = pos;
+	}
+
+	function setVolume(pos) {
+		lastVolumeValue = pos;
 	}
 
 	function getAndObservePlayControl() {
@@ -65,6 +74,8 @@ jpoApp.factory('audioPlayerBusiness', function() {
 		getAndObservePlayControl: getAndObservePlayControl,
 		getMediumPosition: getMediumPosition,
 		setMediumPosition: setMediumPosition,
+		getVolume: getVolume,
+		setVolume: setVolume,
 		playMedium: playMedium,
 		stop: stop,
 		playEnded: playEnded,

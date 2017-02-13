@@ -44,7 +44,7 @@ jpoApp.factory('userStateBusiness', [
 				.silentSubscribe();
 		}
 
-		function observeMediaQueueSelectLinkUrl() {
+		function observeMediumQueueSelectLinkUrl() {
 			return mediaQueueBusiness
 				.observeMediaQueue()
 				.selectWithPreviousValue(function(oldValue, newValue) {
@@ -62,25 +62,42 @@ jpoApp.factory('userStateBusiness', [
 				});
 		}
 
-		function observeMediaPositionChangeByInterval(interval){
+		function observeMediaVolumeChangeByInterval(interval) {
+			var obs = authBusiness.observeAuthenticatedUser();
 			return Rx.Observable
 				.timer(interval, interval)
+				.selectMany(function() {return obs})
+				.whereIsNotNull() // TODO Stop when user disconnect
+				.select(function() {return audioPlayerBusiness.getVolume()})
+				.distinctUntilChanged(function(x) {return x});
+		}
+
+		function observeMediumPositionChangeByInterval(interval){
+			var obs = authBusiness.observeAuthenticatedUser();
+			return Rx.Observable
+				.timer(interval, interval)
+				.selectMany(function() {return obs})
+				.whereIsNotNull() // TODO Stop when user disconnect
 				.select(function() {return audioPlayerBusiness.getMediumPosition()})
 				.distinctUntilChanged(function(x) {return x});
 		}
 
 		function observeControlsForStateChange() {
 			return Rx.Observable.combineLatest(
-				observeMediaPositionChangeByInterval(10000).select(function(x) {
+				observeMediumPositionChangeByInterval(10000).select(function(x) {
 					return x;
 				}),
-				observeMediaQueueSelectLinkUrl().select(function(x) {
+				observeMediumQueueSelectLinkUrl().select(function(x) {
 					return x;
 				}),
-				function (mediumPosition, mediaQueueLinks) {
+				observeMediaVolumeChangeByInterval(10000).select(function(x) {
+					return x;
+				}),
+				function (mediumPosition, mediumQueueLinks, mediumVolume) {
 					return {
 						playedPosition: mediumPosition,
-						mediaQueueLinks: mediaQueueLinks
+						mediaQueueLinks: mediumQueueLinks,
+						mediumVolume: mediumVolume
 					}
 				}
 			);
@@ -92,6 +109,7 @@ jpoApp.factory('userStateBusiness', [
 					observeUserState().getValueAsync(function(userState) {
 						if (userState) { // Just update
 							userState.playedPosition = controlsStates.playedPosition;
+							userState.volume = controlsStates.mediumVolume;
 							userState.mediaQueue = controlsStates.mediaQueueLinks;
 							userState.updateAsync();
 						} else { // Insertion

@@ -9,7 +9,7 @@ angular.module('jpoApp.controllers', []).controller('mainCtrl', [
 	function($scope, $timeout, audioPlayerBusiness, authBusiness) {
 		$scope.currentUser = null;
 
-		$scope.isAdmin = true;
+		$scope.isAdmin = false;
 
 		$scope.manageUserVisible = false;
 		$scope.toggleUserManager = function() {
@@ -23,6 +23,8 @@ angular.module('jpoApp.controllers', []).controller('mainCtrl', [
 					$scope.currentUser = user;
 					if (!user) {
 						$scope.manageUserVisible = false;
+					} else {
+						$scope.isAdmin = user.permissions.isAdmin || user.permissions.isRoot;
 					}
 				});
 			})

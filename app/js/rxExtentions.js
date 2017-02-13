@@ -20,6 +20,10 @@ Rx.Observable.prototype.whereIsNotNull = function() {
 	return this.where(function(obj) { return obj !== null });
 };
 
+Rx.Observable.prototype.whereIsNull = function() {
+	return this.where(function(obj) { return obj === null });
+};
+
 Rx.Observable.prototype.whereHasValue = function() {
 	return this.where(function(obj) { return angular.isDefined(obj) && obj !== null });
 };
@@ -49,4 +53,8 @@ Rx.Observable.prototype.doAsync = Rx.Observable.prototype.getValueAsync = functi
 	this.asAsyncValue()
 		.do(callback)
 		.silentSubscribe();
+};
+
+Rx.Observable.prototype.whereIsAdminOrRootUser = function() {
+	return this.where(function(user) {return user && user.permissions && user.permissions.isRoot || user.permissions.isAdmin});
 };

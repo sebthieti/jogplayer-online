@@ -1,6 +1,10 @@
 'use strict';
 
-jpoApp.factory('mediaQueueBusiness', ['audioPlayerBusiness', 'viewModelBuilder', function(audioPlayerBusiness, viewModelBuilder) {
+jpoApp.factory('mediaQueueBusiness', [
+	'audioPlayerBusiness',
+	'authBusiness',
+	'viewModelBuilder',
+	function(audioPlayerBusiness, authBusiness, viewModelBuilder) {
 	var PlayerState = Jpo.PlayerState;
 
 	var currentMediumInQueueSubject = new Rx.BehaviorSubject();
@@ -37,23 +41,35 @@ jpoApp.factory('mediaQueueBusiness', ['audioPlayerBusiness', 'viewModelBuilder',
 		})
 		.silentSubscribe();
 
-	var displayMediumErrorResumeNext = function() {
+	clearUsersOnUserLogoff();
+
+	function clearUsersOnUserLogoff() {
+		authBusiness
+			.observeCurrentUserAuthentication()
+			.whereIsNull()
+			.do(function() {
+				mediaQueueSubject.onNext([]);
+			})
+			.silentSubscribe();
+	}
+
+	function displayMediumErrorResumeNext() {
 		// Notify error playing and try next.
 		observeCurrentMediumInQueue().getValueAsync(function (currentMedium) {
 			mediumOnErrorSubject.onNext(currentMedium);
 			playNext();
 		});
-	};
+	}
 
-	var observeMediumError = function() {
+	function observeMediumError() {
 		return mediumOnErrorSubject;
-	};
+	}
 
-	var playMedium = function(medium) {
+	function playMedium(medium) {
 		audioPlayerBusiness.playMedium(medium);
-	};
+	}
 
-	var playNext = function() {
+	function playNext() {
 		observeMediaQueueAndCurrentMedium() // TODO Multiple observable creation through calls ?
 			.do(function(mediaQueueSet) {
 				var currentMediumIndex = mediaQueueSet.mediaViewModelsQueue.indexOf(mediaQueueSet.currentMediumInQueue);
@@ -70,9 +86,9 @@ jpoApp.factory('mediaQueueBusiness', ['audioPlayerBusiness', 'viewModelBuilder',
 				audioPlayerBusiness.playMedium(nextMediumViewModelInQueue);
 			})
 			.silentSubscribe();
-	};
+	}
 
-	var playPrevious = function() {
+	function playPrevious() {
 		observeMediaQueueAndCurrentMedium()
 			.do(function(mediaQueueSet) {
 				var currentMediumIndex = mediaQueueSet.mediaViewModelsQueue.indexOf(mediaQueueSet.currentMediumInQueue);
@@ -88,10 +104,11 @@ jpoApp.factory('mediaQueueBusiness', ['audioPlayerBusiness', 'viewModelBuilder',
 				audioPlayerBusiness.playMedium(previousMediaInQueue);
 			})
 			.silentSubscribe();
-	};
+	}
 
-	var onFirstMediumInQueueStartPlay = function() {
+	function onFirstMediumInQueueStartPlay() {
 		observeMediaQueue()
+			.whereHasValue()
 			.selectWithPreviousValue(function (oldValue, newValue) {
 				return oldValue !== null && _.isEmpty(oldValue) && _.any(newValue);
 			})
@@ -102,10 +119,11 @@ jpoApp.factory('mediaQueueBusiness', ['audioPlayerBusiness', 'viewModelBuilder',
 				playFirst();
 			})
 			.silentSubscribe();
-	};
+	}
 
-	var onLastMediumEndAndNewOneAppendedStartPlay = function() {
+	function onLastMediumEndAndNewOneAppendedStartPlay() {
 		observeMediaQueue()
+			.whereHasValue()
 			.selectWithPreviousValue(function (oldValue, newValue) {
 				// TODO Good algorithm ?
 				return {
@@ -113,8 +131,7 @@ jpoApp.factory('mediaQueueBusiness', ['audioPlayerBusiness', 'viewModelBuilder',
 					mediaQueue: newValue
 				}
 			})
-			.where(function(x) {
-				return x.mediaAdded })
+			.where(function(x) { return x.mediaAdded })
 			.combineLatest( // TODO Optimize this chain
 				audioPlayerBusiness
 					.getAndObservePlayControl()
@@ -140,9 +157,9 @@ jpoApp.factory('mediaQueueBusiness', ['audioPlayerBusiness', 'viewModelBuilder',
 				});
 			})
 			.silentSubscribe();
-	};
+	}
 
-	var playFirst = function() {
+	function playFirst() {
 		observeMediaQueue().getValueAsync(function (mediaQueue) {
 			if (_.isEmpty(mediaQueue)) {
 				return;
@@ -151,25 +168,25 @@ jpoApp.factory('mediaQueueBusiness', ['audioPlayerBusiness', 'viewModelBuilder',
 			var firstMediumInQueue = mediaQueue[0];
 			audioPlayerBusiness.playMedium(firstMediumInQueue);
 		});
-	};
+	}
 
-	var enqueueMediumAndStartQueue = function(mediumModel) {
+	function enqueueMediumAndStartQueue(mediumModel) {
 		var mediumVm = viewModelBuilder.buildQueuedMediumViewModel(mediumModel);
 		observeMediaQueue().getValueAsync(function (mediaQueue) {
 			var mediaQueueWithMedium = mediaQueue.concat(mediumVm);
 			mediaQueueSubject.onNext(mediaQueueWithMedium);
 		});
-	};
+	}
 
-	var enqueueMediaAndStartQueue = function(mediaModels) {
+	function enqueueMediaAndStartQueue(mediaModels) {
 		var mediaVm = mediaModels.map(viewModelBuilder.buildQueuedMediumViewModel);
 		observeMediaQueue().getValueAsync(function (mediaQueue) {
 			var mediaQueueWithMedia = mediaQueue.concat(mediaVm);
 			mediaQueueSubject.onNext(mediaQueueWithMedia);
 		});
-	};
+	}
 
-	var removeMedium = function(medium) {
+	function removeMedium(medium) {
 		observeMediaQueueAndCurrentMedium()
 			.do(function(mediaQueueSet) {
 				// If medium to remove is current playing...
@@ -183,18 +200,18 @@ jpoApp.factory('mediaQueueBusiness', ['audioPlayerBusiness', 'viewModelBuilder',
 				mediaQueueSubject.onNext(updatedMediaQueue);
 			})
 			.silentSubscribe();
-	};
+	}
 
-	var observeIsCurrentMediumLast = function() {
+	function observeIsCurrentMediumLast() {
 		return observeMediaQueueAndCurrentMedium()
 			.select(function (mediaQueueSet) {
 				var currentMediumIndex = mediaQueueSet.mediaViewModelsQueue.indexOf(mediaQueueSet.currentMediumInQueue);
 				var isLastElement = currentMediumIndex === mediaQueueSet.mediaViewModelsQueue.length - 1;
 				return isLastElement;
 			});
-	};
+	}
 
-	var observeMediaQueueAndCurrentMedium = function() {
+	function observeMediaQueueAndCurrentMedium() {
 		return observeMediaQueue()
 			.asAsyncValue()
 			.combineLatest(
@@ -203,25 +220,25 @@ jpoApp.factory('mediaQueueBusiness', ['audioPlayerBusiness', 'viewModelBuilder',
 					return { mediaViewModelsQueue: mediaQueue, currentMediumInQueue: currentMediumInQueue }
 				}
 			);
-	};
+	}
 
-	var observeMediaQueue = function() {
+	function observeMediaQueue() {
 		return mediaQueueSubject;
-	};
+	}
 
-	var observeCurrentMediumInQueue = function() {
+	function observeCurrentMediumInQueue() {
 		return currentMediumInQueueSubject.whereIsDefined();
-	};
+	}
 
-	var clearQueue = function() {
+	function clearQueue() {
 		audioPlayerBusiness.stop();
 		currentMediumInQueueSubject.onNext(null);
 		mediaQueueSubject.onNext([]);
-	};
+	}
 
-	var observeQueueEndedWithMedium = function() {
+	function observeQueueEndedWithMedium() {
 		return observeQueueEndedWithMediumSubject;
-	};
+	}
 
 	onFirstMediumInQueueStartPlay();
 	onLastMediumEndAndNewOneAppendedStartPlay();

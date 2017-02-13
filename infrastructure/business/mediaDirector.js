@@ -2,15 +2,16 @@
 
 require('../extentions').StringExtentions;
 var Q = require('q'),
+	_ = require('underscore'),
 	Media = require('../models').Media,
 	mediaHelper = require('../utils').mediaHelper;
 
 var _mediaService,
-    _mediaSaveService;
+	_mediaSaveService;
 
 function MediaDirector (mediaService, mediaSaveService) {
 	_mediaService = mediaService;
-    _mediaSaveService = mediaSaveService;
+	_mediaSaveService = mediaSaveService;
 }
 
 MediaDirector.prototype.getMediumByIdAndPlaylistIdAsync = function (playlistId, mediumId, issuer) {
@@ -20,10 +21,16 @@ MediaDirector.prototype.getMediumByIdAndPlaylistIdAsync = function (playlistId, 
 MediaDirector.prototype.getBinaryChunkAndFileSizeByIdAsync = function (mediumId, fromOffset, toOffset, issuer) {
 	return _mediaSaveService
 		.getMediaByIdAsync(mediumId, issuer)
-		.then(function(media) {
-			return getOffsetAndFileSizeAsync(media.filePath, toOffset) // TODO Later use repositories to save fileSize (save file size)
+		.then(function(medium) {
+			if (!acceptPath(medium.filePath, issuer.permissions)) {
+				throw 'Unauthorized access';
+			}
+			return medium;
+		})
+		.then(function(medium) {
+			return getOffsetAndFileSizeAsync(medium.filePath, toOffset) // TODO Later use repositories to save fileSize (save file size)
 				.then(function(offsetAndFileSize) {
-					offsetAndFileSize.media = media;
+					offsetAndFileSize.media = medium;
 					return offsetAndFileSize;
 				});
 		})
@@ -53,18 +60,39 @@ MediaDirector.prototype.getBinaryChunkAndFileSizeByPathAsync = function (mediaPa
 		});
 };
 
-MediaDirector.prototype.ensureReadableMediaAsync = function (mediaFilePath, browserFormats) {
+MediaDirector.prototype.ensureReadableMediaAsync = function (mediaFilePath, browserFormats, issuer) {
+	if (!acceptPath(mediaFilePath, issuer.permissions)) {
+		throw 'Unauthorized access';
+	}
+
 	// mediaFilePath > eventual path to converted media if needed
-    if (canBrowserHandleFormat(mediaFilePath, browserFormats)) {
-        return Q.fcall(function () { return mediaFilePath }, null);
-    } else {
-        // is this media already converted ? // TODO Record in db
-        // proceed to convertion, then return path
-        return _mediaService.convertMediumToAsync(mediaFilePath, /*browserFormats*/'.mp3');
-    }
+	if (canBrowserHandleFormat(mediaFilePath, browserFormats)) {
+		return Q.fcall(function () { return mediaFilePath }, null);
+	} else {
+		// is this media already converted ? // TODO Record in db
+		// proceed to convertion, then return path
+		return _mediaService.convertMediumToAsync(mediaFilePath, /*browserFormats*/'.mp3');
+	}
 };
 
-var canBrowserHandleFormat = function (mediaFilePath, browserAcceptedFormats) {
+function acceptPath(urlPath, permissions) {
+	if (permissions.isRoot || permissions.isAdmin) {
+		return true;
+	}
+
+	var isPathDenied = _.any(permissions.denyPaths, function(denyPath) {
+		return urlPath.startsWith(denyPath);
+	});
+	return !isPathDenied;
+
+	//var hasAcceptedPath = _.any(permissions.allowPaths, function(allowPath) {
+	//	return urlPath.startsWith(allowPath);
+	//});
+	//
+	//return hasAcceptedPath;
+}
+
+function canBrowserHandleFormat(mediaFilePath, browserAcceptedFormats) {
 	var ext = mediaFilePath.substring(mediaFilePath.lastIndexOf('.'));
 	if (browserAcceptedFormats === '*/*') {
 		switch (ext) {
@@ -94,19 +122,18 @@ var canBrowserHandleFormat = function (mediaFilePath, browserAcceptedFormats) {
 	} else {
 		return true; // TODO Hack because tablet doesn't send browserAcceptedFormats. Use canPlayType
 	}
-};
+}
 
-var getOffsetAndFileSizeAsync = function(mediaPath, toOffset) {
+function getOffsetAndFileSizeAsync(mediaPath, toOffset) {
 	return _mediaService
 		.getFileSizeAsync(mediaPath)
 		.then(function (fileSize) {
 			return { offset: toOffset, fileSize: fileSize };
-		})
+		});
+}
 
-};
-
-var giveRealPath = function (mediaPath) {
+function giveRealPath(mediaPath) {
 	return mediaPath;
-};
+}
 
 module.exports = MediaDirector;

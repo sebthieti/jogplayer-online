@@ -42,13 +42,22 @@ jpoApp.directive("favoritesExplorer", ['viewModelBuilder', 'favoriteBusiness', f
 
 			favoriteBusiness
 				.observeFavorites()
+				.whereHasValue()
 				.do(function (favorites) {
 					var favoritesVm = favorites.map(viewModelBuilder.buildFavoriteViewModel);
 					$scope.favoritesVm = favoritesVm;
 				})
 				.silentSubscribe(); // TODO Handle a disposeWith method
 
-			favoriteBusiness.loadFavorites();
+			favoriteBusiness
+				.observeFavorites()
+				.whereIsNull()
+				.do(function () {
+					$scope.favoritesVm = null;
+				})
+				.silentSubscribe();
+
+			//favoriteBusiness.loadFavorites();
 		}
 	}
 }]);

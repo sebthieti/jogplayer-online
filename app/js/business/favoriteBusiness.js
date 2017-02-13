@@ -7,21 +7,24 @@ jpoApp.factory('favoriteBusiness', ['FavoriteModel', 'authBusiness', function(Fa
 	var favoriteChangeSubject = new Rx.Subject();
 	var selectedFavoriteSubject = new Rx.Subject();
 
-	var observeFavorites = function() {
+	loadFavorites();
+	clearUsersOnUserLogoff();
+
+	function observeFavorites() {
 		return favoritesSubject.whereIsDefined();
-	};
+	}
 
-	var getAndObserveFavorite = function (favId) {
-		return observeFavorites().where(function (f) {
-			return f.id === favId
-		});
-	};
+	function getAndObserveFavorite(favId) {
+		return observeFavorites()
+			.whereHasValue()
+			.where(function (f) {return f.id === favId});
+	}
 
-	var observeFavoriteChanges = function() {
+	function observeFavoriteChanges() {
 		return favoriteChangeSubject;
-	};
+	}
 
-	var addFolderToFavoritesAsync = function(folderPath) {
+	function addFolderToFavoritesAsync(folderPath) {
 		observeFavorites().getValueAsync(function(favorites) {
 			// Get folder name for fav name.
 			var favCount = 0;
@@ -42,23 +45,23 @@ jpoApp.factory('favoriteBusiness', ['FavoriteModel', 'authBusiness', function(Fa
 					favoritesSubject.onNext(favorites);
 				});
 		});
-	};
+	}
 
 	// TODO May be moved to helper ?
-	var splitFolderPath = function(folderPath) {
+	function splitFolderPath(folderPath) {
 		var levels = folderPath.split("/");
 		return _.filter(
 			levels,
 			function(lvl) {
 				return lvl !== ''
 			});
-	};
+	}
 
-	var updateFavoriteAsync = function(favoriteModel) {
+	function updateFavoriteAsync(favoriteModel) {
 		return favoriteModel.updateAsync();
-	};
+	}
 
-	var deleteFavoriteAsync = function(favoriteModel) {
+	function deleteFavoriteAsync(favoriteModel) {
 		return favoriteModel
 			.removeAsync()
 			.then(function () {
@@ -69,47 +72,44 @@ jpoApp.factory('favoriteBusiness', ['FavoriteModel', 'authBusiness', function(Fa
 					favoritesSubject.onNext(updatedFavorites);
 				});
 			});
-	};
+	}
 
-	var deleteFavorite = function(favorites, favorite) {
+	function deleteFavorite(favorites, favorite) {
 		return _.filter(favorites, function(fav) {
 			return fav.id !== favorite.id;
 		});
-	};
+	}
 
 	// TODO Business should create VM, and receive VM
-	var remapIndexes = function(favorites) {
+	function remapIndexes(favorites) {
 		var favIndex = 0;
 		_.each(favorites, function(fav) {
 			fav.index = favIndex;
 			favIndex++;
 		});
 		return favorites;
-	};
+	}
 
-	var observeSelectedFavorite = function() {
+	function observeSelectedFavorite() {
 		return selectedFavoriteSubject;
-	};
+	}
 
-	var observeSelectedFavoriteLink = function() {
+	function observeSelectedFavoriteLink() {
 		return observeSelectedFavorite()
 			.selectMany(function (favorite) {
 				var target = linkHelper.selectTargetLinkFromLinks(favorite.links);
 				return target.href;
 			})
-	};
+	}
 
-	var changeSelectedFavorite = function(favorite) {
+	function changeSelectedFavorite(favorite) {
 		selectedFavoriteSubject.onNext(favorite); // TODO Use only link ?
-	};
+	}
 
-	//authBusiness
-	//	.observeAuthenticatedUser()
-	//	.do(function(user) {
 	function loadFavorites() {
 		authBusiness
 			.observeAuthenticatedUser()
-			.asAsyncValue()
+			.whereHasValue()
 			.do(function(__) {
 				FavoriteModel
 					.getAllAsync()
@@ -120,8 +120,15 @@ jpoApp.factory('favoriteBusiness', ['FavoriteModel', 'authBusiness', function(Fa
 			.silentSubscribe();
 	}
 
-		//})
-		//.silentSubscribe();
+	function clearUsersOnUserLogoff() {
+		authBusiness
+			.observeCurrentUserAuthentication()
+			.whereIsNull()
+			.do(function() {
+				favoritesSubject.onNext(null);
+			})
+			.silentSubscribe();
+	}
 
 	return {
 		observeFavorites: observeFavorites, // TODO Starts w/ get but no start with!
@@ -133,7 +140,7 @@ jpoApp.factory('favoriteBusiness', ['FavoriteModel', 'authBusiness', function(Fa
 		addFolderToFavoritesAsync: addFolderToFavoritesAsync,
 		updateFavoriteAsync: updateFavoriteAsync,
 		deleteFavoriteAsync: deleteFavoriteAsync,
-		changeSelectedFavorite: changeSelectedFavorite,
-		loadFavorites: loadFavorites
+		changeSelectedFavorite: changeSelectedFavorite//,
+		//loadFavorites: loadFavorites
 	}
 }]);

@@ -5,12 +5,39 @@ jpoApp.factory('userBusiness', ['$q', 'UserModel', 'authBusiness', function($q, 
 
 	var usersSubject = new Rx.BehaviorSubject();
 
+	loadUsers();
+	clearUsersOnUserLogoff();
+
 	function observeUsers() {
 		return usersSubject.whereIsDefined();
 	}
 
 	function observeCurrentUser() { // Used for eg. to update current user's name
+	}
 
+	function loadUsers() {
+		authBusiness
+			.observeAuthenticatedUser()
+			.whereHasValue()
+			.whereIsAdminOrRootUser()
+			.do(function() {
+				UserModel
+					.getAllAsync()
+					.then(function(users) {
+						usersSubject.onNext(users);
+					});
+			})
+			.silentSubscribe();
+	}
+
+	function clearUsersOnUserLogoff() {
+		authBusiness
+			.observeCurrentUserAuthentication()
+			.whereIsNull()
+			.do(function() {
+				usersSubject.onNext(null);
+			})
+			.silentSubscribe();
 	}
 
 	function addUserAsync(userViewModel) {
@@ -50,22 +77,6 @@ jpoApp.factory('userBusiness', ['$q', 'UserModel', 'authBusiness', function($q, 
 			return user.id !== userToRemove.id;
 		});
 	}
-
-	function loadUsers() {
-		authBusiness
-			.observeAuthenticatedUser()
-			.asAsyncValue()
-			.do(function(__) {
-				UserModel
-					.getAllAsync()
-					.then(function(users) {
-						usersSubject.onNext(users);
-					});
-			})
-			.silentSubscribe();
-	}
-
-	loadUsers();
 
 	return {
 		observeUsers: observeUsers,

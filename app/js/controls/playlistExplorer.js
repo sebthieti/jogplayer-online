@@ -137,8 +137,17 @@ jpoApp.directive("playlistExplorer", [
 
 				playlistBusiness
 					.observePlaylistViewModels()
+					.whereHasValue()
 					.do(function (playlistsVm) {
 						$scope.playlistsVm = playlistsVm;
+					})
+					.silentSubscribe();
+
+				playlistBusiness
+					.observePlaylistViewModels()
+					.whereIsNull()
+					.do(function () {
+						$scope.playlistsVm = null;
 					})
 					.silentSubscribe();
 
@@ -158,12 +167,11 @@ jpoApp.directive("playlistExplorer", [
 					})
 					.silentSubscribe();
 
-				playlistBusiness.loadPlaylists();
-
 	// END Bootstrap section
 
 				mediaQueueBusiness
 					.observeMediaQueue()
+					.whereHasValue()
 					.select(function(x) {return _.any(x)})
 					.do(function(hasMediaQueueAny) {
 						$scope.hasMediaQueueAny = hasMediaQueueAny;

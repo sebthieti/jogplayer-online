@@ -3,8 +3,9 @@
 jpoApp.directive("manageUsers", [
 	'$timeout',
 	'userBusiness',
+	'authBusiness',
 	'viewModelBuilder',
-	function($timeout, userBusiness, viewModelBuilder) {
+	function($timeout, userBusiness, authBusiness, viewModelBuilder) {
 	return {
 		restrict: 'E',
 		templateUrl: '/templates/controls/manageUsers.html',
@@ -162,8 +163,13 @@ jpoApp.directive("manageUsers", [
 				$scope.editUserVm = null;
 			};
 
-			userBusiness
-				.observeUsers()
+			authBusiness
+				.observeAuthenticatedUser()
+				.where(function(user) {
+					return user.permissions.isAdmin || user.permissions.isRoot})
+				.select(function() {
+					return userBusiness.observeUsers();
+				})
 				.do(function(users) {
 					$timeout(function() {
 						var usersVm = users.map(function(x) {

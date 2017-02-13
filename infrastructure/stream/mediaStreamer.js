@@ -45,6 +45,7 @@ MediaStreamer.prototype.streamByMediaPath = function(rawPath, req, res) {
 	var completePath = rawPath;
     var realPath = _fileService.normalizePathForCurrentOs(completePath);
 
+
 	var canUseChunkedStratagy = typeof req.headers.range !== 'undefined';
 
 	var chunckParams;
@@ -55,7 +56,7 @@ MediaStreamer.prototype.streamByMediaPath = function(rawPath, req, res) {
 	}
 
 	return _mediaDirector
-		.ensureReadableMediaAsync(realPath, req.headers.accept)
+		.ensureReadableMediaAsync(realPath, req.headers.accept, req.user)
 		.then(function(mediaPath) {
 			return _mediaDirector.getBinaryChunkAndFileSizeByPathAsync(mediaPath, chunckParams.startOffset, chunckParams.endOffset)
 		})

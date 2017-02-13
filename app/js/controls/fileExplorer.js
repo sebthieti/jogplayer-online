@@ -70,6 +70,7 @@ jpoApp.directive("fileExplorer", [
 
 				mediaQueueBusiness
 					.observeMediaQueue()
+					.whereHasValue()
 					.select(function(x) {return _.any(x)})
 					.do(function(hasMediaQueueAny) {
 						$scope.hasMediaQueueAny = hasMediaQueueAny;

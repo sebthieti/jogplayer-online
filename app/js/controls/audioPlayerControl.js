@@ -5,6 +5,7 @@ jpoApp.factory("AudioPlayerControl", function () {
 		var ButtonMap = Jpo.ButtonMap;
 		var PlayerState = Jpo.PlayerState;
 		var mediumPositionSubject = new Rx.Subject();
+		var volumeSubject = new Rx.Subject();
 
 		var _currentStateSubject = new Rx.BehaviorSubject(PlayerState.Unknown);
 		var _isDraggingCursor = false;
@@ -13,6 +14,10 @@ jpoApp.factory("AudioPlayerControl", function () {
 
 		function observeMediumPosition() {
 			return mediumPositionSubject;
+		}
+
+		function observeVolume() {
+			return volumeSubject;
 		}
 
 		function init(controlDomElement) {
@@ -264,6 +269,8 @@ jpoApp.factory("AudioPlayerControl", function () {
 
 			_audioPlayerElements.audioPlayer.volume = safeVolumePerOne;
 
+			volumeSubject.onNext(safeVolumePerOne);
+
 			var volumeOffset = -volumeBarWidth + mouseX;
 			_audioPlayerElements.volumeBar.style.transform = 'translateX(' + volumeOffset + 'px)';
 		}
@@ -356,7 +363,8 @@ jpoApp.factory("AudioPlayerControl", function () {
 			playOrPause: playOrPause,
 			stopMedium: stopMedium,
 			observeCurrentState: observeCurrentState,
-			observeMediumPosition: observeMediumPosition
+			observeMediumPosition: observeMediumPosition,
+			observeVolume: observeVolume
 		}
 	}
 	return AudioPlayerControl;
