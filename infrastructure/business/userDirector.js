@@ -21,7 +21,7 @@ UserDirector.prototype.isRootUserSetAsync = function() {
 // TODO Check for rights before doing (directory should do not service layer)
 UserDirector.prototype.getUsersAsync = function(issuer) {
 	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) {
-		throw 'Not authorized no manage users.';
+		throw new Error('Not authorized to manage users.');
 	}
 	return _userProxy.getUsersAsync();
 };
@@ -45,7 +45,7 @@ UserDirector.prototype.addRootUserAsync = function(rootUserDto) {
 
 UserDirector.prototype.addUserAsync = function(userDto, issuer) {
 	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
-		throw 'Not authorized no manage users.';
+		throw new Error('Not authorized to manage users.');
 	}
 	// Generate password salt
 	var passwordSalt = hasher.createSalt();
@@ -64,7 +64,7 @@ UserDirector.prototype.addUserAsync = function(userDto, issuer) {
 
 UserDirector.prototype.addUserPermissionsAsync = function(userId, allowedPaths, issuer) {
 	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
-		throw 'Not authorized no manage users.';
+		throw new Error('Not authorized to manage users.');
 	}
 
 	return _userProxy //_userPermissionsProxy
@@ -76,7 +76,7 @@ UserDirector.prototype.addUserPermissionsAsync = function(userId, allowedPaths, 
 
 UserDirector.prototype.getUserPermissionsByUserId = function(userId, issuer) {
 	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
-		throw 'Not authorized no manage users.';
+		throw new Error('Not authorized to manage users.');
 	}
 
 	return _userProxy
@@ -88,7 +88,7 @@ UserDirector.prototype.getUserPermissionsByUserId = function(userId, issuer) {
 
 UserDirector.prototype.getAllUserPermissionsAsync = function(userId, allowedPaths, issuer) {
 	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
-		throw 'Not authorized no manage users.';
+		throw new Error('Not authorized to manage users.');
 	}
 
 	return _userProxy.getUserByIdWithPermissionsAsync(userId);
@@ -98,7 +98,7 @@ UserDirector.prototype.getAllUserPermissionsAsync = function(userId, allowedPath
 
 UserDirector.prototype.updateUserPermissionsByUserIdAsync = function(userId, userPermissionsDto, issuer) {
 	//if (issuer.role !== 'admin') {
-	//	throw 'Not authorized no manage users.';
+	//	throw 'Not authorized to manage users.';
 	//}
 	return _userProxy
 		.getUserByIdWithPermissionsAsync(userId)
@@ -117,7 +117,7 @@ UserDirector.prototype.updateUserPermissionsByUserIdAsync = function(userId, use
 
 UserDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, issuer) {
 	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) {
-		throw 'Not authorized no manage users.';
+		throw new Error('Not authorized to manage users.');
 	}
 	return this.updateUserPermissionsByUserIdAsync(userId, userDto.permissions, issuer)
 		.then(function() {
@@ -128,10 +128,10 @@ UserDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, issuer
 
 UserDirector.prototype.removeUserByIdAsync = function(userId, currentUser) {
 	if (!currentUser.permissions.isRoot && !currentUser.permissions.isAdmin) {
-		throw "Not authorized no manage users.";
+		throw new Error('Not authorized to manage users.');
 	}
 	if (currentUser.id === userId) {
-		throw "Cannot remove yourself.";
+		throw new Error("Cannot remove yourself.");
 	}
 
 	return _userProxy
@@ -141,7 +141,7 @@ UserDirector.prototype.removeUserByIdAsync = function(userId, currentUser) {
 				return;
 			}
 			if (user.isRoot === true) {
-				throw 'Root user cannot be removed.';
+				throw new Error('Root user cannot be removed.');
 			}
 			return _userProxy.removeUserByIdAsync(user, currentUser);
 		});

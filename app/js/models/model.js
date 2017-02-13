@@ -141,7 +141,7 @@ jpoApp.factory('Model', ['serviceFactory', function(serviceFactory) {
 			return;
 		}
 		if (!Array.isArray(array)) {
-			throw 'Not array';
+			throw new Error('Not array');
 		}
 		_.forEach(array, function (entity) {
 			this.validateSchema(entity, schema);
@@ -173,17 +173,17 @@ jpoApp.factory('Model', ['serviceFactory', function(serviceFactory) {
 							if (typeof value === getFunctionName(type)) {
 								continue; // Ok, there's a match, we both found the key and type is correct.
 							} else if (value){
-								throw 'Type of ' + key + ' in DTO is unexpected';
+								throw new Error('Type of ' + key + ' in DTO is unexpected');
 							}
 						}
 					}
 					if (value) {
-						throw '[Model].[Property]: [' + this.endpointName + '].[' + key + '] in DTO has not been found in schema';
+						throw new Error('[Model].[Property]: [' + this.endpointName + '].[' + key + '] in DTO has not been found in schema');
 					}
 				}
 			} else {
 				if (typeof entities !== getFunctionName(schema)) {
-					throw '[Model].[Property]: [' + this.endpointName + '].[' + schema + '] in DTO has not been found in schema';
+					throw new Error('[Model].[Property]: [' + this.endpointName + '].[' + schema + '] in DTO has not been found in schema');
 				}
 			}
 		}

@@ -151,7 +151,7 @@ PlaylistDirector.prototype.addMediumByFilePathAsync = function (playlistId, medi
 
 PlaylistDirector.prototype.insertMediumByFilePathAsync = function (playlistId, mediaFilePath, index, issuer) {
 	var prepareAndGetPosition;
-	if (!index) { // We'll append medium
+	if (index === undefined || index === null) { // We'll append medium
 		prepareAndGetPosition = _playlistProxy.getMediaCountForPlaylistByIdAsync(playlistId, issuer);
 	} else {
 		prepareAndGetPosition = makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, index, issuer)
@@ -203,7 +203,7 @@ function makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, desiredIndex, is
 			if (desiredIndex == null || desiredIndex > count) {
 				desiredIndex = count;
 			} else if (desiredIndex < 0) {
-				throw "The given index is out of bounds"; // TODO To clean exceptions
+				throw new Error('The given index is out of bounds'); // TODO To clean exceptions
 			}
 
 			// If we insert between playlists, then move below playlist down by one.
@@ -283,17 +283,17 @@ function innerFeedPhysicalPlaylistWithMediaAndSaveAsync(emptyPlaylist, issuer) {
 
 function loadMediaFromPhysicalPlaylistAsync(emptyPlaylist, issuer) {
 	if (!emptyPlaylist) {
-		throw "PlaylistDirector.injectMediaToPhysicalPlaylistAsync: playlist must be set";
+		throw new Error('PlaylistDirector.injectMediaToPhysicalPlaylistAsync: playlist must be set');
 	}
 
 	var filePath = emptyPlaylist.filePath;
 	if (!filePath) {
-		throw "PlaylistDirector.injectMediaToPhysicalPlaylistAsync: playlist.FilePath must be set";
+		throw new Error('PlaylistDirector.injectMediaToPhysicalPlaylistAsync: playlist.FilePath must be set');
 	}
 
 	var physicalPlaylistService = findPhysicalPlaylistServiceFor(filePath);
 	if (!physicalPlaylistService) {
-		throw "PlaylistDirector.injectMediaToPhysicalPlaylistAsync cannot load playlist of format: " + fs.extname(filePath);
+		throw new Error('PlaylistDirector.injectMediaToPhysicalPlaylistAsync cannot load playlist of format: ' + fs.extname(filePath));
 	}
 
 	var plId = emptyPlaylist.id;
@@ -308,7 +308,7 @@ function findPhysicalPlaylistServiceFor(plFilePath) {
 }
 
 function assertOnNotFound(data) {
-	if (data === undefined || data === null) { throw "No data has been found" }
+	if (data === undefined || data === null) { throw new Error('No data has been found') }
 	return data;
 }
 

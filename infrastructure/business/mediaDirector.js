@@ -29,7 +29,7 @@ MediaDirector.prototype.getBinaryChunkAndFileSizeByIdAsync = function (mediumId,
 		.getMediaByIdAsync(mediumId, issuer)
 		.then(function(medium) {
 			if (!acceptPath(medium.filePath, issuer.permissions)) {
-				throw 'Unauthorized access';
+				throw new Error('Unauthorized access');
 			}
 			return medium;
 		})
@@ -68,7 +68,7 @@ MediaDirector.prototype.getBinaryChunkAndFileSizeByPathAsync = function (mediaPa
 
 MediaDirector.prototype.renameMe = function(mediaFilePath, browserFormats, issuer) {
 	if (!acceptPath(mediaFilePath, issuer.permissions)) {
-		throw 'Unauthorized access';
+		throw new Error('Unauthorized access');
 	}
 
 	return utils.checkFileExistsAsync(mediaFilePath)
@@ -89,7 +89,7 @@ MediaDirector.prototype.renameMe = function(mediaFilePath, browserFormats, issue
 		})
 		.then(function(matchSet) {
 			if (!matchSet.exists && matchSet.mediaFilePath === "") {
-				throw "No file matches";
+				throw new Error('No file matches');
 			}
 			if (matchSet.exists) {
 				return matchSet.mediaFilePath;

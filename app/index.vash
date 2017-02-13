@@ -19,7 +19,7 @@
 
 		<div id="menu" ng-show="canShowMenu">
 			<button type="button" class="icon-users btn-rounded-new btn-menu" title="Manage users" ng-show="isAdmin" ng-click="toggleUserManager()"></button>
-			<button type="button" class="icon-list2 btn-rounded-new btn-menu" title="Manage users" ng-show="isAdmin" ng-click="toggleMediaQueue()"></button>
+			<button type="button" class="icon-list2 btn-rounded-new btn-menu" ng-disabled="!enableShowMediaQueue" title="Manage users" ng-show="isAdmin" ng-click="toggleMediaQueue()"></button>
 		</div>
 
 		<!-- TODO Use JSonP to inject admin stuff ? -->

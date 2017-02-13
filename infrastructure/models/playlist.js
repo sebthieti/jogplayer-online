@@ -10,9 +10,9 @@ var Playlist,
 
 var playlistSchema = new Schema({
 	ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
-	name: String,
+	name: { type: String, maxLength: 128 },
 	index: Number,
-	filePath: String,
+	filePath: { type: String, maxLength: 256 },
 	media: [{ type: Schema.Types.ObjectId, ref: 'Media' }],
 	createdOn: { type: Date, default: Date.now },
 	updatedOn: { type: Date }

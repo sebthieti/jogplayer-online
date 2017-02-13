@@ -17,7 +17,7 @@ jpoApp.factory('PlaylistsModel', ['Model', 'jpoModelBuilder', function(Model, jp
 				var self = this;
 				return this.service.addByLinkAsync(
 					this.selectActionFromLinks('media.insert'),
-					{ index: 'end', mediaFilePath: mediaFilePath }
+					{ mediaFilePath: mediaFilePath }
 				)
 				.then(function(mediumEntity) {
 					return Model.build(self.endpointName, self.schema, mediumEntity);

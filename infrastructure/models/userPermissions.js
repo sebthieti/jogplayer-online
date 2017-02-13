@@ -1,7 +1,8 @@
 'use strict';
 
-var mongoose = require('mongoose'),
-	Schema = mongoose.Schema;
+var mongoose = require('mongoose');
+require('mongoose-types-ext')(mongoose);
+var Schema = mongoose.Schema;
 
 var _routes;
 
@@ -12,7 +13,7 @@ var userPermissionsSchema = new Schema({
 	isRoot: Boolean, // TODO This one must be read only
 	allowPaths: [ String ],
 	denyPaths: [ String ],
-	homePath: String
+	homePath: { type: String, maxLength: 128 }
 });
 
 userPermissionsSchema.set('toJSON', { virtuals: true });

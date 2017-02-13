@@ -24,10 +24,10 @@ UserStateSaveService.prototype.getUserStateAsync = function(ownerId) {
 
 UserStateSaveService.prototype.addUserStateAsync = function (userId, state) {
 	if (!userId) {
-		throw "SetupSaveService.addUserStateAsync: userId must be set";
+		throw new Error('SetupSaveService.addUserStateAsync: userId must be set');
 	}
 	if (!state) {
-		throw "SetupSaveService.addUserStateAsync: state must be set";
+		throw new Error('SetupSaveService.addUserStateAsync: state must be set');
 	}
 
 	var defer = Q.defer();
@@ -50,10 +50,10 @@ UserStateSaveService.prototype.addUserStateAsync = function (userId, state) {
 
 UserStateSaveService.prototype.updateFromUserStateDtoAsync = function (userStateId, ownerId, userStateDto) {
 	if (!ownerId) {
-		throw "SetupSaveService.updateFromUserStateDtoAsync: ownerId must be set";
+		throw new Error('SetupSaveService.updateFromUserStateDtoAsync: ownerId must be set');
 	}
 	if (!userStateDto) {
-		throw "SetupSaveService.updateFromUserStateDtoAsync: userStateDto must be set";
+		throw new Error('SetupSaveService.updateFromUserStateDtoAsync: userStateDto must be set');
 	}
 
 	var defer = Q.defer();
@@ -72,7 +72,7 @@ UserStateSaveService.prototype.updateFromUserStateDtoAsync = function (userState
 
 UserStateSaveService.prototype.removeUserStateByIdAsync = function (userId) {
 	if (!userId) {
-		throw "SetupSaveService.removeUserStateByIdAsync: userId must be set";
+		throw new Error('SetupSaveService.removeUserStateByIdAsync: userId must be set');
 	}
 
 	var defer = Q.defer();

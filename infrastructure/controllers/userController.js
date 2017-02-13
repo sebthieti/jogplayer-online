@@ -12,7 +12,7 @@ var _app,
 
 var assertAndGetUserId = function (obj) {
 	if (!obj || !obj.userId) {
-		throw 'Id must be set.';
+		throw new Error('Id must be set.');
 	}
 	return obj.userId;
 };

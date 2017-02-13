@@ -26,13 +26,13 @@ FavoriteSaveService.prototype.getSortedFavoritesAsync = function(issuer) {
 
 FavoriteSaveService.prototype.addFavoriteAsync = function (favorite, issuer) {
 	if (!favorite) {
-		throw "FavoriteSaveService.addFavoriteAsync: favorite must be set";
+		throw new Error('FavoriteSaveService.addFavoriteAsync: favorite must be set');
 	}
 	if (!issuer) {
-		throw "FavoriteSaveService.addFavoriteAsync: issuer must be set";
+		throw new Error('FavoriteSaveService.addFavoriteAsync: issuer must be set');
 	}
 	if (favorite._id) {
-		throw "FavoriteSaveService.addFavoriteAsync: favorite.Id should not be set";
+		throw new Error('FavoriteSaveService.addFavoriteAsync: favorite.Id should not be set');
 	}
 
 	var defer = Q.defer();
@@ -52,10 +52,10 @@ FavoriteSaveService.prototype.addFavoriteAsync = function (favorite, issuer) {
 
 FavoriteSaveService.prototype.updateFromFavoriteDtoAsync = function (favoriteId, favoriteDto, issuer) {
 	if (!favoriteDto) {
-		throw "FavoriteSaveService.updateFromFavoriteDtoAsync: favorite must be set";
+		throw new Error('FavoriteSaveService.updateFromFavoriteDtoAsync: favorite must be set');
 	}
 	if (!favoriteId) {
-		throw "FavoriteSaveService.updateFromFavoriteDtoAsync: favorite.Id should be set";
+		throw new Error('FavoriteSaveService.updateFromFavoriteDtoAsync: favorite.Id should be set');
 	}
 
 	var defer = Q.defer();
@@ -74,7 +74,7 @@ FavoriteSaveService.prototype.updateFromFavoriteDtoAsync = function (favoriteId,
 
 FavoriteSaveService.prototype.removeFavoriteByIdAsync = function (favoriteId, issuer) {
 	if (!favoriteId) {
-		throw "FavoriteSaveService.removeFavoriteByIdAsync: favoriteId must be set";
+		throw new Error('FavoriteSaveService.removeFavoriteByIdAsync: favoriteId must be set');
 	}
 
 	var defer = Q.defer();

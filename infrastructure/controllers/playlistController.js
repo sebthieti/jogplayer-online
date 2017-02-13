@@ -12,7 +12,7 @@ var _app,
 
 function assertAndGetPlaylistId(obj) {
 	if (!obj || !obj.playlistId) {
-		throw 'Id must be set.';
+		throw new Error('Id must be set.');
 	}
 	return obj.playlistId;
 }
@@ -22,7 +22,7 @@ function assertAndGetPlaylistIdsAndSteps(obj) {
 	var steps = obj.steps;
 
 	if (!playlistIds || !steps) {
-		throw 'ids or steps have not been providen.';
+		throw new Error('ids or steps have not been providen.');
 	}
 	return { playlistIds: playlistIds, steps: steps }
 }
@@ -32,7 +32,7 @@ function assertAndGetPlaylistIdAndMediaId(obj) {
 	var mediumId = obj.mediumId;
 
 	if (!playlistId || !mediumId) {
-		throw 'playlistId or mediumId have not been providen.';
+		throw new Error('playlistId or mediumId have not been providen.');
 	}
 	return { playlistId: playlistId, mediumId: mediumId }
 }
@@ -43,8 +43,8 @@ function assertMediumInsertParamsFromRequest(request) {
 	var insertPosition = request.body.index;
 	var mediaFilePath = request.body.mediaFilePath;
 
-	if (!playlistId || insertPosition === undefined || insertPosition === null || !mediaFilePath) {
-		throw "Playlist object doesn't have all mandatory fields."
+	if (!playlistId || !mediaFilePath) {
+		throw new Error('Playlist object does not have all mandatory fields.');
 	}
 
 	var data = {
@@ -52,14 +52,16 @@ function assertMediumInsertParamsFromRequest(request) {
 		mediaFilePath: mediaFilePath
 	};
 
-	if (insertPosition === 'end') {
-		data.insertPosition = 'end';
-	} else if (!isNaN(insertPosition)) {
-		var index = parseInt(insertPosition);
-		data.insertPosition = index;
-	} else {
-		throw "insertPosition is not in a valid range."
+	if (insertPosition === undefined) {
+		return data;
 	}
+
+  if (!isNaN(insertPosition)) {
+    var index = parseInt(insertPosition);
+    data.insertPosition = index;
+  } else {
+    throw new Error('insertPosition is not in a valid range.');
+  }
 
 	return data;
 }
@@ -88,7 +90,7 @@ function registerPlaylistRoutes() {
 		.then(function (playlistId) {
 			return {
 				playlistId: playlistId,
-				playlist: PlaylistDto.toDto(req.body, playlistId)
+				playlist: PlaylistDto.toDto(req.body, { overrideId: playlistId })
 			}
 		})
 		.then(function (reqSet) {
@@ -104,7 +106,7 @@ function registerPlaylistRoutes() {
 	});
 
 	_app.post(_plRoutes.insertPath, _authDirector.ensureApiAuthenticated, function(req, res) {
-		Q.fcall(PlaylistDto.toDto, req.body)
+		Q.fcall(PlaylistDto.toDto, req.body, { checkAllRequiredFieldsButId: true })
 		.then(function (playlist) {
 			return (playlist.index == null)
 				? _playlistsDirector.addPlaylistAsync(playlist, req.user)
@@ -140,15 +142,15 @@ function registerPlaylistMediaRoutes() {
 	_app.post(_mediaRoutes.insertPath, _authDirector.ensureApiAuthenticated, function(req, res) {
 		Q.fcall(assertMediumInsertParamsFromRequest, req)
 			.then(function (reqSet) {
-				return (reqSet.insertPosition === 'end')
-					? _playlistDirector.addMediumByFilePathAsync( // TODO Like for everything i should return a Dto, not model (mediumDto)
-						reqSet.playlistId,
-						reqSet.mediaFilePath,
-						req.user)
-					: _playlistDirector.insertMediumByFilePathAsync(
+				return reqSet.insertPosition !== undefined
+					? _playlistDirector.insertMediumByFilePathAsync(
 						reqSet.playlistId,
 						reqSet.mediaFilePath,
 						reqSet.insertPosition,
+						req.user)
+					: _playlistDirector.addMediumByFilePathAsync( // TODO Like for everything i should return a Dto, not model (mediumDto)
+						reqSet.playlistId,
+						reqSet.mediaFilePath,
 						req.user)
 			})
 			.then(function(newMedia) { res.send(newMedia) })

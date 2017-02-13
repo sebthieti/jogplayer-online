@@ -10,7 +10,7 @@ var _app,
 
 var assertAndGetUserStateId = function (obj) {
 	if (!obj || !obj.userStateId) {
-		throw 'Id must be set.';
+		throw new Error('Id must be set.');
 	}
 	return obj.userStateId;
 };

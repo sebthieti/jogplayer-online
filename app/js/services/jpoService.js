@@ -47,7 +47,7 @@ jpoApp.factory("jpoProxy", ['$q', 'jpoService', function ($q, jpoService) {
 						return link.rel === name;
 					});
 					if (angular.isUndefined(apiLink)) {
-						throw 'Api with rel=' + name + ' could not be found;';
+						throw new Error('Api with rel=' + name + ' could not be found;');
 					}
 					deferred.resolve(apiLink.href);
 				});

@@ -18,14 +18,14 @@
                 <div class="tab-tools" ng-show="!playlistVm.isEditing">
                     <!-- Non editing mode -->
                     <button type="button" class="icon-pencil rename" stop-event ng-click="beginEditPlaylist(playlistVm)"></button>
-                    <button type="button" class="icon-cross delete" stop-event ng-click="innerRemovePlaylist(playlistVm)"></button>
+                    <button type="button" class="icon-close delete" stop-event ng-click="innerRemovePlaylist(playlistVm)"></button>
                 </div>
             </li>
             <li ng-switch="isAdding" class="btn-enabled">
                 <div ng-switch-when="true">
                     <input type="text" ng-model="newPlaylist.name" ng-enter="endAddVirtualPlaylist()">
                     <button type="button" class="icon-checkmark rename" stop-event ng-click="endAddVirtualPlaylist()"></button>
-                    <button type="button" class="icon-cross cancel" stop-event ng-click="cancelAddPlaylist()"></button>
+                    <button type="button" class="icon-close cancel" stop-event ng-click="cancelAddPlaylist()"></button>
                 </div>
 
                 <div ng-switch-default>

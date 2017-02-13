@@ -2,38 +2,30 @@
 
 var ResourceLinksDto = require('./resourceLinksDto');
 
-var FolderContentDto = function(/*name, type, isRoot, *//*links*/resourceLinksDto, files) {
-	if (resourceLinksDto) {
-		var v = resourceLinksDto instanceof ResourceLinksDto;
-		var v2 = resourceLinksDto instanceof Array;
-		if (v) {
-			this.links = resourceLinksDto.links;
-		} else if (v2){
-			this.links = resourceLinksDto;
+var FolderContentDto = function(data) {
+	if (!data) return;
+
+  if (data.resourceLinksDto) {
+		var isDto = data.resourceLinksDto instanceof ResourceLinksDto;
+		var isArray = data.resourceLinksDto instanceof Array;
+		if (isDto) {
+			this.links = data.resourceLinksDto.links;
+		} else if (isArray){
+			this.links = data.resourceLinksDto;
 		} else {
-			throw 'links must be an Array';
+			throw new Error('links must be an Array');
 		}
-
 	}
-	//links && assert.equal(links instanceof ResourceLinksDto, true, 'links must be an Array');
 
-	this.files = files;
+	if (data.files) this.files = data.files;
 };
 
-FolderContentDto.prototype = {
+FolderContentDto.prototype.setFiles = function(files) {
+  return new FolderContentDto({ resourceLinksDto: this.links, files: files });
+};
 
-	setFiles: function(files) {
-		return new FolderContentDto(this.links, files);
-	},
-
-	setLinks: function(links) {
-		return new FolderContentDto(links, this.files);
-	}//,
-
-	//toJson: function() {
-	//	return { links: this.links.toJson(), files: this.files };
-	//}
-
+FolderContentDto.prototype.setLinks = function(links) {
+  return new FolderContentDto({ resourceLinksDto: links, files: this.files });
 };
 
 module.exports = FolderContentDto;

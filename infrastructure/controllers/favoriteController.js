@@ -10,7 +10,7 @@ var _app,
 
 var assertAndGetFavoriteId = function (obj) {
 	if (!obj || !obj.favId) {
-		throw 'Id must be set.';
+		throw new Error('Id must be set.');
 	}
 	return obj.favId;
 };
@@ -32,7 +32,7 @@ FavoriteController.prototype.init = function() {
 	});
 
 	_app.post(_routes.favorites.insertPath, _authDirector.ensureApiAuthenticated, function(req, res) {
-		Q.fcall(FavoriteDto.toDto, req.body)
+		Q.fcall(FavoriteDto.toDto, req.body, { checkAllRequiredFieldsButId: true })
 		.then(function(dto) {
 			return _favoriteDirector.addFavoriteAsync(dto, req.user);
 		})
@@ -46,7 +46,7 @@ FavoriteController.prototype.init = function() {
 		.then(function (favId) {
 			return {
 				favId: favId,
-				favorite: FavoriteDto.toDto(req.body, favId)
+				favorite: FavoriteDto.toDto(req.body, { overrideId: favId })
 			}
 		})
 		.then(function (reqSet) {

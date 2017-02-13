@@ -113,7 +113,7 @@ var injectDataStreamInResponse = function (response, dataStream) {
 
 var parseChunkRequest = function (request) {
 	if (typeof request.headers.range === 'undefined') {
-		throw "Only handle chunked requests";
+		throw new Error('Only handle chunked requests');
 	}
 
 	var chunkParams = {};

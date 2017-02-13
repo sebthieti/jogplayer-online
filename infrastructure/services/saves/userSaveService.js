@@ -73,10 +73,10 @@ UserSaveService.prototype.getUserByUsernameWithPermissionsAsync = function(usern
 
 UserSaveService.prototype.addRootUserAsync = function (userDto, userPermissionsModel) {
 	if (!userDto) {
-		throw "SetupSaveService.addUserAsync: favorite must be set";
+		throw new Error('SetupSaveService.addUserAsync: favorite must be set');
 	}
 	if (userDto._id) {
-		throw "SetupSaveService.addUserAsync: user.Id should not be set";
+		throw new Error('SetupSaveService.addUserAsync: user.Id should not be set');
 	}
 
 	var defer = Q.defer();
@@ -102,13 +102,13 @@ UserSaveService.prototype.addRootUserAsync = function (userDto, userPermissionsM
 
 UserSaveService.prototype.addUserAsync = function (userDto, userPermissionsModel, issuer) {
 	if (!userDto) {
-		throw "SetupSaveService.addUserAsync: favorite must be set";
+		throw new Error('SetupSaveService.addUserAsync: favorite must be set');
 	}
 	if (!issuer) {
-		throw "SetupSaveService.addUserAsync: issuer must be set";
+		throw new Error('SetupSaveService.addUserAsync: issuer must be set');
 	}
 	if (userDto._id) {
-		throw "SetupSaveService.addUserAsync: user.Id should not be set";
+		throw new Error('SetupSaveService.addUserAsync: user.Id should not be set');
 	}
 
 	var defer = Q.defer();
@@ -155,10 +155,10 @@ UserSaveService.prototype.addUserPermissionsAsync = function (userId, permission
 
 UserSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, issuer) {
 	if (!userDto) {
-		throw "SetupSaveService.updateFromUserDtoAsync: user must be set";
+		throw new Error('SetupSaveService.updateFromUserDtoAsync: user must be set');
 	}
 	if (!userId) {
-		throw "SetupSaveService.updateFromUserDtoAsync: user.Id should be set";
+		throw new Error('SetupSaveService.updateFromUserDtoAsync: user.Id should be set');
 	}
 
 	var defer = Q.defer();
@@ -177,7 +177,7 @@ UserSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, is
 
 UserSaveService.prototype.removeUserByIdAsync = function (userId, issuer) {
 	if (!userId) {
-		throw "SetupSaveService.removeUserByIdAsync: userId must be set";
+		throw new Error('SetupSaveService.removeUserByIdAsync: userId must be set');
 	}
 
 	var defer = Q.defer();

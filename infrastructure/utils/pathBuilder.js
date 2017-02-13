@@ -35,9 +35,9 @@ PathBuilder.prototype = {
 
 	toAbsolutePath: function (playlistFilePath, mediaFileRelativePath) {
 		if (!playlistFilePath) {
-			throw "playlistFilePath";
+			throw new Error('playlistFilePath is not defined');
 		} if (!mediaFileRelativePath) {
-			throw "mediaFileRelativePath";
+			throw new Error('mediaFileRelativePath is not defined');
 		}
 
 		var resultPath;

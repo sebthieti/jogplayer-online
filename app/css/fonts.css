@@ -53,7 +53,7 @@
 .icon-heart:before {
 	content: "\e609";
 }
-.icon-cross:before {
+.icon-close:before {
 	content: "\e60a";
 }
 .icon-checkmark:before {

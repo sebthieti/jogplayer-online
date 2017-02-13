@@ -1,7 +1,8 @@
 'use strict';
 
-var mongoose = require('mongoose'),
-	Schema = mongoose.Schema;
+var mongoose = require('mongoose');
+require('mongoose-types-ext')(mongoose);
+var Schema = mongoose.Schema;
 
 var _userStateRoutes;
 
@@ -9,8 +10,8 @@ var userStateSchema = new Schema({
 	ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
 	playedPosition: Number,
 	mediaQueue: [ String ],
-	browsingFolderPath: String,
-	openedPlaylistId: String, // TODO Put a link url in it ?
+	browsingFolderPath: { type: String, maxLength: 128 },
+	openedPlaylistId: String, // TODO Put a link url in it ? | s/b an ObjectID instead
 	playingMediumInQueueIndex: Number
 });
 userStateSchema.set('toJSON', { virtuals: true });

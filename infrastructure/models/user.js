@@ -1,17 +1,18 @@
 'use strict';
 
-var mongoose = require('mongoose'),
-	Schema = mongoose.Schema;
+var mongoose = require('mongoose');
+require('mongoose-types-ext')(mongoose);
+var Schema = mongoose.Schema;
 
 var _userRoutes;
 
 var userSchema = new Schema({
 	isActive: Boolean,
-	username: { type: String, required: 'Username is mandatory' },
-	password: { type: String, required: 'Password is mandatory' },
+	username: { type: String, required: 'Username is mandatory', maxLength: 128 },
+	password: { type: String, required: 'Password is mandatory', maxLength: 128 },
 	passwordSalt: { type: String, required: 'PasswordSalt is mandatory' },
-	fullName: String,
-	email: String,
+	fullName: { type: String, maxLength: 128 },
+	email: { type: String, maxLength: 128 },
 	//state: { type: Schema.Types.ObjectId, ref: 'UserState' }
 	permissions: { type: Schema.Types.ObjectId, ref: 'UserPermission' }
 });

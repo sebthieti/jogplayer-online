@@ -13,7 +13,7 @@ function assertAndGetPlaylistIdsAndMediumId(params) {
 	var mediumId = params.mediumId;
 
 	if (!playlistId || !mediumId) {
-		throw 'playlistId or mediumId have not been provided.';
+		throw new Error('playlistId or mediumId have not been provided.');
 	}
 	return { playlistId: playlistId, mediumId: mediumId }
 }

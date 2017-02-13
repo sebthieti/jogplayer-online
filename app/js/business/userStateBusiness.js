@@ -286,10 +286,10 @@ jpoApp.factory('userStateBusiness', [
 			}
 		}
 
-		loadStateOnUserAuthenticated();
-		onControlsStateChangeUpdate();
-
-		return { // TODO give init method
-			//saveUserState: saveUserState
+		return {
+			init: function() {
+				loadStateOnUserAuthenticated();
+				onControlsStateChangeUpdate();
+			}
 		}
 }]);

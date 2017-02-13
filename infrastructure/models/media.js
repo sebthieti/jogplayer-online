@@ -1,7 +1,8 @@
 'use strict';
 // TODO Rename file to medium not media
-var mongoose = require('mongoose'),
-	Schema = mongoose.Schema;
+var mongoose = require('mongoose');
+require('mongoose-types-ext')(mongoose);
+var Schema = mongoose.Schema;
 
 var _mediaRoutes,
 	Media;
@@ -9,10 +10,10 @@ var _mediaRoutes,
 var mediumSchema = new Schema({
 	ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
 	_playlistId: { type: Schema.Types.ObjectId, ref: 'Playlist' },
-	title: String,
+	title: { type: String, maxLength: 256 },
 	createdOn: { type: Date },
 	updatedOn: { type: Date },
-	filePath: String,
+	filePath: { type: String, maxLength: 256 },
 	isChecked: { type: Boolean, default: true },
 	mediaType: String,
 	index: Number,

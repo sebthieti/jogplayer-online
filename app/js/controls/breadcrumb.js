@@ -21,7 +21,7 @@ jpoApp.directive("breadCrumb", [
 			} else if ($scope.groupName === 'playlist-finder') {
 				breadCrumbBusiness = breadCrumbPlaylistExplorerBusiness;
 			} else {
-				throw 'Must set groupName';
+				throw new Error('BreadCrumb groupName: Must set groupName');
 			}
 
 			$scope.levels = emptyArray;

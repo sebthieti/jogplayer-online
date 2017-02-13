@@ -286,14 +286,11 @@ jpoApp.factory('playlistBusiness', [
 				.asAsyncValue()
 				.whereHasValue()
 				.do(function(selectedPlaylistViewModel) {
-					var mediaFilePathPromises = fileViewModels.map(function(fileVm, index) {
+					var mediaFilePathPromises = fileViewModels.map(function(fileVm) {
 						var mediaFilePath = fileVm.model.selectSelfPhysicalFromLinks();
 						return selectedPlaylistViewModel
 							.model
-							.insertMediumByFilePathToPlaylist(
-								mediaFilePath,
-								index
-							);
+							.addMediumByFilePathToPlaylist(mediaFilePath);
 					});
 					$q.all(mediaFilePathPromises)
 					.then(function(mediaFilePaths) {

@@ -17,7 +17,7 @@ function FileExplorerDirector(fileExplorerService) {
 
 FileExplorerDirector.prototype.getFolderContentAsync = function (urlPath, issuer) {
 	if (!acceptPath(urlPath, issuer.permissions)) {
-		throw 'Unauthorized access'; // TODO Should become HTTP 403
+		throw new Error('Unauthorized access'); // TODO Should become HTTP 403
 	}
 	return exploreFilePathAsync(urlPath, issuer);
 };
@@ -80,7 +80,7 @@ function isSupportedMediumExt(ext) {
 
 FileExplorerDirector.prototype.getFileInfoAsync = function (urlPath, issuer) {
 	if (!acceptPath(urlPath, issuer.permissions)) {
-		throw 'Unauthorized access'; // TODO Should become HTTP 403
+		throw new Error('Unauthorized access'); // TODO Should become HTTP 403
 	}
 
 	return getFileInfoPathAsync(urlPath);

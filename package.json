@@ -21,6 +21,7 @@
     "m3u": "0.0.2",
     "mongodb": "^1.4.35",
     "mongoose": "^3.8.25",
+    "mongoose-types-ext": "^0.2.0",
     "node-ffprobe": "^1.2.2",
     "node-linq": "0.0.3",
     "passport": "^0.2.1",

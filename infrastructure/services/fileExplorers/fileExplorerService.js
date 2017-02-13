@@ -81,7 +81,7 @@ var queryFileStatAsync = function (fullFilePath, fileName) {
 		}, function(e) { // onError
 			// errno:34 code:ENOENT when no drive
 			// TODO What error for drive empty CD drive?
-			throw e;
+			throw new Error('An error occured while accessing the path ' + fullFilePath + ' :' + e.message)
 		})
 		.catch(function() {
 			return new FileInfo()

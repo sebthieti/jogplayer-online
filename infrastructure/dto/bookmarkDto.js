@@ -1,21 +1,40 @@
 'use strict';
 
 var Q = require('q'),
-	invokers = require('../invokers'),
 	Dto = require('./dto');
 
-var BookmarkDto = function(id, name, index, filePath, createdOn, folderPath) {
-	this.id = id;
-	this.name = name;
-	this.createdOn = createdOn;
-	this.index = index;
-	this.folderPath = folderPath;
+function safeOptions(options) {
+  if (!options) return {};
+  return options;
+}
+
+function assertValidData(data, options) {
+  if (data === undefined) {
+    throw new Error('Invalid Bookmark');
+  }
+}
+
+var BookmarkDto = function(data, overrideId) {
+  this.id = overrideId || data.id;
+  if (data.name) this.name = data.name;
+  if (data.index) this.index = data.index;
+  if (data.filePath) this.filePath = data.filePath;
+  if (data.createdOn) this.createdOn = data.createdOn;
+  if (data.folderPath) this.folderPath = data.folderPath;
 };
+
 BookmarkDto.prototype = Object.create(Dto.prototype);
 BookmarkDto.prototype.constructor = Dto;
 
-//BookmarkDto.toDto = function (obj, favId) {
-//	return invokers.dtoBuilder.validateAndBuildBookmarkDtoFromObject(obj, favId);
-//};
+BookmarkDto.prototype.getDefinedFields = function() {
+  var fields = Dto.prototype.getDefinedFields.call(this);
+  return fields;
+};
+
+BookmarkDto.toDto = function (data, options) {
+  options = safeOptions(options);
+  assertValidData(data, options);
+  return new BookmarkDto(data, options.overrideId);
+};
 
 module.exports = BookmarkDto;

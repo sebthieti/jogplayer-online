@@ -19,7 +19,7 @@ function PlaylistsDirector(playlistsProxy, playlistDirector, physicalPlaylistSer
 
 var assertOnPlaylistNotFound = function (playlist) {
 	if (!playlist) {
-		throw "No playlist has been found";
+		throw new Error('No playlist has been found');
 	}
 	return playlist;
 };
@@ -81,7 +81,7 @@ var makeRoomForPlaylistAtIndexAsync = function (desiredIndex, issuer) {
 			if (desiredIndex == null) {
 				desiredIndex = count;
 			} else if (desiredIndex > count || desiredIndex < 0) {
-				throw "The given index is out of bounds";
+				throw new Error('The given index is out of bounds');
 			}
 
 			// If we insert between playlists, then move below playlist down by one.
@@ -106,7 +106,7 @@ var makeRoomForPlaylistAtIndexAsync = function (desiredIndex, issuer) {
 
 var movePlaylistsAsync = function (playlistIdIndexes, steps, issuer) { // TODO To be tested
 	if (!playlistIdIndexes || !playlistIdIndexes.length || playlistIdIndexes.length == 0) {
-		throw "playlists cannot be empty";
+		throw new Error('playlists cannot be empty');
 	}
 
 	return _playlistsProxy
@@ -118,7 +118,7 @@ var movePlaylistsAsync = function (playlistIdIndexes, steps, issuer) { // TODO T
 			var isValidLowerBound = lowerIndex + steps >= 0;
 			var isValidUpperBound = higherIndex + steps <= plIdIndexes.length;
 			if (!isValidLowerBound || !isValidUpperBound) {
-				throw "steps value is outer bounds";
+				throw new Error('steps value is outer bounds');
 			}
 
 			var plIds = from(plIdIndexes).select(function(x) {return x._id.toString()}).toArray();

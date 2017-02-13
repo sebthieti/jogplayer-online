@@ -6,19 +6,22 @@ angular.module('jpoApp.controllers', [])
 	'$timeout',
 	'audioService',
 	'authBusiness',
+	'mediaQueueBusiness',
 	'userStateBusiness',
-	function($scope, $timeout, audioService, authBusiness) {
+	function($scope, $timeout, audioService, authBusiness, mediaQueueBusiness, userStateBusiness) {
 		$scope.currentUser = null;
 
 		$scope.isAdmin = false;
 		$scope.canShowMenu = false;
-
+		$scope.canShowMediaQueue = false;
+		$scope.enableShowMediaQueue = false;
 		$scope.manageUserVisible = false;
+
 		$scope.toggleUserManager = function() {
 			$scope.manageUserVisible = !$scope.manageUserVisible;
 		};
 
-		$scope.canShowMediaQueue = false;
+
 		$scope.toggleMediaQueue = function() {
 			$scope.canShowMediaQueue = !$scope.canShowMediaQueue;
 		};
@@ -56,6 +59,15 @@ angular.module('jpoApp.controllers', [])
 				}
 			})
 			.silentSubscribe();
+
+		mediaQueueBusiness
+			.observeMediaQueue()
+			.do(function(queue) {
+				$scope.enableShowMediaQueue = queue.length > 0;
+			})
+			.silentSubscribe();
+
+		userStateBusiness.init();
 	}
 ]).controller('WelcomeController', [
 	'$scope',

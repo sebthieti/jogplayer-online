@@ -30,14 +30,14 @@ MediaBuilder.prototype = {
 
 	toMediumAsync: function (mediaSummary, playlistId, issuer) {
 		if (!mediaSummary) {
-			throw "MediaBuilder.toMedia error: mediaSummary must be set";
+			throw new Error('MediaBuilder.toMedia error: mediaSummary must be set');
 		}
 		return this.buildMediumAsync(playlistId, mediaSummary.filePath, mediaSummary.index, issuer);
 	},
 
 	buildMediumAsync: function (playlistId, filePath, index, issuer) {
 		if (!filePath) {
-			throw "MediaBuilder.buildMedia: filePath not set";
+			throw new Error('MediaBuilder.buildMedia: filePath not set');
 		}
 
 		var mimeType = mediaHelper.getMimeTypeFromPath(filePath);
@@ -81,7 +81,7 @@ MediaBuilder.prototype = {
 
 	buildMediaSummary: function (filePath, title, index, duration) {
 		if (!filePath) {
-			throw "MediaBuilder.buildMediaSummary: filePath not set";
+			throw new Error('MediaBuilder.buildMediaSummary: filePath not set');
 		}
 		return new MediaSummary(
 			title,

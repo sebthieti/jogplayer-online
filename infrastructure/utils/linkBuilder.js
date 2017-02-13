@@ -23,11 +23,11 @@ function buildFilesLinks(files, urlPath) {
 }
 
 function buildFileInfoDto(urlPath, file) {
-	return new Dto.FileInfoDto(
-		file.name,
-		file.type,
-		buildFileLinks(file, urlPath)
-	);
+	return new Dto.FileInfoDto({
+    name: file.name,
+    type: file.type,
+    resourcesLinksDto: buildFileLinks(file, urlPath)
+  });
 }
 
 function buildFileLinks(file, parentFolderPath) {
@@ -41,7 +41,7 @@ function tryMakeFolderSelfPhysLink(folderPath) {
 	if (!folderPath || folderPath === '/') {
 		return;
 	}
-	return new Dto.LinkDto('self.phys', folderPath);
+	return new Dto.LinkDto({ rel:'self.phys', href: folderPath});
 }
 
 function tryMakeFileSelfPhysLink(parentFolderPath, file) {
@@ -66,7 +66,7 @@ function tryMakeFileSelfPhysLink(parentFolderPath, file) {
 		fullFilePath += "/";
 	}
 
-	return new Dto.LinkDto('self.phys', fullFilePath);
+	return new Dto.LinkDto({ rel:'self.phys', href: fullFilePath });
 }
 
 function makeSelfLinkToRes(parentFolderPath, file) {
@@ -96,7 +96,7 @@ function makeSelfLinkToRes(parentFolderPath, file) {
 	} else {
 		fullFilePath = parentFolderPath;
 	}
-	return new Dto.LinkDto('self', '/api/explore' + fullFilePath);
+	return new Dto.LinkDto({ rel:'self', href: '/api/explore' + fullFilePath });
 }
 
 function tryMakeParentLink(urlPath) {
@@ -104,7 +104,7 @@ function tryMakeParentLink(urlPath) {
 	if (!upPath) {
 		return;
 	}
-	return new Dto.LinkDto('parent', '/api/explore' + upPath);
+	return new Dto.LinkDto({ rel: 'parent', href: '/api/explore' + upPath });
 }
 
 function tryMakeUpPath(urlPath){
@@ -122,7 +122,7 @@ function tryMakeSelfPlayLink(parentFolderPath, file) {
 	if (file.type && file.type === 'F') {
 		var fullFilePath = parentFolderPath + file.name;
 		// TODO only when playable
-		return new Dto.LinkDto('self.play', '/api/media/play/path' + fullFilePath);
+		return new Dto.LinkDto({ rel:'self.play', href: '/api/media/play/path' + fullFilePath });
 	}
 }
 

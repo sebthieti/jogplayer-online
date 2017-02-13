@@ -1,16 +1,17 @@
 'use strict';
 
-var mongoose = require('mongoose'),
-	Schema = mongoose.Schema;
+var mongoose = require('mongoose');
+require('mongoose-types-ext')(mongoose);
+var Schema = mongoose.Schema;
 
 var _favRoutes;
 
 var favoriteSchema = new Schema({
 	ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
-	name: String,
+	name: { type: String, maxLength: 128 },
 	createdOn: { type: Date, default: Date.now },
 	updatedOn: { type: Date },
-	folderPath: String,
+	folderPath: { type: String, maxLength: 256 },
 	index: Number
 });
 favoriteSchema.set('toJSON', { virtuals: true });
