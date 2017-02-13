@@ -34,8 +34,8 @@ PlayMediaController.prototype.init = function() {
 			.then(function(reqSet) {
 				return _mediaDirector.getMediumByIdAndPlaylistIdAsync(reqSet.playlistId, reqSet.mediumId, req.user);
 			})
-			.then(function(data) { res.send(200, data) })
-			.catch(function(err) { res.send(400, err) })
+			.then(function(data) { res.status(200).send(data) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 

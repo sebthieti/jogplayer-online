@@ -13,6 +13,7 @@ var routes = require('./routes'),
 	Business = require('./business'),
 	Invokers = require('./invokers'),
 	Services = require('./services'),
+	Proxies = require('./proxies'),
 	Controllers = require('./controllers'),
 	Stream = require('./stream'),
 	Models = require('./models'),
@@ -50,26 +51,26 @@ function registerBusinesses() {
 	container.register('mediaDirector', function (mediaService, mediaSaveService) {
 		return new Business.MediaDirector(mediaService, mediaSaveService);
 	});
-	container.register('authDirector', function (userSaveService) {
-		return new Business.AuthDirector (userSaveService);
+	container.register('authDirector', function (userProxy) {
+		return new Business.AuthDirector (userProxy);
 	});
-	container.register('playlistDirector', function (fileExplorerService, mediaDirector, physicalPlaylistServices, playlistSaveService, mediaSaveService, mediaService, mediaBuilder) {
-		return new Business.PlaylistDirector(fileExplorerService, mediaDirector, physicalPlaylistServices, playlistSaveService, mediaSaveService, mediaService, mediaBuilder);
+	container.register('playlistDirector', function (fileExplorerService, mediaDirector, physicalPlaylistServices, playlistSaveService, playlistProxy, playlistsProxy, mediaSaveService, mediaService, mediaBuilder) {
+		return new Business.PlaylistDirector(fileExplorerService, mediaDirector, physicalPlaylistServices, playlistSaveService, playlistProxy, playlistsProxy, mediaSaveService, mediaService, mediaBuilder);
 	});
-	container.register('playlistsDirector', function (playlistDirector, physicalPlaylistServices, playlistSaveService, playlistBuilder) {
-		return new Business.PlaylistsDirector(playlistDirector, physicalPlaylistServices, playlistSaveService, playlistBuilder);
+	container.register('playlistsDirector', function (playlistsProxy, playlistDirector, physicalPlaylistServices, playlistSaveService, playlistBuilder) {
+		return new Business.PlaylistsDirector(playlistsProxy, playlistDirector, physicalPlaylistServices, playlistSaveService, playlistBuilder);
 	});
 	container.register('fileExplorerDirector', function (fileExplorerService) {
 		return new Business.FileExplorerDirector(fileExplorerService);
 	});
-	container.register('favoriteDirector', function (favoriteSaveService) {
-		return new Business.FavoriteDirector (favoriteSaveService);
+	container.register('favoriteDirector', function (favoriteProxy) {
+		return new Business.FavoriteDirector (favoriteProxy);
 	});
-	container.register('userDirector', function (userPermissionsDirector, userSaveService, userPermissionsSaveService) {
-		return new Business.UserDirector (userPermissionsDirector, userSaveService, userPermissionsSaveService);
+	container.register('userDirector', function (userPermissionsDirector, userProxy) {
+		return new Business.UserDirector (userPermissionsDirector, userProxy);
 	});
-	container.register('userStateDirector', function (userStateSaveService) {
-		return new Business.UserStateDirector (userStateSaveService);
+	container.register('userStateDirector', function (userStateProxy) {
+		return new Business.UserStateDirector (userStateProxy);
 	});
 	container.register('userPermissionsDirector', function (userSaveService, Models) {
 		return new Business.UserPermissionsDirector (userSaveService, Models.UserPermissions);
@@ -92,6 +93,27 @@ function registerModels() {
 			UserState: Models.UserState(routes.userStates),
 			UserPermissions: Models.UserPermissions(routes)
 		}
+	});
+}
+
+function registerProxies() {
+	container.register('userProxy', function(userSaveService) {
+		return new Proxies.UserProxy(userSaveService);
+	});
+	container.register('favoriteProxy', function(favoriteSaveService) {
+		return new Proxies.FavoriteProxy(favoriteSaveService);
+	});
+	container.register('playlistProxy', function(playlistSaveService) {
+		return new Proxies.PlaylistProxy(playlistSaveService);
+	});
+	container.register('playlistsProxy', function(playlistSaveService) {
+		return new Proxies.PlaylistsProxy(playlistSaveService);
+	});
+	container.register('playlistProxyMediator', function(playlistProxy, playlistsProxy) {
+		return new Proxies.PlaylistProxyMediator(playlistProxy, playlistsProxy);
+	});
+	container.register('userStateProxy', function(userStateSaveService) {
+		return new Proxies.UserStateProxy(userStateSaveService);
 	});
 }
 
@@ -192,6 +214,7 @@ function bootstrap(app, io) {
 	registerOther();
 	registerModels();
 	registerServices();
+	registerProxies();
 	registerBusinesses();
 	registerControllers(app, io);
 	registerAuthenticationStack(app);
@@ -206,7 +229,8 @@ function bootstrap(app, io) {
 		stateController,
 		authController,
 		userController,
-		userStateController
+		userStateController,
+		playlistProxyMediator
 	) {
 		homeController.init();
 		setupController.init();
@@ -219,6 +243,8 @@ function bootstrap(app, io) {
 		authController.init();
 		userController.init();
 		userStateController.init();
+
+		playlistProxyMediator.init();
 	});
 }
 

@@ -143,17 +143,14 @@ jpoApp.factory('audioPlayerBusiness', function() {
 				.build()
 				.setState(mediumQueueVm)
 				.do(function (vm) {
-					_handlers.setMediumPositionHandler(vm);
+					_handlers.setMediumHandler(vm);
 				})
 				.setQueue(pendingList)
 				.dequeue(playMedium)
 				.enqueue(playMedium);
 		} else {
-			_handlers.setMediumPositionHandler(mediumQueueVm);
+			_handlers.setMediumHandler(mediumQueueVm);
 		}
-
-
-
 		//playingMediumSubject.onNext(mediumQueueVm);
 	}
 

@@ -13,11 +13,11 @@ MediaStreamer.prototype.streamByMediaIdAndExt = function(mediaIdWithExt, req, re
 	var mediaExt = mediaIdWithExt.substring(mediaExtIndex);
 	var mediaId = mediaIdWithExt.substring(0, mediaExtIndex);
 	if (!mediaId) {
-		res.send(400, "A valid media id must be provided.");
+		res.status(400).send("A valid media id must be provided.");
 		return;
 	}
 	if (!mediaExt) {
-		res.send(400, "Media doesn't seem to have an extension.");
+		res.status(400).send("Media doesn't seem to have an extension.");
 		return;
 	}
 
@@ -36,8 +36,8 @@ MediaStreamer.prototype.streamByMediaIdAndExt = function(mediaIdWithExt, req, re
 			prepareAndSendResponseWithData(res, canUseChunkedStratagy, chunckParams, dataSet);
 		})
 		.catch(function(err) {
-			res.send(400, err) }
-		)
+			res.status(400).send(err)
+		})
 		.done();
 };
 
@@ -64,7 +64,7 @@ MediaStreamer.prototype.streamByMediaPath = function(rawPath, req, res) {
 			prepareAndSendResponseWithData(res, canUseChunkedStratagy, chunckParams, dataSet);
 		})
 		.catch(function(err) {
-			res.send(400, err)
+			res.status(400).send(err)
 		})
 		.done();
 };
@@ -102,12 +102,7 @@ var injectHeaderInResponse = function (response, useChunkMode, chunckParams, fil
 };
 
 var injectDataStreamInResponse = function (response, dataStream) {
-	dataStream.on('data', function(data) {
-		response.write(data, "binary");
-	});
-	dataStream.on('end', function() {
-		response.end();
-	});
+	dataStream.pipe(response);
 };
 
 var parseChunkRequest = function (request) {

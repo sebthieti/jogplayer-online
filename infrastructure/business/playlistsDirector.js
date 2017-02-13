@@ -1,13 +1,21 @@
 'use strict';
 
 var Q = require('q'),
-	from = require('fromjs'),
-	utils = require('../utils');
+	from = require('fromjs');
 
 var _playlistDirector,
 	_physicalPlaylistServices,
 	_playlistSaveService,
-	_playlistBuilder;
+	_playlistBuilder,
+	_playlistsProxy;
+
+function PlaylistsDirector(playlistsProxy, playlistDirector, physicalPlaylistServices, playlistSaveService, playlistBuilder) {
+	_playlistsProxy = playlistsProxy;
+	_playlistDirector = playlistDirector;
+	_physicalPlaylistServices = physicalPlaylistServices;
+	_playlistSaveService = playlistSaveService;
+	_playlistBuilder = playlistBuilder
+}
 
 var assertOnPlaylistNotFound = function (playlist) {
 	if (!playlist) {
@@ -17,7 +25,7 @@ var assertOnPlaylistNotFound = function (playlist) {
 };
 
 var getPlaylistsAsync = function (issuer) {
-	return _playlistSaveService.getPlaylistsAsync(issuer);
+	return _playlistsProxy.getPlaylistsAsync(issuer);
 };
 
 // BEGIN Add/Insert Playlist
@@ -29,7 +37,7 @@ var addPlaylistAsync = function (playlistDto, issuer) {
 var insertPlaylistAsync = function (playlistDto, issuer, index) {
 	var prepareAndGetPosition;
 	if (!index) { // We'll append medium
-		prepareAndGetPosition = _playlistSaveService.getPlaylistsCountAsync(issuer);
+		prepareAndGetPosition = _playlistsProxy.getPlaylistsCountAsync(issuer);
 	} else {
 		prepareAndGetPosition = makeRoomForPlaylistAtIndexAsync(index, issuer)
 			.then(function() { return index });
@@ -45,7 +53,7 @@ var insertPlaylistAsync = function (playlistDto, issuer, index) {
 
 var buildAndInsertVirtualPlaylistAsync = function (playlistDto, index, issuer) {
 	var emptyPlaylist = _playlistBuilder.buildEmptyVirtualPlaylist(playlistDto.name, index, issuer);
-	return utils.saveModelAsync(emptyPlaylist);
+	return _playlistsProxy.saveNewPlaylist(emptyPlaylist, issuer);//utils.saveModelAsync(emptyPlaylist);
 };
 
 var buildAndInsertPhysicalPlaylistAsync = function (playlistDto, index, issuer) {
@@ -62,12 +70,12 @@ var buildAndInsertEmptyPlaylistFromDtoAsync = function(dtoPlaylist, index, issue
 		index,
 		issuer
 	).then(function(emptyPlaylist) {
-		return utils.saveModelAsync(emptyPlaylist);
+		return _playlistsProxy.saveNewPlaylist(emptyPlaylist);//utils.saveModelAsync(emptyPlaylist);
 	});
 };
 
 var makeRoomForPlaylistAtIndexAsync = function (desiredIndex, issuer) {
-	return _playlistSaveService
+	return _playlistsProxy
 		.getPlaylistsCountAsync(issuer)
 		.then(function(count) {
 			if (desiredIndex == null) {
@@ -78,7 +86,7 @@ var makeRoomForPlaylistAtIndexAsync = function (desiredIndex, issuer) {
 
 			// If we insert between playlists, then move below playlist down by one.
 			if (desiredIndex < count) {
-				return _playlistSaveService
+				return _playlistsProxy
 					.getPlaylistIdsLowerThanAsync(desiredIndex, true, issuer)
 					.then(function(plIdIndexesToOffset) {
 						var steps = 1;
@@ -101,7 +109,7 @@ var movePlaylistsAsync = function (playlistIdIndexes, steps, issuer) { // TODO T
 		throw "playlists cannot be empty";
 	}
 
-	return _playlistSaveService
+	return _playlistsProxy
 		.getPlaylistIdIndexesAsync(issuer)
 		.then(function (plIdIndexes) {
 			var lowerIndex = from(plIdIndexes).select(function(x) {return x.index}).min();
@@ -184,7 +192,7 @@ var removePlaylistAsync = function (playlistId, issuer) {
 			}
 		})
 		.then(function () {
-			return _playlistSaveService.removePlaylistByIdAsync(playlistId, issuer)
+			return _playlistsProxy.removePlaylistByIdAsync(playlistId, issuer)
 		});
 };
 
@@ -192,7 +200,7 @@ var getPlaylistsIdIndexToUpdateForReorderAsync = function (playlist, issuer) {
 	var lowestIndex = playlist.index;
 
 	var deferred = Q.defer();
-	_playlistSaveService
+	_playlistsProxy
 		.getPlaylistIdsLowerThanAsync(lowestIndex, false, issuer)
 		.then(function(plIdsLower) {
 			deferred.resolve( { lowerIds: plIdsLower, lowestIndex: lowestIndex });
@@ -214,13 +222,6 @@ var reorderLowerPlaylists = function (plIdLowerSet, playlistIdsToRemove, issuer)
 		.toArray();
 
 	return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdReordered, issuer);
-};
-
-var PlaylistsDirector = function (playlistDirector, physicalPlaylistServices, playlistSaveService, playlistBuilder) {
-	_playlistDirector = playlistDirector;
-	_physicalPlaylistServices = physicalPlaylistServices;
-	_playlistSaveService = playlistSaveService;
-	_playlistBuilder = playlistBuilder
 };
 
 PlaylistsDirector.prototype = {

@@ -27,7 +27,7 @@ UserStateController.prototype.init = function() {
 		return _userStateDirector
 			.getUserStateAsync(req.user)
 			.then(function(data) { res.send(data) })
-			.catch(function(err) { res.send(400, err) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 
@@ -37,7 +37,7 @@ UserStateController.prototype.init = function() {
 			return _userStateDirector.addUserStateAsync(dto, req.user);
 		})
 		.then(function(data) { res.send(data) })
-		.catch(function(err) { res.send(400, err) })
+		.catch(function(err) { res.status(400).send(err) })
 		.done();
 	});
 
@@ -56,8 +56,8 @@ UserStateController.prototype.init = function() {
 				req.user
 			);
 		})
-		.then(function(data) { res.send(200, data) })
-		.catch(function(err) { res.send(400, err) })
+		.then(function(data) { res.status(200).send(data) })
+		.catch(function(err) { res.status(400).send(err) })
 		.done();
 	});
 

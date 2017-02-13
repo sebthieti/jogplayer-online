@@ -37,7 +37,7 @@ MediaDirector.prototype.getBinaryChunkAndFileSizeByIdAsync = function (mediumId,
 		.then(function (dataSet) {
 			var safeToOffset = toOffset || dataSet.fileSize;
 			return {
-				media: dataSet.media,
+				mimeType: dataSet.media.mimeType,
 				dataStream: _mediaService.getFileStream(dataSet.media.filePath, fromOffset, safeToOffset),
 				fileSize: dataSet.fileSize
 			};

@@ -118,6 +118,7 @@
 		<script src="js/controls/audioPlayer.js"></script>
 		<script src="js/controls/fileExplorer.js"></script>
 		<script src="js/controls/controlBar.js"></script>
+		<script src="js/controls/addOrEditUser.js"></script>
 		<script src="js/services/jpoService.js"></script>
 		<script src="js/ngEnter.js"></script>
 

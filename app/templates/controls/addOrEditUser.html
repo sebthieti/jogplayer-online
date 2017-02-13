@@ -1,0 +1,111 @@
+<!--ng-class="canShowAddUserArea ? 'active' : 'inactive'"-->
+<!--<div id="add-user">-->
+	<!--&lt;!&ndash; TODO Remove ng-show once accordion anim in use &ndash;&gt;-->
+	<!--<div id="add-user-button-area" ng-hide="canShowAddUserPanel">-->
+		<!--&lt;!&ndash; TODO Should not looks like a button &ndash;&gt;-->
+		<!--<button class="icon-user-add btn-middle" ng-click="beginAddUser()"></button>-->
+	<!--</div>-->
+	<!--&lt;!&ndash; TODO Remove ng-hide once accordion anim in use &ndash;&gt;-->
+	<!--<div id="add-user-form-area" ng-show="canShowAddUserPanel">-->
+		<!--<button class="btn-rounded-new btn-small" style="position: absolute;right: 22px" ng-click="cancelAddUser()">X</button>-->
+<div class="tab-container">
+	<ul>
+		<!--ng-class="selectedPlaylist._id == playlistVm.model.id ? 'selected' : ''"-->
+		<li class="btn-enabled pl"  ng-click="tabSelected('identity')">Identity</li>
+		<li class="btn-enabled pl" ng-click="tabSelected('homePath')">Home path</li>
+		<li class="btn-enabled pl" ng-click="tabSelected('denyPaths')">Deny paths</li>
+	</ul>
+</div>
+<form ng-submit="submitNewUser()">
+	<div ng-show="canShowIdentityTab">
+		<div>
+			<label for="username">Username</label>
+			<input id="username" placeholder="Username" name="username" type="text" ng-model="newUserVm.model.username">
+		</div>
+		<div>
+			<label for="password">Password</label>
+			<input id="password" placeholder="Password" name="password" type="password" ng-model="newUserVm.model.password">
+		</div>
+		<div>
+			<label for="fullName">Full Name</label>
+			<input id="fullName" placeholder="Full Name" name="fullName" type="text" ng-model="newUserVm.model.fullName">
+		</div>
+		<div>
+			<label for="email">Email</label>
+			<input id="email" placeholder="Email" name="email" type="email" ng-model="newUserVm.model.email">
+		</div>
+		<div>
+			<input id="is-admin" name="isAdmin" type="checkbox" ng-model="newUserVm.model.permissions.isAdmin">
+			<span>Is Admin</span>
+		</div>
+		<div>
+			<input id="can-write" name="canWrite" type="checkbox" ng-model="newUserVm.model.permissions.canWrite">
+			<span>Can Write</span>
+		</div>
+	</div>
+	<div ng-show="canShowHomePathTab">
+		<file-explorer bind-to-favorites="false"
+		               explore-when-visible="true"
+		               selected-files="selectedPlaylistFiles">
+		</file-explorer>
+	</div>
+	<div ng-show="canShowDenyPathsTab">
+		<file-explorer bind-to-favorites="false"
+		               explore-when-visible="true"
+		               selected-files="selectedPlaylistFiles">
+		</file-explorer>
+	</div>
+	<!--<table>-->
+		<!--<tr>-->
+			<!--<td>-->
+				<!--<input placeholder="Username" name="username" type="text" ng-model="newUserVm.model.username">-->
+			<!--</td>-->
+		<!--</tr>-->
+		<!--<tr>-->
+			<!--<td>-->
+				<!--<input placeholder="Password" name="password" type="password" ng-model="newUserVm.model.password">-->
+			<!--</td>-->
+		<!--</tr>-->
+		<!--<tr>-->
+			<!--<td>-->
+				<!--<input placeholder="Full Name" name="fullName" type="text" ng-model="newUserVm.model.fullName">-->
+			<!--</td>-->
+		<!--</tr>-->
+		<!--<tr>-->
+			<!--<td>-->
+				<!--<input placeholder="Email" name="email" type="email" ng-model="newUserVm.model.email">-->
+			<!--</td>-->
+		<!--</tr>-->
+		<!--<tr>-->
+			<!--<td>-->
+				<!--<label for="is-admin">Is Admin</label>-->
+				<!--<input id="is-admin" name="isAdmin" type="checkbox" ng-model="newUserVm.model.permissions.isAdmin">-->
+			<!--</td>-->
+		<!--</tr>-->
+		<!--<tr>-->
+			<!--<td>-->
+				<!--<label for="can-write">Can Write</label>-->
+				<!--<input id="can-write" name="canWrite" type="checkbox" ng-model="newUserVm.model.permissions.canWrite">-->
+			<!--</td>-->
+		<!--</tr>-->
+		<!--<tr>-->
+			<!--<td>-->
+				<!--<button type="submit">Add</button>-->
+			<!--</td>-->
+		<!--</tr>-->
+	<!--</table>-->
+	<!--<ul>-->
+		<!--<li ng-repeat="denyPath in newUserVm.model.permissions.denyPaths">-->
+			<!--<input type="text" ng-model="denyPath.path">-->
+			<!--<button type="button" ng-click="removeDenyPath(denyPath, newUserVm)" class="icon-close"></button>-->
+		<!--</li>-->
+		<!--<li>-->
+			<!--<div>-->
+				<!--<button type="button" ng-click="addDenyPathToNewUser(newUserVm)">+ Deny Path</button>-->
+			<!--</div>-->
+		<!--</li>-->
+	<!--</ul>-->
+	<!--<input placeholder="HomePath" type="text" ng-model="newUserVm.model.permissions.homePath">-->
+</form>
+	<!--</div>-->
+<!--</div>-->

@@ -34,7 +34,7 @@ function registerUserRoutes() {
 		_userDirector
 			.getUsersAsync(req.user)
 			.then(function(data) { res.send(data) })
-			.catch(function(err) { res.send(400, err) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 
@@ -44,7 +44,7 @@ function registerUserRoutes() {
 				return _userDirector.addUserAsync(dto, req.user);
 			})
 			.then(function(data) { res.send(data) })
-			.catch(function(err) { res.send(400, err) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 
@@ -63,8 +63,8 @@ function registerUserRoutes() {
 					req.user
 				);
 			})
-			.then(function(data) { res.send(200, data) })
-			.catch(function(err) { res.send(400, err) })
+			.then(function(data) { res.status(200).send(data) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 
@@ -73,8 +73,8 @@ function registerUserRoutes() {
 			.then(function(userId) {
 				return _userDirector.removeUserByIdAsync(userId, req.user);
 			})
-			.then(function() { res.send(204) })
-			.catch(function(err) { res.send(400, err) })
+			.then(function() { res.sendStatus(204) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 }
@@ -86,7 +86,7 @@ function registerUserPermissionsRoutes() {
 				return _userDirector.getUserPermissionsByUserId(userId, req.user);
 			})
 			.then(function(data) { res.send(data) })
-			.catch(function(err) { res.send(400, err) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 
@@ -105,8 +105,8 @@ function registerUserPermissionsRoutes() {
 					req.user
 				);
 			})
-			.then(function(data) { res.send(200, data) })
-			.catch(function(err) { res.send(400, err) })
+			.then(function(data) { res.status(200).send(data) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 }

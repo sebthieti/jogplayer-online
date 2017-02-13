@@ -21,7 +21,7 @@ UserPermissionsDirector.prototype.getUserPermissions = function(userId, issuer) 
 UserPermissionsDirector.prototype.addRootUserPermissionsAsync = function() {//userId, allowedPaths
 	var userPermissionsModel = new UserPermissionsModel({ isRoot: true });
 
-	return utils.saveModelAsync(userPermissionsModel);//_userPermissionsSaveService.addUserAsync(user, issuer);
+	return utils.saveModelAsync(userPermissionsModel);//_userPermissionsProxy.addUserAsync(user, issuer);
 };
 
 UserPermissionsDirector.prototype.addUserPermissionsAsync = function(permissionsDto, issuer) {//userId, allowedPaths
@@ -30,7 +30,7 @@ UserPermissionsDirector.prototype.addUserPermissionsAsync = function(permissions
 	}
 	var userPermissionsModel = new UserPermissionsModel(permissionsDto);
 
-	return utils.saveModelAsync(userPermissionsModel);//_userPermissionsSaveService.addUserAsync(user, issuer);
+	return utils.saveModelAsync(userPermissionsModel);//_userPermissionsProxy.addUserAsync(user, issuer);
 };
 
 UserPermissionsDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, issuer) {

@@ -26,7 +26,7 @@ FileExplorerController.prototype.init = function() {
 		_fileExplorerDirector
 			.getFolderContentAsync(extractUrlFromParams(req.params), req.user)
 			.then(function(fileDetails) { res.send(fileDetails) })
-			.catch(function(err) { res.send(400, err) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 
@@ -35,7 +35,7 @@ FileExplorerController.prototype.init = function() {
 		_fileExplorerDirector
 			.getFileInfoAsync(extractUrlFromParams(req.params), req.user)
 			.then(function(fileDetails) { res.send(fileDetails) })
-			.catch(function(err) { res.send(400, err) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 

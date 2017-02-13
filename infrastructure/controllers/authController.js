@@ -17,16 +17,16 @@ function AuthController (app, routes, passport, authDirector) {
 AuthController.prototype.init = function() {
 
 	_app.post(_routes.login.postPath, _passport.authenticate('local'), function(req, res) {
-		res.send(200, req.user);
+		res.status(200).send(req.user);
 	});
 
 	_app.post(_routes.logout.postPath, function(req, res) {
 		req.logout();
-		res.send(200, { message: 'Logged out' });
+		res.status(200).send({ message: 'Logged out' });
 	});
 
 	_app.get(_routes.isAuthenticated.getPath, _authDirector.ensureApiAuthenticated, function(req, res) {
-		res.send(200, req.user);
+		res.status(200).send(req.user);
 	});
 
 };

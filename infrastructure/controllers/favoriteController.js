@@ -25,9 +25,9 @@ function FavoriteController (app, routes, favoriteDirector, authDirector) {
 FavoriteController.prototype.init = function() {
 	_app.get(_routes.favorites.getPath, _authDirector.ensureApiAuthenticated, function(req, res) {
 		_favoriteDirector
-			.getFavoritesAsync(req.user)
+			.getUserFavoritesAsync(req.user)
 			.then(function(data) { res.send(data) })
-			.catch(function(err) { res.send(400, err) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 
@@ -37,7 +37,7 @@ FavoriteController.prototype.init = function() {
 			return _favoriteDirector.addFavoriteAsync(dto, req.user);
 		})
 		.then(function(data) { res.send(data) })
-		.catch(function(err) { res.send(400, err) })
+		.catch(function(err) { res.status(400).send(err) })
 		.done();
 	});
 
@@ -56,8 +56,8 @@ FavoriteController.prototype.init = function() {
 				req.user
 			);
 		})
-		.then(function(data) { res.send(200, data) })
-		.catch(function(err) { res.send(400, err) })
+		.then(function(data) { res.status(200).send(data) })
+		.catch(function(err) { res.status(400).send(err) })
 		.done();
 	});
 
@@ -66,8 +66,8 @@ FavoriteController.prototype.init = function() {
 		.then(function(dto) {
 			return _favoriteDirector.removeFavoriteByIdAsync(dto, req.user);
 		})
-		.then(function() { res.send(204) })
-		.catch(function(err) { res.send(400, err) })
+		.then(function() { res.sendStatus(204) })
+		.catch(function(err) { res.status(400).send(err) })
 		.done();
 	});
 };

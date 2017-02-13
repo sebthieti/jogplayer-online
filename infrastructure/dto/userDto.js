@@ -11,13 +11,24 @@ var assertDefinedObj = function(obj) {
 };
 
 var UserDto = function (id, isActive, username, fullName, email, password, isAdmin, canWrite, allowPaths, denyPaths, homePath) {
-	this.id = id;
-	this.isActive = isActive;
-	this.username = username;
-	this.fullName = fullName;
-	this.email = email;
-	this.password = password;
-
+	if (id !== undefined) {
+		this.id = id;
+	}
+	if (isActive !== undefined) {
+		this.isActive = isActive;
+	}
+	if (username !== undefined) {
+		this.username = username;
+	}
+	if (fullName !== undefined) {
+		this.fullName = fullName;
+	}
+	if (email !== undefined) {
+		this.email = email;
+	}
+	if (password !== undefined) {
+		this.password = password;
+	}
 	this.permissions = new UserPermissionsDto(isAdmin, canWrite, allowPaths, denyPaths, homePath);
 };
 
@@ -34,11 +45,11 @@ UserDto.toDto = function (obj, userId) {
 		obj.fullName,
 		obj.email,
 		obj.password,
-		obj.permissions.isAdmin,
-		obj.permissions.canWrite,
-		obj.permissions.allowPaths,
-		obj.permissions.denyPaths,
-		obj.permissions.homePath
+		obj.permissions ? obj.permissions.isAdmin : undefined,
+		obj.permissions ? obj.permissions.canWrite : undefined,
+		obj.permissions ? obj.permissions.allowPaths : undefined,
+		obj.permissions ? obj.permissions.denyPaths : undefined,
+		obj.permissions ? obj.permissions.homePath : undefined
 	);
 };
 

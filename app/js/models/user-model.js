@@ -9,15 +9,11 @@ jpoApp.factory('userSchema', function() {
 		password: String,
 		role: String,
 		fullName: String,
-		isAdmin: Boolean, // TODO Remove this later
-		isRoot: Boolean, // TODO Remove this later
-		canWrite: Boolean, // TODO Remove this later
 		permissions: {
 			canWrite: Boolean,
 			isAdmin: Boolean,
 			isRoot: Boolean,
 			allowPaths: [ String ],
-			allowedPaths: [ String ], // TODO To be removed
 			denyPaths: [ String ],
 			homePath: String,
 			links: [{ href: String, rel: String }]

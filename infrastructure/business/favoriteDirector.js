@@ -1,25 +1,25 @@
 'use strict';
 
-var _favoriteSaveService;
+var _favoriteProxy;
 
-function FavoriteDirector (favoriteSaveService) {
-	_favoriteSaveService = favoriteSaveService;
+function FavoriteDirector (favoriteProxy) {
+	_favoriteProxy = favoriteProxy;
 }
 
-FavoriteDirector.prototype.getFavoritesAsync = function(issuer) {
-	return _favoriteSaveService.getSortedFavoritesAsync(issuer);
+FavoriteDirector.prototype.getUserFavoritesAsync = function(user) {
+	return _favoriteProxy.getUserFavoritesAsync(user);
 };
 
 FavoriteDirector.prototype.addFavoriteAsync = function(favorite, issuer) {
-	return _favoriteSaveService.addFavoriteAsync(favorite, issuer);
+	return _favoriteProxy.addFavoriteAsync(favorite, issuer);
 };
 
 FavoriteDirector.prototype.updateFromFavoriteDtoAsync = function(favoriteId, favoriteDto, issuer) {
-	return _favoriteSaveService.updateFromFavoriteDtoAsync(favoriteId, favoriteDto, issuer);
+	return _favoriteProxy.updateFromFavoriteDtoAsync(favoriteId, favoriteDto, issuer);
 };
 
 FavoriteDirector.prototype.removeFavoriteByIdAsync = function(favorite, issuer) {
-	return _favoriteSaveService.removeFavoriteByIdAsync(favorite, issuer);
+	return _favoriteProxy.removeFavoriteByIdAsync(favorite, issuer);
 };
 
 module.exports = FavoriteDirector;

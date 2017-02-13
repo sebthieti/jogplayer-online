@@ -1,6 +1,6 @@
 'use strict';
 
-jpoApp.directive("manageUsers", [
+jpoApp.directive("addOrEditUser", [
 	'$timeout',
 	'userBusiness',
 	'authBusiness',
@@ -8,14 +8,41 @@ jpoApp.directive("manageUsers", [
 	function($timeout, userBusiness, authBusiness, viewModelBuilder) {
 	return {
 		restrict: 'E',
-		templateUrl: '/templates/controls/manageUsers.html',
+		/*scope: {
+
+		},*/
+		templateUrl: '/templates/controls/addOrEditUser.html',
 		controller: function($scope) {
+			$scope.canShowIdentityTab = true;
+			$scope.canShowHomePathTab = false;
+			$scope.canShowDenyPathsTab = false;
+			$scope.tabSelected = function(tabName) {
+				switch (tabName) {
+					case "identity":
+						$scope.canShowIdentityTab = true;
+						$scope.canShowHomePathTab = false;
+						$scope.canShowDenyPathsTab = false;
+						break;
+					case "homePath":
+						$scope.canShowIdentityTab = false;
+						$scope.canShowHomePathTab = true;
+						$scope.canShowDenyPathsTab = false;
+						break;
+					case "denyPaths":
+						$scope.canShowIdentityTab = false;
+						$scope.canShowHomePathTab = false;
+						$scope.canShowDenyPathsTab = true;
+						break;
+				}
+			};
+
+
 			var _currentIndexEdited = -1;
 
 			$scope.newUserVm = null;
 			$scope.editUserVm = null;
-			$scope.canShowAddUserArea = false;
-			$scope.canShowAddAllowedPathArea = true;
+
+			$scope.canShowAddUserPanel = false;
 
 			$scope.beginAddUser = function() {
 				$scope.newUserVm = viewModelBuilder.buildEditableViewModel({
@@ -32,7 +59,7 @@ jpoApp.directive("manageUsers", [
 						homePath: ''
 					}
 				});
-				$scope.canShowAddUserArea = true;
+				$scope.canShowAddUserPanel = true;
 			};
 
 			$scope.beginAddAllowedPath = function() {
@@ -69,7 +96,7 @@ jpoApp.directive("manageUsers", [
 					.updateUserAsync(userVm.model)
 					.then(function() {
 						//$scope.newUser = null;
-						$scope.canShowAddUserArea = false;
+						$scope.canShowAddUserPanel = false;
 					});
 			};
 
@@ -132,7 +159,7 @@ jpoApp.directive("manageUsers", [
 
 			$scope.cancelAddUser = function() {
 				$scope.newUser = null;
-				$scope.canShowAddUserArea = false;
+				$scope.canShowAddUserPanel = false;
 			};
 
 			$scope.removeUser = function(userVm) {

@@ -9,6 +9,8 @@ var fs = require('fs'),
 var _fileExplorerService,
 	_physicalPlaylistServices,
 	_playlistSaveService,
+	_playlistProxy,
+	_playlistsProxy,
 	_mediaSaveService,
 	_mediaService,
 	_mediaBuilder,
@@ -19,6 +21,8 @@ var PlaylistDirector = function(
 	mediaDirector,
 	physicalPlaylistServices,
 	playlistSaveService,
+	playlistProxy,
+	playlistsProxy,
 	mediaSaveService,
 	mediaService,
 	mediaBuilder)
@@ -27,17 +31,19 @@ var PlaylistDirector = function(
 	_mediaDirector = mediaDirector;
 	_physicalPlaylistServices = physicalPlaylistServices;
 	_playlistSaveService = playlistSaveService;
+	_playlistProxy = playlistProxy;
+	_playlistsProxy = playlistsProxy;
 	_mediaSaveService = mediaSaveService;
 	_mediaService = mediaService;
 	_mediaBuilder = mediaBuilder;
 };
 
 PlaylistDirector.prototype.updatePlaylistAsync = function(playlistId, playlistDto, issuer) {
-	return _playlistSaveService.updatePlaylistDtoAsync(playlistId, playlistDto, issuer);
+	return _playlistProxy.updatePlaylistDtoAsync(playlistId, playlistDto, issuer);
 };
 
 PlaylistDirector.prototype.getMediaFromPlaylistByIdAsync = function (playlistId, issuer) {
-	return _playlistSaveService
+	return _playlistProxy
 		.getPlaylistWithMediaAsync(playlistId, issuer)
 		.then(assertOnNotFound)
 		.then(function (playlist) {
@@ -55,7 +61,6 @@ PlaylistDirector.prototype.getMediaFromPlaylistByIdAsync = function (playlistId,
 };
 
 function ifPlaylistNotReloadedCheckMediaAvailabilityAsync(plReloadedSet) {
-
 	var checkAndUpdatePromises = plReloadedSet.playlist.media.map(function(medium) {
 		return utils.checkFileExistsAsync(medium.filePath)
 			.then(function (fileExists) {
@@ -113,7 +118,7 @@ function ifPhysicalPlaylistChangeThenUpdateAsync(playlist, issuer) {
 }
 
 function updatePlaylistDateReloadMediaAndSaveAsync(playlist, lastUpdateOn, issuer) {
-	return _playlistSaveService
+	return _playlistProxy//_playlistSaveService
 		.removeAllMediaFromPlaylistAsync(playlist.id, issuer)
 		.then(function(cleanPl) {
 			return cleanPl.setUpdatedOn(lastUpdateOn);
@@ -137,7 +142,7 @@ PlaylistDirector.prototype.addMediumByFilePathAsync = function (playlistId, medi
 PlaylistDirector.prototype.insertMediumByFilePathAsync = function (playlistId, mediaFilePath, index, issuer) {
 	var prepareAndGetPosition;
 	if (!index) { // We'll append medium
-		prepareAndGetPosition = _playlistSaveService.getMediaCountForPlaylistByIdAsync(playlistId, issuer);
+		prepareAndGetPosition = _playlistProxy.getMediaCountForPlaylistByIdAsync(playlistId, issuer);
 	} else {
 		prepareAndGetPosition = makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, index, issuer)
 			.then(function() { return index });
@@ -148,10 +153,10 @@ PlaylistDirector.prototype.insertMediumByFilePathAsync = function (playlistId, m
 			return buildAndInsertMediumByFilePathAsync(playlistId, mediaFilePath, mediaPosition, issuer);
 		})
 		.then(function(unlinkedMedium) {
-			return _playlistSaveService.insertMediaToPlaylistAsync(playlistId, unlinkedMedium, issuer);
+			return _playlistProxy.insertMediaToPlaylistAsync(playlistId, unlinkedMedium, issuer);
 		})
 		.then(function(linkedMedium) {
-			return _playlistSaveService
+			return _playlistProxy
 				.getPlaylistWithMediaAsync(playlistId, issuer)
 				.then(function(playlist) {
 					// if virtual, then update file
@@ -182,18 +187,18 @@ function buildAndInsertMediumByFilePathAsync(playlistId, mediaFilePath, desiredI
 }
 
 function makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, desiredIndex, issuer) { // TODO Why playlistId is demanded ?
-	return _playlistSaveService
+	return _playlistsProxy
 		.getPlaylistsCountAsync(issuer)
 		.then(function(count) {
 			if (desiredIndex == null) {
 				desiredIndex = count;
 			} else if (desiredIndex > count || desiredIndex < 0) {
-				throw "The given index is out of bounds";
+				throw "The given index is out of bounds"; // TODO To clean exceptions
 			}
 
 			// If we insert between playlists, then move below playlist down by one.
 			if (desiredIndex < count) {
-				return _playlistSaveService
+				return _playlistsProxy
 					.getPlaylistIdsLowerThanAsync(desiredIndex, true, issuer)
 					.then(function(plIdIndexesToOffset) {
 						var steps = 1;
@@ -203,7 +208,7 @@ function makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, desiredIndex, is
 						return plIdIndexesToOffset;
 					})
 					.then(function (plIdIndexesToOffset) {
-						return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdIndexesToOffset, issuer)
+						return _playlistProxy.updatePlaylistIdsPositionAsync(plIdIndexesToOffset, issuer)
 					});
 			}
 		});
@@ -222,12 +227,12 @@ PlaylistDirector.prototype.removeMediaAsync = function (playlistId, mediaId, iss
 			}
 		})
 		.then(function () {
-			return _playlistSaveService.removeMediaFromPlaylistAsync(playlistId, mediaId, issuer);
+			return _playlistProxy.removeMediaFromPlaylistAsync(playlistId, mediaId, issuer);
 		});
 };
 
 function getMediaIdIndexToUpdateForReorderAsync(playlistId, mediaIndex, issuer) {
-	return _playlistSaveService
+	return _playlistProxy
 		.getMediaIdsLowerThanAsync(playlistId, mediaIndex, false, issuer)
 		.then(function(mediaIdsLower) {
 			return { lowerIds: mediaIdsLower, lowestIndex: mediaIndex };
@@ -258,7 +263,7 @@ function innerFeedPhysicalPlaylistWithMediaAndSaveAsync(emptyPlaylist, issuer) {
 	return loadMediaFromPhysicalPlaylistAsync(emptyPlaylist, issuer) // Should give new Pl with media not yet persisted
 		.then(saveMediaAsync)
 		.then(function(media) {
-			return _playlistSaveService.insertMediaToPlaylistReturnSelfAsync(
+			return _playlistProxy.insertMediaToPlaylistReturnSelfAsync(
 				emptyPlaylist.id,
 				media,
 				issuer

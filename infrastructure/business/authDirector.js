@@ -3,15 +3,15 @@
 var Q = require('q'),
 	hasher = require('../utils/hasher');
 
-var _userSaveService;
+var _userProxy;
 
-function AuthDirector(userSaveService) {
-	_userSaveService = userSaveService;
+function AuthDirector(userProxy) {
+	_userProxy = userProxy;
 }
 
 AuthDirector.prototype.verifyUser = function(username, password, next) {
-	_userSaveService
-		.getUserByUsernameAsync(username)
+	_userProxy
+		.getUserByUsernameWithPermissionsAsync(username)
 		.then(function(user) {
 			if (user === null) {
 				next(null, false, { message: 'Invalid credentials.' });
@@ -29,7 +29,7 @@ AuthDirector.prototype.verifyUser = function(username, password, next) {
 };
 
 AuthDirector.prototype.getUserByUsernameAsync = function(username) {
-	return _userSaveService.getUserByUsernameAsync(username);
+	return _userProxy.getUserByUsernameWithPermissionsAsync(username);
 };
 
 AuthDirector.prototype.serializeUser = function(user, next) {
@@ -49,7 +49,7 @@ AuthDirector.prototype.ensureApiAuthenticated = function(req, res, next) {
 	if (req.isAuthenticated()) {
 		next();
 	} else {
-		res.send(401);
+		res.sendStatus(401);
 	}
 };
 

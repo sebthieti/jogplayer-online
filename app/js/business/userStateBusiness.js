@@ -163,11 +163,22 @@ jpoApp.factory('userStateBusiness', [
 
 		function observeControlsForStateChange() {
 			return Rx.Observable.combineLatest(
-				observeMediumPositionChangeByInterval(5000),
-				observePlaylistSelectionChangeByInterval(5000),
-				observeFileExplorerPathChangeByInterval(5000),
-				observeMediumQueueSelectLinkUrl(),
-				observeCurrentMediumIndexInQueue(),
+				// TODO Problem here: All observable have to produce a value for first same
+				observeMediumPositionChangeByInterval(5000).select(function(x) {
+					return x;
+				}),
+				observePlaylistSelectionChangeByInterval(5000).select(function(x) {
+					return x;
+				}),
+				observeFileExplorerPathChangeByInterval(5000).select(function(x) {
+					return x;
+				}),
+				observeMediumQueueSelectLinkUrl().select(function(x) {
+					return x;
+				}),
+				observeCurrentMediumIndexInQueue().select(function(x) {
+					return x;
+				}),
 				function (mediumPosition, currentPlaylistVm, currentFileExplorerPath, mediumQueueLinks, playingMediumInQueueIndex) {
 					return {
 						playedPosition: mediumPosition,

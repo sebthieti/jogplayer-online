@@ -29,12 +29,12 @@ function assertAndGetPlaylistIdsAndSteps(obj) {
 
 function assertAndGetPlaylistIdAndMediaId(obj) {
 	var playlistId = obj.playlistId;
-	var mediaId = obj.mediaId;
+	var mediumId = obj.mediumId;
 
-	if (!playlistId || !mediaId) {
-		throw 'playlistId or mediaId have not been providen.';
+	if (!playlistId || !mediumId) {
+		throw 'playlistId or mediumId have not been providen.';
 	}
-	return { playlistId: playlistId, mediaId: mediaId }
+	return { playlistId: playlistId, mediumId: mediumId }
 }
 
 function assertMediumInsertParamsFromRequest(request) {
@@ -69,7 +69,7 @@ function registerPlaylistRoutes() {
 		_playlistsDirector
 			.getPlaylistsAsync(req.user)
 			.then(function(data) { res.send(data) })
-			.catch(function(err) { res.send(400, err) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 
@@ -78,8 +78,8 @@ function registerPlaylistRoutes() {
 		.then(function(reqSet) {
 			return _playlistsDirector.movePlaylistsAsync(reqSet.playlistIds, reqSet.steps, req.user);
 		})
-		.then(function(data) { res.send(200, data) })
-		.catch(function(err) { res.send(400, err) })
+		.then(function(data) { res.status(200).send(data) })
+		.catch(function(err) { res.status(400).send(err) })
 		.done();
 	});
 
@@ -98,8 +98,8 @@ function registerPlaylistRoutes() {
 				req.user
 			);
 		})
-		.then(function(data) { res.send(200, data) })
-		.catch(function(err) { res.send(400, err) })
+		.then(function(data) { res.status(200).send(data) })
+		.catch(function(err) { res.status(400).send(err) })
 		.done();
 	});
 
@@ -111,7 +111,7 @@ function registerPlaylistRoutes() {
 				: _playlistsDirector.insertPlaylistAsync(playlist, playlist.index, req.user);
 		})
 		.then(function(newPlaylist) { res.send(newPlaylist) })
-		.catch(function(err) { res.send(400, err) })
+		.catch(function(err) { res.status(400).send(err) })
 		.done();
 	});
 
@@ -120,8 +120,8 @@ function registerPlaylistRoutes() {
 		.then(function(playlistId) {
 			return _playlistsDirector.removePlaylistAsync(playlistId, req.user)
 		})
-		.then(function() { res.send(204) })
-		.catch(function(err) { res.send(400, err) })
+		.then(function() { res.sendStatus(204) })
+		.catch(function(err) { res.status(400).send(err) })
 		.done();
 	});
 }
@@ -133,7 +133,7 @@ function registerPlaylistMediaRoutes() {
 			return _playlistDirector.getMediaFromPlaylistByIdAsync(playlistId, req.user);
 		})
 		.then(function(data) { res.send(data) })
-		.catch(function(err) { res.send(400, err) })
+		.catch(function(err) { res.status(400).send(err) })
 		.done();
 	});
 
@@ -152,17 +152,17 @@ function registerPlaylistMediaRoutes() {
 						req.user)
 			})
 			.then(function(newMedia) { res.send(newMedia) })
-			.catch(function(err) { res.send(400, err) })
+			.catch(function(err) { res.status(400).send(err) })
 			.done();
 	});
 
 	_app.delete(_mediaRoutes.deletePath, _authDirector.ensureApiAuthenticated, function(req, res) {
 		Q.fcall(assertAndGetPlaylistIdAndMediaId, req.params)
 		.then(function(reqSet) {
-			return _playlistDirector.removeMediaAsync(reqSet.playlistId, reqSet.mediaId, req.user)
+			return _playlistDirector.removeMediaAsync(reqSet.playlistId, reqSet.mediumId, req.user)
 		})
-		.then(function() { res.send(204) })
-		.catch(function(err) { res.send(400, err) })
+		.then(function() { res.sendStatus(204) })
+		.catch(function(err) { res.status(400).send(err) })
 		.done();
 	});
 }

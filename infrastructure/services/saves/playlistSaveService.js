@@ -219,12 +219,14 @@ PlaylistSaveService.prototype.updatePlaylistDtoAsync = function (playlistId, pla
 
 	Playlist.findOneAndUpdate(
 		{ _id: playlistId, ownerId: issuer.id },
-		playlistDto.getDefinedFields(),
+		playlistDto.getDefinedFields()
+	)
+	.populate("media")
+	.exec(
 		function(err, playlist) {
 			if (!err) { defer.resolve(playlist) }
 			else { defer.reject(err) }
-		}
-	);
+		});
 
 	return defer.promise;
 };
@@ -264,10 +266,7 @@ PlaylistSaveService.prototype.removeMediaFromPlaylistAsync = function (playlistI
 
 	Playlist
 		.findOne({ _id: playlistId, ownerId: issuer.id })
-		.populate({
-			path: 'media',
-			select: '_id'
-		})
+		.populate("media")
 		.exec(function(err, playlist) {
 			if (err) {
 				defer.reject(err);

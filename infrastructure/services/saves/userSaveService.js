@@ -58,7 +58,7 @@ UserSaveService.prototype.getUserByIdWithPermissionsAsync = function(userId) {
 	return defer.promise;
 };
 
-UserSaveService.prototype.getUserByUsernameAsync = function(username) {
+UserSaveService.prototype.getUserByUsernameWithPermissionsAsync = function(username) {
 	var defer = Q.defer();
 
 	User.findOne({ username: username})

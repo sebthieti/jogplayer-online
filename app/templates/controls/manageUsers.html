@@ -66,79 +66,17 @@
 				</div>
 			</li>
 			<li>
-				<div id="add-user" ng-class="canShowAddUserArea ? 'active' : 'inactive'">
+				<!--ng-class="canShowAddUserArea ? 'active' : 'inactive'"-->
+
+				<div id="add-user">
 					<!-- TODO Remove ng-show once accordion anim in use -->
-					<div id="add-user-button-area" ng-hide="canShowAddUserArea">
+					<div id="add-user-button-area" ng-hide="canShowAddUserPanel">
 						<!-- TODO Should not looks like a button -->
 						<button class="icon-user-add btn-middle" ng-click="beginAddUser()"></button>
 					</div>
-					<!-- TODO Remove ng-hide once accordion anim in use -->
-					<div id="add-user-form-area" ng-show="canShowAddUserArea">
+					<div id="add-user-form-area" ng-show="canShowAddUserPanel">
 						<button class="btn-rounded-new btn-small" style="position: absolute;right: 22px" ng-click="cancelAddUser()">X</button>
-						<form ng-submit="submitNewUser()">
-							<table>
-								<tr>
-									<td>
-										<input placeholder="Username" name="username" type="text" ng-model="newUserVm.model.username">
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<input placeholder="Password" name="password" type="password" ng-model="newUserVm.model.password">
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<input placeholder="Full Name" name="fullName" type="text" ng-model="newUserVm.model.fullName">
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<input placeholder="Email" name="email" type="email" ng-model="newUserVm.model.email">
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<label for="is-admin">Is Admin</label>
-										<input id="is-admin" name="isAdmin" type="checkbox" ng-model="newUserVm.model.permissions.isAdmin">
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<label for="can-write">Can Write</label>
-										<input id="can-write" name="canWrite" type="checkbox" ng-model="newUserVm.model.permissions.canWrite">
-									</td>
-								</tr>
-								<tr>
-									<td>
-										<button type="submit">Add</button>
-									</td>
-								</tr>
-							</table>
-							<!--<ul>-->
-								<!--<li ng-repeat="allowPath in newUserVm.model.permissions.allowPaths">-->
-									<!--<input type="text" ng-model="allowPath.path">-->
-									<!--<button type="button" ng-click="removeAllowPath(allowPath, newUserVm)" class="icon-close"></button>-->
-								<!--</li>-->
-								<!--<li>-->
-									<!--<div>-->
-										<!--<button type="button" ng-click="addAllowedPathToNewUser(newUserVm)">+ Allow Path</button>-->
-									<!--</div>-->
-								<!--</li>-->
-							<!--</ul>-->
-							<ul>
-								<li ng-repeat="denyPath in newUserVm.model.permissions.denyPaths">
-									<input type="text" ng-model="denyPath.path">
-									<button type="button" ng-click="removeDenyPath(denyPath, newUserVm)" class="icon-close"></button>
-								</li>
-								<li>
-									<div>
-										<button type="button" ng-click="addDenyPathToNewUser(newUserVm)">+ Deny Path</button>
-									</div>
-								</li>
-							</ul>
-							<input placeholder="HomePath" type="text" ng-model="newUserVm.model.permissions.homePath">
-						</form>
+						<add-or-edit-user ng-class="canShowAddUserArea ? 'active' : 'inactive'"></add-or-edit-user>
 					</div>
 				</div>
 			</li>

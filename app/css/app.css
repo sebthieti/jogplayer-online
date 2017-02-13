@@ -84,6 +84,15 @@ file-explorer>div{position:relative}
 #playlists-container li.pl{min-width:30px;margin-right:2px}
 #playlists-container li.selected{background-color: #7d7d7d}
 #playlists-container li:hover>.tab-tools{display:block}
+
+.tab-container{overflow-x:auto;font-size:.8em}
+.tab-container li{padding:5px;height:20px;display:inline-block;background-color:#b0b0b0;position:relative;margin-top:18px}
+form label{display:block}
+/*.tab-container input{min-width:50px;max-width:70px;margin:0;padding:0;height:12px}*/
+.tab-container li:hover{background-color:#8e8e8e}
+.tab-container li.pl{min-width:30px;margin-right:2px}
+.tab-container li.selected{background-color: #7d7d7d}
+
 .rename{padding:1px;border-radius:3px}
 .rename:hover{background-color:#c1c1c1}
 .remove{padding:3px;border-radius:3px;font-size:.8em}
@@ -173,7 +182,7 @@ welcome>div.animate-show.ng-hide-remove.ng-hide-remove-active {
 #user-list{list-style: none;padding: 0;margin: 0}
 #user-list li{margin: 10px 0}
 #user-list li>div{}
-#user-list li>div:hover{background-color: #808080}
+/*#user-list li>div:hover{background-color: #808080}*/
 #user-list .full-name{font-size: 1.2em}
 #user-list .user-info{background-color: #DFDFDF;}
 #user-list .user-info:hover{background-color: #bbbbbb}

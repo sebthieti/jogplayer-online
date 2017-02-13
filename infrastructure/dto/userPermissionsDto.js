@@ -10,11 +10,21 @@ var assertDefinedObj = function(obj) {
 };
 
 function UserPermissionsDto(isAdmin, canWrite, allowPaths, denyPaths, homePath) {
-	this.isAdmin = isAdmin;
-	this.canWrite = canWrite;
-	this.allowPaths = allowPaths;
-	this.denyPaths = denyPaths;
-	this.homePath = homePath;
+	if (isAdmin !== undefined) {
+		this.isAdmin = isAdmin;
+	}
+	if (canWrite !== undefined) {
+		this.canWrite = canWrite;
+	}
+	if (allowPaths !== undefined) {
+		this.allowPaths = allowPaths;
+	}
+	if (denyPaths !== undefined) {
+		this.denyPaths = denyPaths;
+	}
+	if (homePath !== undefined) {
+		this.homePath = homePath;
+	}
 }
 
 UserPermissionsDto.prototype = Object.create(Dto.prototype);
