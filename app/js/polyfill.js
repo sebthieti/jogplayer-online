@@ -14,6 +14,16 @@ Object.prototype.toArray = function() {
 	return [ this ];
 };
 
+Object.prototype.mapOwnProperties = function(callback) {
+	var objectMap = {};
+	for(var key in this) {
+		if(this.hasOwnProperty(key)) {
+			objectMap[key] = callback(this[key]);
+		}
+	}
+	return objectMap;
+};
+
 Object.prototype.updateFieldsFrom = function (obj) { // TODO doesn't compare well Arrays
 	for (var objField in obj) {
 		if (this[objField] !== undefined && this.hasOwnProperty(objField)) {

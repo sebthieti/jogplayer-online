@@ -1,204 +1,284 @@
 'use strict';
 
-jpoApp.factory('playlistBusiness', function(playlistService, mediaService) {
+jpoApp.factory('playlistBusiness', [
+	'$q',
+	'mediaQueueBusiness',
+	'audioPlayerBusiness',
+	'PlaylistsModel',
+	'PlaylistMediaModel',
+	'viewModelBuilder',
+	function($q, mediaQueueBusiness, audioPlayerBusiness, PlaylistsModel, PlaylistMediaModel, viewModelBuilder) {
+		var playlistViewModelsSubject = new Rx.BehaviorSubject();
+		var playingPlaylistSubject = new Rx.BehaviorSubject();
+		var playingMediumSubject = new Rx.BehaviorSubject();
+		var currentPlaylistSubject = new Rx.BehaviorSubject();
 
-	var playlists,
-		media;
+		// React on ended or next (when there's a need to change medium)
+		// Get 'is current medium last' of queue
+		// If it is, then get the latest one
+		// If the last one is a medium from a playlist, then play next automagically
 
-	var linkHelper = Helpers.linkHelpers;
-	var EntityStatus = JpoAppTypes.EntityStatus;
+		mediaQueueBusiness
+			.observeQueueEndedWithMedium()
+			.where(function(lastMediumInQueueViewModel) { // React only if current playing medium is a medium from playlist
+				return angular.isDefined(lastMediumInQueueViewModel.model.id)
+			})
+			.do(function(lastMediumInQueueViewModel) {
+				playNext(lastMediumInQueueViewModel);
+			})
+			.silentSubscribe();
 
-	var playlistsSubject = new Rx.Subject();
-	var playlistChangeSubject = new Rx.Subject();
-	var mediaSubject = new Rx.Subject();
-	//var selectedPlaylistSubject = new Rx.Subject();
+		var observePlayingMedium = function() {
+			return playingMediumSubject.whereIsDefined();
+		};
 
-	var loadAndObservePlaylists = function() {
-		return Rx.Observable
-			.fromPromise(loadPlaylistsAsync())
-			.do(function(pls) { playlists = pls })
-			.concat(playlistsSubject);
-	};
+		var findMediumFromOtherViewModelAsAsyncValue = function(playingMediumViewModel) {
+			return Rx.Observable.create(function(observer) {
+				if (!playingMediumViewModel || !angular.isDefined(playingMediumViewModel.model.id)) {
+					return;
+				}
 
-	var loadPlaylistsAsync = function () {
-		return playlistService
-			.getPlaylists()
-			.then(function (playlists) {
-				return buildViewModels(playlists);
-			}, function (err) {
-			});
-	};
+				var playingMediumId = playingMediumViewModel.model.id;
+				observePlayingPlaylist().getValueAsync(function(playingPlaylist) {
+					var mediumVm = _.find(playingPlaylist.media, function(mediumVm) {
+						return mediumVm.model.id === playingMediumId;
+					});
 
-
-
-	var observeMedia = function() {
-		return mediaSubject
-			.do(function(m) { media = m });
-	};
-
-	var playlistSelected = function(playlist) {
-		return loadMediaAsync(playlist)
-			.then(function(media) {
-				var mediaVm = buildMediaViewModels(media);
-				mediaSubject.onNext(mediaVm);
-				return mediaVm;
-			});
-	};
-
-	var loadMediaAsync = function(playlist) {
-		return playlistService.getPlaylistMedia(playlist);
-	};
-
-	var buildViewModels = function (playlists) {
-		return playlists.map(buildViewModel);
-	};
-
-	var buildViewModel = function (playlist) {
-		playlist.isEditing = false;
-		return playlist;
-	};
-
-	var buildMediaViewModels = function (media) {
-		return media.map(buildMediumViewModel);
-	};
-
-	var buildMediumViewModel = function (medium) {
-		medium.isPlaying = false;
-		return medium;
-	};
-
-	var addVirtualPlaylistAsync = function(playlist){
-		//var favCount = 0;
-		//if (favorites) {
-		//	favCount = favorites.length;
-		//}
-		//
-		//var favorite = { // TODO To builder
-		//	name: _.last(splitFolderPath(folderPath)),
-		//	folderPath: folderPath,
-		//	index: favCount
-		//};
-		//
-		//favoriteService
-		//	.addFavoriteAsync(favorite)
-		//	.then(function (newFavorite) {
-		//		favorites = favorites.concat(newFavorite);
-		//
-		//		favoriteSubject.onNext(favorites);
-		//		favoriteChangeSubject.onNext({
-		//			entity: favorite.toArray(),
-		//			status: EntityStatus.Added
-		//		});
-		//	});
-		//
-		//
-
-
-		return playlistService
-			.addPlaylist(playlist)
-			.then(function(newPlaylist) {
-				//$scope.newPlaylist = null;
-				//$scope.isAdding = false;
-				playlists = playlists.concat(newPlaylist);
-
-				playlistsSubject.onNext(favorites);
-				playlistChangeSubject.onNext({
-					entity: playlist.toArray(),
-					status: EntityStatus.Added
+					observer.onNext(mediumVm);
+					observer.onCompleted();
 				});
 			});
-	};
+		};
 
-	var updatePlaylistAsync = function(playlist){
-		return playlistService
-			.updatePlaylist(playlist)
-			.then(function(updatedPlaylist) {
-				playlists = updatePlaylists(playlist);
+		audioPlayerBusiness
+			.observePlayingMedium()
+			.whereIsNotNull()
+			.do(function(currentMediumViewModel) {
+				// Is medium from playlist of file system ?
+				if (!currentMediumViewModel.model.playlistId) {
+					playingPlaylistSubject.onNext(null);
+					return;
+				}
+				observePlaylistViewModels().getValueAsync(function(playlistViewModels) {
+					var playingPlaylist = _.find(playlistViewModels, function(playlistViewModel) {
+						return playlistViewModel.model.id === currentMediumViewModel.model.playlistId;
+					});
+					playingPlaylistSubject.onNext(playingPlaylist);
 
-				playlistChangeSubject.onNext({
-					entity: updatedPlaylist.toArray(),
-					status: EntityStatus.Updated
+					var currentMedium = findMediumFromOtherViewModelAsAsyncValue(currentMediumViewModel);
+					playingMediumSubject.onNext(currentMedium);
 				});
-				return playlist.updateFieldsFrom(updatedPlaylist);
-			});
-	};
+			})
+			.silentSubscribe();
 
-	var updatePlaylists = function(playlist) {
-		var plToUpdate =_.find(playlists, function(pl) {
-			return pl._id === playlist._id;
-		});
-
-		var plIndex = playlists.indexOf(plToUpdate);
-		playlists[plIndex] = playlist;
-		return playlists;
-	};
-
-
-	var deleteMedia = function(){
-
-	};
-
-
-
-	var getPlaylistMedia = function(){
-
-	};
-
-	var removePlaylistAsync = function(playlist){
-		return playlistService
-			.removePlaylist(playlist)
-			.then(function() {
-				//$scope.playlists = _.filter($scope.playlists, function(pl) {
-				//	return pl._id !== playlist._id;
-				//});
-				//
-				//$scope.media = null;
-				//$scope.selectedPlaylist = null;
-				mediaSubject.onNext(null);
-				//selectedPlaylistSubject.onNext(null);
-
-				playlists = deletePlaylist(playlist);
-				playlists = remapIndexes(playlists);
-
-				playlistsSubject.onNext(playlists);
-				playlistChangeSubject.onNext({
-					entity: playlist.toArray(),
-					status: EntityStatus.Removed
+		var playNext = function(currentMediumInQueueViewModel) {
+			var currentMediumId = currentMediumInQueueViewModel.model.id;
+			observePlayingPlaylist().getValueAsync(function(playingPlaylist) {
+				var currentMediumVm = _.find(playingPlaylist.media, function(mediumVm) {
+					return mediumVm.model.id === currentMediumId;
 				});
+
+				var currentMediumIndex = currentMediumVm.model.index;
+				// If current ended medium isn't last from playlist, then play it
+				if (currentMediumIndex < playingPlaylist.media.length - 1) {
+					// take next
+					var nextMedium = playingPlaylist.media[currentMediumIndex+1];
+					mediaQueueBusiness.enqueueMedium(nextMedium.model);
+				}
 			});
-	};
+		};
 
-	var deletePlaylist = function(playlist) {
-		return _.filter(playlists, function(pl) {
-			return pl.id !== playlist.id;
-		});
-	};
+		var observePlaylistViewModels = function() {
+			return playlistViewModelsSubject.whereIsDefined();
+		};
 
-	var remapIndexes = function(favorites) {
-		var favIndex = 0;
-		_.each(favorites, function(fav) {
-			fav.index = favIndex;
-			favIndex++;
-		});
-		return favorites;
-	};
+		var observePlayingPlaylist = function() {
+			return playingPlaylistSubject.whereIsDefined();
+		};
 
+		var observeCurrentPlaylist = function() {
+			return currentPlaylistSubject.whereIsDefined();
+		};
 
-	var playMedia = function(){
+		var loadPlaylistsAsync = function () {
+			return PlaylistsModel
+				.getAllAsync()
+				.then(function(playlists) {
+					return playlists.map(viewModelBuilder.buildEditableViewModel)
+				})
+				.then(function (playlistViewModels) {
+					playlistViewModelsSubject.onNext(playlistViewModels);
+				});
+		};
 
-	};
+		var playlistSelected = function(playlistViewModel) {
+			if (playlistViewModel.media) {
+				currentPlaylistSubject.onNext(playlistViewModel);
+				var defered = $q.defer();
+				defered.resolve(playlistViewModel.media);
+				return defered;
+			}
+			return loadMediaAsync(playlistViewModel.model)
+				.then(function(media) {
+					playlistViewModel.media = media.map(viewModelBuilder.buildMediumViewModel);
+					currentPlaylistSubject.onNext(playlistViewModel);
+				});
+		};
 
+		var loadMediaAsync = function(playlistModel) {
+			return PlaylistMediaModel.getMediaFrom(playlistModel);
+		};
 
+		var addVirtualPlaylistAsync = function(playlist){
+			return PlaylistsModel
+				.addAsync(playlist)
+				.then(function(playlist) {
+					return viewModelBuilder.buildEditableViewModel(playlist)
+				})
+				.then(function (newPlaylistViewModel) {
+					observePlaylistViewModels().getValueAsync(function (playlistViewModels) {
+						playlistViewModelsSubject.onNext(playlistViewModels.concat(newPlaylistViewModel));
+					});
+					//playlistChangeSubject.onNext({
+					//	entity: playlist.toArray(),
+					//	status: EntityStatus.Added
+					//});
+				});
+		};
 
+		var addPhysicalPlaylistsByFilePathsAsync = function(playlistFiles){ // TODO Test when fileEx turns to model
+			Rx.Observable
+				.fromArray(playlistFiles) // playlistsFilePaths
+				.select(function(playlistFile) {
+					return Rx.Observable.fromPromise(PlaylistsModel.addByFilePathAsync(playlistFile));
+				})
+				.selectMany(function(rx) { return rx })
+				.toArray()
+				.select(function(addedPlaylists) { // toPlaylistsViewModel
+					return addedPlaylists.map(viewModelBuilder.buildEditableViewModel);
+				})
+				.do(function(addedPlaylistViewModels) {
+					observePlaylistViewModels().getValueAsync(function (playlistViewModels) {
+						playlistViewModelsSubject.onNext(playlistViewModels.concat(addedPlaylistViewModels));
+					});
+					//playlistChangeSubject.onNext({
+					//	entity: playlist.toArray(),
+					//	status: EntityStatus.Added
+					//});
+				})
+				.silentSubscribe();
+		};
 
+		var updatePlaylistAsync = function(playlistModel){
+			return playlistModel.updateAsync();
+			//playlistChangeSubject.onNext({
+			//	entity: updatedPlaylist.toArray(),
+			//	status: EntityStatus.Updated
+			//});
+		};
 
+		var removeMediumFromPlaylist = function(mediumToRemove){
+			Rx.Observable
+				.fromPromise(mediumToRemove.removeAsync())
+				.selectMany(function() { return observeCurrentPlaylist().asAsyncValue() })
+				.do(function(currentPlaylist) {
+					var mediaArrayUpdated = removeMediumFromArray(currentPlaylist.media, mediumToRemove);
+					mediaArrayUpdated = remapIndexes(mediaArrayUpdated);
+					currentPlaylist.media = mediaArrayUpdated;
 
-	return {
-		loadAndObservePlaylists: loadAndObservePlaylists,
-		observeMedia: observeMedia,
-		playlistSelected: playlistSelected,
-		updatePlaylistAsync: updatePlaylistAsync,
-		removePlaylistAsync: removePlaylistAsync,
-		addVirtualPlaylistAsync: addVirtualPlaylistAsync
+					//mediaChangeSubject.onNext({
+					//	entity: mediumToRemove.toArray(),
+					//	status: EntityStatus.Removed
+					//});
+				})
+				.silentSubscribe();
+		};
+
+		var removeMediumFromArray = function(mediaArray, mediumToRemove) {
+			return _.filter(mediaArray, function(medium) {
+				return medium.model.id !== mediumToRemove.id;
+			});
+		};
+
+		var removePlaylistAsync = function(playlist){
+			return playlist
+				.removeAsync()
+				.then(function() {
+					observePlaylistViewModels().getValueAsync(function (playlistViewModels) {
+						playlistViewModels = removePlaylist(playlistViewModels, playlist);
+						playlistViewModels = remapIndexes(playlistViewModels);
+						playlistViewModelsSubject.onNext(playlistViewModels);
+					});
+					//playlistChangeSubject.onNext({
+					//	entity: playlist.toArray(),
+					//	status: EntityStatus.Removed
+					//});
+				});
+		};
+
+		var removePlaylist = function(playlists, playlist) {
+			return _.filter(playlists, function(pl) {
+				return pl.model.id !== playlist.id;
+			});
+		};
+
+		var remapIndexes = function(elements) {
+			var elIndex = 0;
+			_.each(elements, function(elm) {
+				elm.model.index = elIndex;
+				elIndex++;
+			});
+			return elements;
+		};
+
+		var playMedium = function(mediumViewModel){
+			mediaQueueBusiness.enqueueMedium(mediumViewModel.model);
+		};
+
+		var addFilesToSelectedPlaylist = function(fileViewModels) {
+			observeCurrentPlaylist()
+				.asAsyncValue()
+				.whereIsNotNull()
+				.selectMany(function(selectedPlaylistViewModel) {
+					var mediaFilePaths = _.map(fileViewModels, function(fileVm) {
+						return fileVm.model.selectSelfPhysicalFromLinks();
+					});
+					return Rx.Observable
+						.fromArray(mediaFilePaths)
+						.select(function(mediaFilePath) {
+							return Rx.Observable.fromPromise(selectedPlaylistViewModel.model.addMediumByFilePathToPlaylist(mediaFilePath))
+						})
+						.selectMany(function(rx) { return rx })
+						.toArray()
+						.select(function(newMedia) {
+							return {
+								selectedPlaylistViewModel: selectedPlaylistViewModel,
+								newMedia: newMedia
+							};
+						});
+				}) // TODO Cannot insert multiple media on pl without fail
+				.do(function(plMediaSetCurrentPl) {
+					var plVm = plMediaSetCurrentPl.selectedPlaylistViewModel;
+					plVm.media = plVm.media.concat(
+						plMediaSetCurrentPl.newMedia.map(viewModelBuilder.buildMediumViewModel)
+					);
+				})
+				.silentSubscribe();
+		};
+
+		return {
+			observePlayingMedium: observePlayingMedium,
+			loadPlaylistsAsync: loadPlaylistsAsync,
+			observePlaylistViewModels: observePlaylistViewModels,
+			playlistSelected: playlistSelected,
+			updatePlaylistAsync: updatePlaylistAsync,
+			removePlaylistAsync: removePlaylistAsync,
+			addVirtualPlaylistAsync: addVirtualPlaylistAsync,
+			addPhysicalPlaylistsByFilePathsAsync: addPhysicalPlaylistsByFilePathsAsync,
+			addFilesToSelectedPlaylist: addFilesToSelectedPlaylist,
+			removeMediumFromPlaylist: removeMediumFromPlaylist,
+			playMedium: playMedium,
+			observeCurrentPlaylist: observeCurrentPlaylist
+		}
 	}
-});
+]);

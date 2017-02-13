@@ -24,6 +24,7 @@ FavoriteController.prototype.init = function() {
 	_app.get(_routes.favorites.getPath, function(req, res) {
 		_favoriteDirector
 			.getFavoritesAsync()
+			.then()
 			.then(function(data) { res.send(data) })
 			.catch(function(err) { res.send(400, err) })
 			.done();

@@ -1,44 +1,61 @@
 'use strict';
 
-jpoApp.directive("mediaQueue", function () {
+jpoApp.directive("mediaQueue", ['mediaQueueBusiness', function (mediaQueueBusiness) {
 	return {
 		restrict: 'E',
 		replace: true,
 		templateUrl: '/templates/controls/mediaQueue.html',
-		scope: {
-			mediaQueue: '=queuedMedia', // Means looks for folder-path attribute (= for object, & for function in parent scope, @ for just string or computed like {{}})
-			currentMediaInQueue: '=',
-			playMedia: '&',
-			remove: '&',
-			clearQueue: '&'
-		},
-		controller: function($scope) {
-
+		controller: function($scope, $timeout) {
 			$scope.hasAny = false;
 
-			$scope.innerPlayMedia = function(media) {
-				$scope.playMedia({ media: media });
+			$scope.playMedium = function(medium) {
+				mediaQueueBusiness.playMedium(medium);
 			};
 
-			$scope.innerRemove = function(media) {
-				$scope.remove({ media: media });
+			$scope.innerRemove = function(medium) {
+				mediaQueueBusiness.removeMedium(medium);
 			};
 
-			$scope.$watchCollection('mediaQueue', function(newArray) {
-				$scope.hasAny = newArray.length > 0;
+			$scope.clearQueue = function() {
+				mediaQueueBusiness.clearQueue();
+			};
+
+			$scope.$watchCollection('mediaQueueViewModels', function(newMediaArray) {
+				$scope.hasAny = _.any(newMediaArray);
 			});
 
-			// TODO Should this directive change this ?
-			$scope.$watch('currentMediaInQueue', function(newValue, oldValue) {
-				// When this one updates, we have to change current visible media
-				if (oldValue) {
-					oldValue.isPlaying = false;
-				}
-				if (newValue) {
-					newValue.isPlaying = true;
-				}
-			});
+			mediaQueueBusiness
+				.observeMediaQueue()
+				.do(function(mediaQueueViewModels) {
+					$timeout(function() {
+						$scope.mediaQueueViewModels = mediaQueueViewModels;
+					});
+				})
+				.silentSubscribe();
 
+			mediaQueueBusiness
+				.observeCurrentMediumInQueue()
+				.whereIsNotNull()
+				.selectWithPreviousValue(function(oldValue, newValue) {
+					$timeout(function() {
+						// If a medium is already playing, then unset it's playing status (the color change) and set the new one
+						if (oldValue) { // TODO Can Still be an object but unlinked from array
+							oldValue.isPlaying = false;
+						}
+						newValue.isPlaying = true;
+						newValue.hasError = false;
+					});
+				})
+				.silentSubscribe();
+
+			mediaQueueBusiness
+				.observeMediumError()
+				.do(function(mediumInError) {
+					$timeout(function() {
+						mediumInError.hasError = true;
+					});
+				})
+				.silentSubscribe()
 		}
 	};
-});
+}]);

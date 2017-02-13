@@ -12,7 +12,6 @@ var playlistSchema = new Schema({
 	name: String,
 	index: Number,
 	filePath: String,
-	isChecked: { type: Boolean, default: true },
 	media: [{ type: Schema.Types.ObjectId, ref: 'Media' }],
 	createdOn: { type: Date, default: Date.now },
 	updatedOn: { type: Date }
@@ -30,6 +29,17 @@ playlistSchema.statics.whereInOrGetAll = function (path, whereIn) {
 	return whereIn ? this.where(path).in(whereIn) : this;
 };
 playlistSchema.set('toJSON', { virtuals: true });
+playlistSchema.set('toObject', { virtuals: true });
+playlistSchema.methods.toJSON = function() {
+	var obj = this.toObject();
+	delete obj._id;
+	delete obj.__v;
+	delete obj.isVirtual;
+	delete obj.filePath;
+	delete obj.createdOn;
+	delete obj.updatedOn;
+	return obj;
+};
 playlistSchema.virtual('links').get(function() {
 	return [{
 		rel: 'self',

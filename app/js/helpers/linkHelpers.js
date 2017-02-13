@@ -9,11 +9,13 @@ window.Helpers = {
 				return link;
 			}
 		},
+
 		selectSelfFromLinks: function (links) {
 			return _.find(links, function (link) {
 				return link.rel === 'self';
 			}).href;
 		},
+
 		selectSelfPhysicalFromLinks: function (links) {
 			var link = _.find(links, function (link) {
 				return link.rel === 'self.phys';

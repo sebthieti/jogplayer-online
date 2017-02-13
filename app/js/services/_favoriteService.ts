@@ -6,9 +6,9 @@ declare var jpoApp: any;
 
 jpoApp.factory('favoriteBusiness', function(favoriteService) {
 
-    var subject = new Rx.Subject<number>();
-    //subject.selectMany
+    var subject = new Rx.BehaviorSubject<number>();
 
+    //Rx.Observable.select()
 
     subject.onNext(1452);
 });

@@ -1,38 +1,21 @@
 'use strict';
 
-jpoApp.directive("favoritesExplorer", function (favoriteBusiness) {
-	//var EntityStatus = JpoAppTypes.EntityStatus;
-
+jpoApp.directive("favoritesExplorer", ['viewModelBuilder', 'favoriteBusiness', function (viewModelBuilder, favoriteBusiness) {
 	return {
 		restrict: 'E',
 		templateUrl: '/templates/controls/favoritesExplorer.html',
-		scope: {
-			changeDirCmd: '&' // TODO I can use RxJs for that
-		},
 		controller: function ($scope) {
-
 			var _currentIndexEdited = -1;
 
-			var selectTargetLinkFromLinks = function(links) {
-				var link = _.find(links, function(link) {
-					return link.rel === 'target';
-				});
-				if (link) {
-					return link;
-				}
-			};
-
-			$scope.goToFolder = function (favorite) {
-				//$scope.currentDirPath = favorite.folderPath;
-				//$scope.changeDirCmd({ link: selectTargetLinkFromLinks(favorite.links) });
-				favoriteBusiness.changeSelectedFavorite(favorite);
+			$scope.goToFolder = function (favoriteVm) {
+				favoriteBusiness.changeSelectedFavorite(favoriteVm.model);
 			};
 
 			$scope.editFavorite = function(fav) {
 				if (_currentIndexEdited != -1) {
-					$scope.favorites[_currentIndexEdited].isEditing = false;
+					$scope.favoritesVm[_currentIndexEdited].isEditing = false;
 				}
-				_currentIndexEdited = $scope.favorites.indexOf(fav);
+				_currentIndexEdited = $scope.favoritesVm.indexOf(fav);
 				fav.isEditing = true;
 			};
 
@@ -42,48 +25,28 @@ jpoApp.directive("favoritesExplorer", function (favoriteBusiness) {
 			};
 
 			$scope.done = function(favorite) {
-				// Proceed with update.
-				return updateFavorite(favorite)
-					.then(function(updatedFavorite) {
-						updatedFavorite.isEditing = false;
+				return favoriteBusiness
+					.updateFavoriteAsync(favorite.model)
+					.then(function(updatedFavoriteModel) {
+						var updatedFavVm = viewModelBuilder.buildFavoriteViewModel(updatedFavoriteModel);
+						updatedFavVm.isEditing = false;
+
+						$scope.favoritesVm[_currentIndexEdited] = updatedFavVm;
 						_currentIndexEdited = -1;
 					});
 			};
 
-			$scope.innerDeleteFavorite = function(favorite) {
-				favoriteBusiness.deleteFavoriteAsync(favorite);
+			$scope.innerDeleteFavorite = function(favoriteVm) {
+				favoriteBusiness.deleteFavoriteAsync(favoriteVm.model);
 			};
-
-			var updateFavorite = function(favorite) {
-				return favoriteBusiness.updateFavoriteAsync(favorite)
-			};
-
-			function handleUpdate(favoriteSet) {
-				//if (favoriteSet.status !== EntityStatus.Updated) {
-				//	return;
-				//}
-				//
-				//_.each(favoriteSet.entity, function(favorite) {
-				//	var favToUpdate =_.find($scope.favorites, function(fav) {
-				//		return fav._id === favorite._id;
-				//	});
-				//
-				//	var favIndex = $scope.favorites.indexOf(favToUpdate);
-				//	$scope.favorites[favIndex] = favorite;
-				//});
-			}
 
 			favoriteBusiness
-				.getAndObserveFavorites()
+				.observeFavorites()
 				.do(function (favorites) {
-					$scope.favorites = favorites;
+					var favoritesVm = favorites.map(viewModelBuilder.buildFavoriteViewModel);
+					$scope.favoritesVm = favoritesVm;
 				})
-				//.do(handleUpdate)
-				.subscribe(
-					function(_) {},
-					function(err) { console.log(err) } // TODO console.log should disappear in prod.
-				); // TODO Handle a disposeWith method
-
+				.silentSubscribe(); // TODO Handle a disposeWith method
 		}
 	}
-});
+}]);

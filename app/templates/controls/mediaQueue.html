@@ -6,12 +6,12 @@
           ng-click="clearQueue()"></span>
     <div id="queue-container-list">
         <ul id="queue">
-            <li ng-repeat="m in mediaQueue track by $index"
-                ng-click="innerPlayMedia(m)"
-                ng-class="m.isPlaying ? 'active btn-enabled' : 'btn-enabled'">
-                <span ng-click="innerRemove(m)" class="remove" stop-event>[x]</span>
-                <span class="error" ng-show="m.hasError" stop-event>[!]</span>
-                <span>{{ m.name || m.title }}</span>
+            <li ng-repeat="mVm in mediaQueueViewModels track by $index"
+                ng-click="playMedium(mVm)"
+                ng-class="mVm.isPlaying ? 'active btn-enabled' : 'btn-enabled'">
+                <span ng-click="innerRemove(mVm)" class="remove" stop-event>[x]</span>
+                <span class="error" ng-show="mVm.hasError" stop-event>[!]</span>
+                <span>{{ mVm.model.name || mVm.model.title }}</span>
             </li>
         </ul>
     </div>

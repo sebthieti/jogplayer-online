@@ -21,13 +21,24 @@ var mediaSchema = new Schema({ // TODO Rename to mediumSchema
 	//metadatas: [],
 	//bookmarks: [{ type: Schema.Types.ObjectId, ref: 'Bookmark' }]
 });
-mediaSchema.set('toJSON', { virtuals: true });
 // TODO Think about remove this and only compute it elsewhere (maybe only put it to DTO ?)
 mediaSchema.virtual('isAvailable').get(function() {
 	return this._isAvailable || false;
 }).set(function(value) {
 	this._isAvailable = value;
 });
+mediaSchema.set('toJSON', { virtuals: true });
+mediaSchema.set('toObject', { virtuals: true });
+mediaSchema.methods.toJSON = function() {
+	var obj = this.toObject();
+	delete obj._id;
+	delete obj.__v;
+	delete obj._playlistId;
+	delete obj.filePath;
+	delete obj.createdOn;
+	delete obj.updatedOn;
+	return obj;
+};
 mediaSchema.virtual('links').get(function() {
 	return [{
 		rel: 'self',

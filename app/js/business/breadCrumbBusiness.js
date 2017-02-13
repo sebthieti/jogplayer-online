@@ -3,7 +3,7 @@
 jpoApp.factory('breadCrumbBusiness', function(fileExplorerBusiness) {
 	var observeCurrentDir = function () {
 		return fileExplorerBusiness
-			.observeCurrentFolderContent(true, 'mediaExplorer')
+			.observeCurrentFolderContent()
 			.select(function(folderContentVm) {
 				return folderContentVm.links;
 			});
@@ -11,7 +11,7 @@ jpoApp.factory('breadCrumbBusiness', function(fileExplorerBusiness) {
 
 	var changeDir = function (folderPath) {
 		var folderApiLink = '/api/explore' + folderPath;
-		fileExplorerBusiness.changeFolderByApiLink(folderApiLink);
+		fileExplorerBusiness.changeFolderByApiLinkAndResetSelection(folderApiLink);
 	};
 
 	return {

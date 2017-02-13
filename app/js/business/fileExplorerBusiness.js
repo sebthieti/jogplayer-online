@@ -1,139 +1,145 @@
 'use strict';
 
-jpoApp.factory('fileExplorerBusiness', function(favoriteBusiness, fileExplorerService) {
+jpoApp.factory('playlistExplorerBusiness', ['explorerBusinessFactory', function(explorerBusinessFactory) {
+	return explorerBusinessFactory.buildPlaylistExplorerBusiness();
+}]);
 
-	var linkHelper = Helpers.linkHelpers;
+jpoApp.factory('fileExplorerBusiness', ['explorerBusinessFactory', function(explorerBusinessFactory) {
+	return explorerBusinessFactory.buildFileExplorerBusiness();
+}]);
 
-	var folderContentSubject = new Rx.Subject();
+jpoApp.factory('explorerBusinessFactory', [
+	'favoriteBusiness',
+	'mediaQueueBusiness',
+	'fileExplorerService',
+	'folderContentBuilder',
+	'FileExplorerModel',
+	'$filter',
+	function(favoriteBusiness, mediaQueueBusiness, fileExplorerService, folderContentBuilder, FileExplorerModel, $filter) {
+		function ExplorerBusiness(doLinkToFavorites, fileFilter) {
+			var folderContentSubject = new Rx.BehaviorSubject();
+			var selectedFilesSubject = new Rx.BehaviorSubject();
 
-	var observeFavoriteSelection = function() {
-		return favoriteBusiness
-			.observeSelectedFavorite()
-			.selectMany(function (favorite) {
-				var target = linkHelper.selectTargetLinkFromLinks(favorite.links);
-			    return Rx.Observable.fromPromise(loadFolderContentAsync(target.href));
-			});
-	};
+			if (doLinkToFavorites) {
+				favoriteBusiness
+					.observeSelectedFavorite()
+					.select(function (favoriteModel) {
+						return favoriteModel.selectTargetLinkFromLinks();
+					})
+					.do(function(favoriteLink) {
+						changeFolderByApiUrlAndResetSelection(favoriteLink.href);
+					})
+					.silentSubscribe();
+			}
 
-	var observeCurrentFolderContent = function(observeExternalChanges, issuerGroup, caller) { // TODO Combine it with the above one
-		var baseObs = folderContentSubject
-			.where(function(folderContentSet) {
-				if (folderContentSet.caller) {
-					return folderContentSet.caller === caller;
-				} else if (folderContentSet.issuerGroup) {
-					return folderContentSet.issuerGroup === issuerGroup;
-				}
-			});
-		if (observeExternalChanges) {
-			baseObs = baseObs.merge(observeFavoriteSelection());
-		}
-		return baseObs
-			.select(function(folderContentSet) {
-				if (folderContentSet.folderContentVm) {
-					return folderContentSet.folderContentVm;
-				}
-				return folderContentSet;
-			});
-	};
-
-	var changeFolderByApiLink = function(folderApiLink) {
-		loadFolderContentAsync(folderApiLink)
-			.then(function(folderContentVm) {
-				folderContentSubject.onNext({
-					issuerGroup: 'mediaExplorer',
-					folderContentVm: folderContentVm
+			var observeCurrentFolderContent = function() {
+				return folderContentSubject.where(function(folderContent) {
+					return angular.isDefined(folderContent);
 				});
-			});
-	};
+			};
 
-	var goUp = function(links, issuerGroup) {
-		var parentDirPath = linkHelper.selectParentDirFromLinks(links);
-		loadFolderContentAsync(parentDirPath)
-			.then(function(folderContentVm) {
-				folderContentSubject.onNext({
-					issuerGroup: issuerGroup,
-					folderContentVm: folderContentVm
-				});
-			});
-	};
+			var browseFolder = function(folderToBrowseModel) {
+				var dirPath = folderToBrowseModel.selectSelfFromLinks();
+				changeFolderByApiUrlAndResetSelection(dirPath);
+			};
 
-	var startExplore = function(caller) {
-		fileExplorerService
-			.startExplore()
-			.then(function(filesResult) {
-				var folderContentVm = buildFolderContentStruct(filesResult);
-				folderContentSubject.onNext({
-					caller: caller,
-					folderContentVm: folderContentVm
-				});
-			});
-	};
+			var goUp = function(folderToBrowseUpModel) {
+				var parentDirPath = folderToBrowseUpModel.selectParentDirFromLinks();
+				changeFolderByApiUrlAndResetSelection(parentDirPath);
+			};
 
-	var fileSelected = function(file, issuerGroup) {
-		var isBrowsable = !file.type || file.type === 'D';
-		if (isBrowsable) {
-			var dirPath = linkHelper.selectSelfFromLinks(file.links);
-			loadFolderContentAsync(dirPath)
-				.then(function(folderContentVm) {
-					folderContentSubject.onNext({
-						issuerGroup: issuerGroup,
-						folderContentVm: folderContentVm
+			// Called by outside breadcrumb
+			var changeFolderByApiUrlAndResetSelection = function(folderApiLink) {
+				loadFolderContentAsync(folderApiLink)
+					.then(function(folderContentVm) {
+						folderContentSubject.onNext(folderContentVm);
+						selectedFilesSubject.onNext(null);
 					});
+			};
+
+			var loadFolderContentAsync = function(linkUrl) {
+				return FileExplorerModel
+					.getFolderByLink(linkUrl)
+					.then(filterAndOrderFiles);
+					//.then(function (folderContent) {
+					//	return viewModelBuilder.buildEditableViewModel(folderContent);
+					//})
+			};
+
+			var startExplore = function() {
+				FileExplorerModel
+					.getAllAsync()
+					.then(filterAndOrderFiles)
+					.then(function(filesResult) {
+						folderContentSubject.onNext(filesResult);
+						//viewModelBuilder.buildEditableViewModel(filesResult)
+					})
+				;
+			};
+
+			var filterAndOrderFiles = function(folderContent) {
+				var folderContentCpy = folderContent.clone();
+				folderContentCpy.files = filterFiles(folderContentCpy.files);
+				folderContentCpy.files = $filter('orderBy')(folderContentCpy.files, ['type','name']);
+				return folderContentCpy;
+			};
+
+			var updateFileSelection = function(files) {
+				selectedFilesSubject.onNext(files);
+			};
+
+			var getAndObserveHasFileSelection = function() {
+				return observeFileSelection()
+					.select(function(fileSelection) {
+						return _.any(fileSelection);
+					})
+					.startWith(false);
+			};
+
+			var observeFileSelection = function() {
+				// TODO Really check that here, not from UI (ensure Folder mustn't be selectable) ?
+				return selectedFilesSubject
+					.whereIsDefined()
+					.where(function(fileViewModelsSelection) { // distinct until change
+						// Where all elements in selection are files, no dir.
+						return _.all(fileViewModelsSelection, function(fileViewModel) {
+							return fileViewModel.model.isFile();
+						});
+					}); // TODO Use publish to avoid traverse entire Rx ?
+			};
+
+			// TODO Should be in fileExplorerBusiness, not ExplorerBusiness
+			var playMedium = function(medium) {
+				mediaQueueBusiness.enqueueMedium(medium.model);
+			};
+
+			// TODO Think about: filter s/b business side or controller ? Shoulnd't be, because only where filter on endpoint
+			var filterFiles = function (files) {
+				return _.filter(files, function(file) {
+					return !file.type || file.type === 'D' || !fileFilter || file.name.endsWith(fileFilter);
 				});
+			};
 
-			// Reload folder mean we'll lose last file
-			// TODO The following statement wasn't commented, and was part of the then call.
-			//_lastSelectedFile = null;
-		} else {
-			// TODO The following statement wasn't commented
-			//updateFileSelection(file);
+			return {
+				observeCurrentFolderContent: observeCurrentFolderContent,
+				observeFileSelection: observeFileSelection,
+				getAndObserveHasFileSelection: getAndObserveHasFileSelection,
+				browseFolder: browseFolder,
+				goUp: goUp,
+				startExplore: startExplore,
+				changeFolderByApiLinkAndResetSelection: changeFolderByApiUrlAndResetSelection,
+				updateFileSelection: updateFileSelection,
+				playMedium: playMedium // TODO Or requestPlayMedium ?
+			}
 		}
-	};
 
-	var loadFolderContentAsync = function(linkUrl) {
-		return fileExplorerService
-			.getResourceAsync(linkUrl)
-			.then(function (folderContent) {
-				return buildFolderContentStruct(folderContent);
-			}, function (err) {
-			});
-	};
+		return {
+			buildFileExplorerBusiness: function() {
+				return new ExplorerBusiness(true);
+			},
 
-	var buildFolderContentStruct = function(folderContent) {
-		var files = folderContent.files;
-		var links = folderContent.links;
-		// TODO To Builder To VM -> To entity/data
-		_.each(files, function(file) {
-			buildViewModel(file);
-		});
-
-		var parentDirPath = linkHelper.selectParentDirFromLinks(links);
-
-		return { // TODO Assimilate to a viewModel
-			files: files,
-			links: links,
-			isActive: true,
-			canExecuteFolderUp: angular.isDefined(parentDirPath)
+			buildPlaylistExplorerBusiness: function() { // TODO Rather filter in server with where clause in fileExp endpoint
+				return new ExplorerBusiness(false, 'm3u');
+			}
 		};
-	};
-
-	// TODO Think about: filter s/b business side or controller ?
-	var filterFiles = function (files, filterFiles) {
-		return _.filter(files, function(file) {
-			return !file.type || file.type === 'D' || file.name.endsWith(filterFiles); // TODO Should handle multi ext.
-		});
-	};
-
-	var buildViewModel = function (file) {
-		file.selected = false;
-		file.hasError = false;
-	};
-
-	return {
-		observeCurrentFolderContent: observeCurrentFolderContent,
-		fileSelected: fileSelected,
-		goUp: goUp,
-		startExplore: startExplore,
-		changeFolderByApiLink: changeFolderByApiLink
-	}
-});
+}]);

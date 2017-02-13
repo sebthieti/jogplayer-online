@@ -1,6 +1,6 @@
 'use strict';
 
-jpoApp.factory("favoriteService", function ($http, $q, jpoProxy) {
+jpoApp.factory("favoriteService__", function ($http, $q, jpoProxy) {
 	var selectActionFromLinks = function(action, links) {
 		var link = _.find(links, function(link) {
 			return link.rel === action;
@@ -31,24 +31,25 @@ jpoApp.factory("favoriteService", function ($http, $q, jpoProxy) {
 				});
 		},
 
-		updateFavoriteAsync: function(favorite) {
+		updateFavoriteAsync: function(favorite, updateLink) {
 			return $http({
 				method: 'PATCH',
-				url: selectActionFromLinks('update', favorite.links), data: favorite
+				url: updateLink,
+				data: favorite
 			})
 			.then(function (result) {
 				return result.data;
 			});
 		},
 
-		deleteFavoriteAsync: function(favorite) {
+		removeFavoriteAsync: function(removeLink) {
 			var deferred = $q.defer();
 
-			$http.delete(selectActionFromLinks('remove', favorite.links))
+			$http.delete(removeLink)
 				.then(function (result) {
 					var removeSuccess = result.status === 204;
 					if (removeSuccess) { deferred.resolve() }
-					else { deferred.reject("Favorite with id " + favorite._id + " hasn't be deleted" ) }
+					else { deferred.reject("Favorite hasn't be deleted" ) }
 				}, function (err) {
 					deferred.reject(err);
 				});

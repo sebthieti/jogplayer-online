@@ -3,7 +3,7 @@
 jpoApp.factory("playlistService", function ($http, $q, jpoProxy) {
 	var linkHelper = Helpers.linkHelpers;
 
-	var addOrInsertMediaByFilePathToPlaylist = function (playlist, mediaFilePath, index) {
+	var addOrInsertMediumByFilePathToPlaylist = function (playlist, mediaFilePath, index) {
 		return $http
 			.post(linkHelper.selectActionFromLinks('media.insert', playlist.links), { index: index, mediaFilePath: mediaFilePath })
 			.then(function (result) {
@@ -65,13 +65,12 @@ jpoApp.factory("playlistService", function ($http, $q, jpoProxy) {
 			return deferred.promise;
 		},
 
-		// TODO rename to addMediumByFilePathToPlaylist
-		addMediaByFilePathToPlaylist: function (playlist, mediaFilePaths) {
-			return addOrInsertMediaByFilePathToPlaylist(playlist, mediaFilePaths[0], 'end');
+		addMediumByFilePathToPlaylist: function (playlist, mediaFilePath) {
+			return addOrInsertMediumByFilePathToPlaylist(playlist, mediaFilePath, 'end');
 		},
 
-		insertMediaByFilePathToPlaylist: function (playlist, mediaFilePaths, index) {
-			return addOrInsertMediaByFilePathToPlaylist(playlist, mediaFilePaths[0], index);
+		insertMediumByFilePathToPlaylist: function (playlist, mediaFilePath, index) {
+			return addOrInsertMediumByFilePathToPlaylist(playlist, mediaFilePath, index);
 		},
 
 		getPlaylistMedia: function (playlist) {

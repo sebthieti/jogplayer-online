@@ -30,14 +30,14 @@ ul{padding:0;margin:0;list-style:none}
 #remaining-time-container{width:50px}
 #remaining-time{margin:0 11px 0 13px}
 #btnPlay{margin:0 4px}
-#timeline{display:inline-block;position:relative;height:6px;border:1px solid whitesmoke;width:200px}
-#timeline-container{margin-left:10px}
+#time-line{display:inline-block;position:relative;height:6px;border:1px solid whitesmoke;width:200px}
+#time-line-container{margin-left:10px}
 .time{font-weight:bold}
 #volume-container{}
-#volume-bar{display:inline-block;vertical-align:middle;width:84px;height:10px;border:1px solid #fff;margin-right:5px}
+#volume-bar-container{overflow:hidden;display:inline-block;vertical-align:middle;width:84px;height:10px;border:1px solid #fff;margin-right:5px}
+#volume-bar{background-color:whitesmoke;height:100%;width:100%}
 #cursor{border-radius:50%;width:10px;height:10px;border:5px solid #fff;left:0;position:absolute;background-color:#acacac;margin-left:-9px;margin-top:-8px}
 #loaded-chunks{background-color:whitesmoke;height:6px;width:0;position:absolute}
-#volume-level{background-color:whitesmoke;height:100%;width:0}
 #command-bar{margin-top:10px;margin-left:20%}
 
 /* BEGIN Layout main sections */
@@ -49,7 +49,7 @@ ul{padding:0;margin:0;list-style:none}
 #playlist-browser{margin-top:5px}
 #playlist-explorer{width:45%;float:left}
 #file-explorer-commands{float:left;padding:40px 6px 0 6px}
-#file-explorer-commands span{display:block;margin-top:10px}
+#file-explorer-commands *{display:block;margin-top:10px}
 #right-section{float:left;margin-top:22px;width:45%}
 
 /* END Layout main sections */

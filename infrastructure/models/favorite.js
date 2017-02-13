@@ -13,6 +13,15 @@ var favoriteSchema = new Schema({
 	index: Number
 });
 favoriteSchema.set('toJSON', { virtuals: true });
+favoriteSchema.set('toObject', { virtuals: true });
+favoriteSchema.methods.toJSON = function() {
+	var obj = this.toObject();
+	delete obj._id;
+	delete obj.__v;
+	delete obj.createdOn;
+	delete obj.updatedOn;
+	return obj;
+};
 favoriteSchema.virtual('links').get(function() {
 	return [{
 		rel: 'self',
