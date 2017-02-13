@@ -49,19 +49,20 @@ UserSaveService.prototype.getUserByUsernameAsync = function(username) {
 	return defer.promise;
 };
 
-UserSaveService.prototype.addUserAsync = function (userDto, userPermissionsModel, owner) {
+UserSaveService.prototype.addUserAsync = function (userDto, userPermissionsModel, issuer) {
 	if (!userDto) {
 		throw "UserStateSaveService.addUserAsync: favorite must be set";
 	}
-	if (!owner) {
-		throw "UserStateSaveService.addUserAsync: owner must be set";
+	if (!issuer) {
+		throw "UserStateSaveService.addUserAsync: issuer must be set";
 	}
 	if (userDto._id) {
 		throw "UserStateSaveService.addUserAsync: user.Id should not be set";
 	}
 
 	var defer = Q.defer();
-
+	//delete userDto.permissions;
+	userDto.permissions = null;
 	var userFields = userDto.getDefinedFields();
 
 	User.create(
@@ -80,11 +81,11 @@ UserSaveService.prototype.addUserAsync = function (userDto, userPermissionsModel
 	return defer.promise;
 };
 
-UserSaveService.prototype.addUserPermissionsAsync = function (userId, permissionsArray, owner) {
+UserSaveService.prototype.addUserPermissionsAsync = function (userId, permissionsArray, issuer) {
 	var defer = Q.defer();
 
 	User
-		.findOne({ _id: userId }) // , ownerId: owner.id
+		.findOne({ _id: userId }) // , ownerId: issuer.id
 		.populate({ path: 'permissions', select: '_id' })
 		.exec(function(readError, user) {
 			if (readError) {
@@ -101,7 +102,7 @@ UserSaveService.prototype.addUserPermissionsAsync = function (userId, permission
 	return defer.promise;
 };
 
-UserSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, owner) {
+UserSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, issuer) {
 	if (!userDto) {
 		throw "UserStateSaveService.updateFromUserDtoAsync: user must be set";
 	}
@@ -112,7 +113,7 @@ UserSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, ow
 	var defer = Q.defer();
 
 	User.findOneAndUpdate(
-		{ _id: userId }, // , ownerId: owner.id
+		{ _id: userId }, // , ownerId: issuer.id
 		userDto.getDefinedFields(),
 		function(err, user) {
 			if (err) { defer.reject(err) }
@@ -123,7 +124,7 @@ UserSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, ow
 	return defer.promise;
 };
 
-UserSaveService.prototype.removeUserByIdAsync = function (userId, owner) {
+UserSaveService.prototype.removeUserByIdAsync = function (userId, issuer) {
 	if (!userId) {
 		throw "UserStateSaveService.removeUserByIdAsync: userId must be set";
 	}

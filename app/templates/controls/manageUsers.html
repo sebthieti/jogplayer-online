@@ -24,7 +24,7 @@
 						<div class="remove">
 							<button class="btn-rounded-new btn-small" ng-click="cancelEditUser(userVm)">X</button>
 						</div>
-						<form ng-submit="beginEditUser(userVm)">
+						<form ng-submit="submitUser(userVm)">
 							<div>
 								<input type="text" name="fullName" ng-model="userVm.model.fullName">&nbsp;(<input type="text" name="username" ng-model="userVm.model.username">)
 							</div>
@@ -36,29 +36,36 @@
 							<label for="can-write-edit">Can Write</label>
 							<input id="can-write-edit" name="canWrite" type="checkbox" ng-model="userVm.model.permissions.canWrite">
 
+							<!--<ul>-->
+								<!--<li ng-repeat="allowPath in userVm.model.permissions.allowPaths">-->
+									<!--<input type="text" ng-model="allowPath.path">-->
+									<!--<button type="button" ng-click="removeAllowPath(allowPath, userVm)" class="icon-close"></button>-->
+								<!--</li>-->
+								<!--<li>-->
+									<!--<div>-->
+										<!--<button type="button" ng-click="addAllowedPathToNewUser(userVm)">+ Allow Path</button>-->
+									<!--</div>-->
+								<!--</li>-->
+							<!--</ul>-->
 							<ul>
-								<li ng-repeat="allowedPath in userVm.model.permissions.allowPaths" ng-show="canShowAddAllowedPathArea">
-									<input type="text" ng-model="allowedPath">
+								<li ng-repeat="denyPath in userVm.model.permissions.denyPaths">
+									<input type="text" ng-model="denyPath.path">
+									<button type="button" ng-click="removeDenyPath(denyPath, userVm)" class="icon-close"></button>
 								</li>
 								<li>
-									<div ng-show="canShowAddAllowedPathArea">
-										<button class="" ng-click="beginAddAllowedPath()">+ Path</button>
-									</div>
-									<div ng-hide="canShowAddAllowedPathArea">
-										<input type="text" ng-model="allowedPath">
-										<button class="icon-arrow-left" ng-click="endAddAllowedPath(userVm)"></button>
+									<div>
+										<button type="button" ng-click="addDenyPathToNewUser(userVm)">+ Deny Path</button>
 									</div>
 								</li>
 							</ul>
-
-							<button type="submit" ng-click="endEditUser(userVm)">Commit</button>
+							<input placeholder="HomePath" type="text" ng-model="userVm.model.permissions.homePath">
+							<button type="submit">Commit</button>
 						</form>
 					</div>
 
 				</div>
 			</li>
 			<li>
-				<!--canShowAddUserArea-->
 				<div id="add-user" ng-class="canShowAddUserArea ? 'active' : 'inactive'">
 					<!-- TODO Remove ng-show once accordion anim in use -->
 					<div id="add-user-button-area" ng-hide="canShowAddUserArea">
@@ -108,19 +115,21 @@
 									</td>
 								</tr>
 							</table>
-							<ul>
-								<li ng-repeat="allowPath in newUserVm.model.permissions.allowPaths">
-									<input type="text" ng-model="allowPath.path">
-								</li>
-								<li>
-									<div>
-										<button type="button" ng-click="addAllowedPathToNewUser(newUserVm)">+ Allow Path</button>
-									</div>
-								</li>
-							</ul>
+							<!--<ul>-->
+								<!--<li ng-repeat="allowPath in newUserVm.model.permissions.allowPaths">-->
+									<!--<input type="text" ng-model="allowPath.path">-->
+									<!--<button type="button" ng-click="removeAllowPath(allowPath, newUserVm)" class="icon-close"></button>-->
+								<!--</li>-->
+								<!--<li>-->
+									<!--<div>-->
+										<!--<button type="button" ng-click="addAllowedPathToNewUser(newUserVm)">+ Allow Path</button>-->
+									<!--</div>-->
+								<!--</li>-->
+							<!--</ul>-->
 							<ul>
 								<li ng-repeat="denyPath in newUserVm.model.permissions.denyPaths">
 									<input type="text" ng-model="denyPath.path">
+									<button type="button" ng-click="removeDenyPath(denyPath, newUserVm)" class="icon-close"></button>
 								</li>
 								<li>
 									<div>

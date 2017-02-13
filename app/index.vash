@@ -18,8 +18,10 @@
 		<![endif]-->
 
 		<div id="menu">
-			<button class="icon-users btn-rounded-new btn-menu" title="Manage users" ng-click="toggleUserManager()"></button>
+			<button class="icon-users btn-rounded-new btn-menu" title="Manage users" ng-show="isAdmin" ng-click="toggleUserManager()"></button>
 		</div>
+
+		<!-- TODO Use JSonP to inject admin stuff ? -->
 		<manage-users ng-show="manageUserVisible"></manage-users>
 
 		<div id="main-container">

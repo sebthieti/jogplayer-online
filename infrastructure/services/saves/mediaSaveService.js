@@ -15,10 +15,10 @@ function MediaSaveService(saveService, mediaBuilder, mediaModel, playlistModel) 
 	Playlist = playlistModel;
 }
 
-MediaSaveService.prototype.getMediaByIdAsync = function(mediaId, owner) {
+MediaSaveService.prototype.getMediaByIdAsync = function(mediaId, issuer) {
 	var defer = Q.defer();
 
-	Media.findOne({ _id: mediaId, ownerId: owner.id }, function(err, media) {
+	Media.findOne({ _id: mediaId, ownerId: issuer.id }, function(err, media) {
 		if (!err) { defer.resolve(media) }
 		else { defer.reject(err) }
 	});
@@ -26,13 +26,13 @@ MediaSaveService.prototype.getMediaByIdAsync = function(mediaId, owner) {
 	return defer.promise;
 };
 
-MediaSaveService.prototype.getMediumByIdAndPlaylistIdAsync = function(playlistId, mediumId, owner) {
+MediaSaveService.prototype.getMediumByIdAndPlaylistIdAsync = function(playlistId, mediumId, issuer) {
 	var defer = Q.defer();
 
 	Media.findOne({
 		_id: mediumId,
 		_playlistId: playlistId,
-		ownerId: owner.id
+		ownerId: issuer.id
 	}, function(err, media) {
 		if (!err) { defer.resolve(media) }
 		else { defer.reject(err) }
@@ -41,11 +41,11 @@ MediaSaveService.prototype.getMediumByIdAndPlaylistIdAsync = function(playlistId
 	return defer.promise;
 };
 
-MediaSaveService.prototype.findIndexFromMediaIdsAsync = function(mediaId, owner) {
+MediaSaveService.prototype.findIndexFromMediaIdsAsync = function(mediaId, issuer) {
 	var defer = Q.defer();
 
 	Media
-		.findOne({ _id: mediaId, ownerId: owner.id })
+		.findOne({ _id: mediaId, ownerId: issuer.id })
 		.select('index')
 		.exec(function(err, medium) {
 			if (err) { defer.reject(err) }
@@ -55,18 +55,18 @@ MediaSaveService.prototype.findIndexFromMediaIdsAsync = function(mediaId, owner)
 	return defer.promise;
 };
 
-MediaSaveService.prototype.updateMediaIndexByIdsAsync = function (mediaIdIndexesToOffset, owner) {
+MediaSaveService.prototype.updateMediaIndexByIdsAsync = function (mediaIdIndexesToOffset, issuer) {
 	var updateMediaIdIndexPromises = mediaIdIndexesToOffset.map(function(value) {
-		return this.updateMediaIndexByIdAsync(value._id, value.index, owner);
+		return this.updateMediaIndexByIdAsync(value._id, value.index, issuer);
 	}, this);
 	return Q.all(updateMediaIdIndexPromises);
 };
 
-MediaSaveService.prototype.updateMediaIndexByIdAsync = function (mediaId, newIndex, owner) {
+MediaSaveService.prototype.updateMediaIndexByIdAsync = function (mediaId, newIndex, issuer) {
 	var defer = Q.defer();
 
 	Media
-		.findOne({ _id: mediaId, ownerId: owner.id })
+		.findOne({ _id: mediaId, ownerId: issuer.id })
 		.select('index')
 		.exec(function(readError, medium) {
 			if (readError) {
@@ -83,9 +83,9 @@ MediaSaveService.prototype.updateMediaIndexByIdAsync = function (mediaId, newInd
 	return defer.promise;
 };
 
-MediaSaveService.prototype.removeMediaAsync = function (media, owner) {
+MediaSaveService.prototype.removeMediaAsync = function (media, issuer) {
 	var removeMediumPromises = media.map(function(medium) {
-		return this.removeMediumAsync(medium, owner);
+		return this.removeMediumAsync(medium, issuer);
 	}, this);
 	return Q.all(removeMediumPromises);
 };

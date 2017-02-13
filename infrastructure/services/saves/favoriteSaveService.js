@@ -10,11 +10,11 @@ function FavoriteSaveService(saveService, favoriteModel) {
 	Favorite = favoriteModel;
 }
 
-FavoriteSaveService.prototype.getSortedFavoritesAsync = function(owner) {
+FavoriteSaveService.prototype.getSortedFavoritesAsync = function(issuer) {
 	var defer = Q.defer();
 
 	Favorite
-		.find({ ownerId: owner.id })
+		.find({ ownerId: issuer.id })
 		.sort('index')
 		.exec(function(err, favorites) {
 			if (err) { defer.reject(err) }
@@ -24,12 +24,12 @@ FavoriteSaveService.prototype.getSortedFavoritesAsync = function(owner) {
 	return defer.promise;
 };
 
-FavoriteSaveService.prototype.addFavoriteAsync = function (favorite, owner) {
+FavoriteSaveService.prototype.addFavoriteAsync = function (favorite, issuer) {
 	if (!favorite) {
 		throw "FavoriteSaveService.addFavoriteAsync: favorite must be set";
 	}
-	if (!owner) {
-		throw "FavoriteSaveService.addFavoriteAsync: owner must be set";
+	if (!issuer) {
+		throw "FavoriteSaveService.addFavoriteAsync: issuer must be set";
 	}
 	if (favorite._id) {
 		throw "FavoriteSaveService.addFavoriteAsync: favorite.Id should not be set";
@@ -38,7 +38,7 @@ FavoriteSaveService.prototype.addFavoriteAsync = function (favorite, owner) {
 	var defer = Q.defer();
 
 	var favFields = favorite.getDefinedFields();
-	favFields.ownerId = owner.id;
+	favFields.ownerId = issuer.id;
 
 	Favorite.create(
 		favFields,
@@ -50,7 +50,7 @@ FavoriteSaveService.prototype.addFavoriteAsync = function (favorite, owner) {
 	return defer.promise;
 };
 
-FavoriteSaveService.prototype.updateFromFavoriteDtoAsync = function (favoriteId, favoriteDto, owner) {
+FavoriteSaveService.prototype.updateFromFavoriteDtoAsync = function (favoriteId, favoriteDto, issuer) {
 	if (!favoriteDto) {
 		throw "FavoriteSaveService.updateFromFavoriteDtoAsync: favorite must be set";
 	}
@@ -61,7 +61,7 @@ FavoriteSaveService.prototype.updateFromFavoriteDtoAsync = function (favoriteId,
 	var defer = Q.defer();
 
 	Favorite.findOneAndUpdate(
-		{ _id: favoriteId, ownerId: owner.id },
+		{ _id: favoriteId, ownerId: issuer.id },
 		favoriteDto.getDefinedFields(),
 		function(err, favorite) {
 			if (err) { defer.reject(err) }
@@ -72,7 +72,7 @@ FavoriteSaveService.prototype.updateFromFavoriteDtoAsync = function (favoriteId,
 	return defer.promise;
 };
 
-FavoriteSaveService.prototype.removeFavoriteByIdAsync = function (favoriteId, owner) {
+FavoriteSaveService.prototype.removeFavoriteByIdAsync = function (favoriteId, issuer) {
 	if (!favoriteId) {
 		throw "FavoriteSaveService.removeFavoriteByIdAsync: favoriteId must be set";
 	}
@@ -80,7 +80,7 @@ FavoriteSaveService.prototype.removeFavoriteByIdAsync = function (favoriteId, ow
 	var defer = Q.defer();
 
 	Favorite.findOneAndRemove(
-		{ _id: favoriteId, ownerId: owner.id },
+		{ _id: favoriteId, ownerId: issuer.id },
 		function(err) {
 			if (err) { defer.reject(err) }
 			else { defer.resolve() }

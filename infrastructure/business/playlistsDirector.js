@@ -16,59 +16,59 @@ var assertOnPlaylistNotFound = function (playlist) {
 	return playlist;
 };
 
-var getPlaylistsAsync = function (owner) {
-	return _playlistSaveService.getPlaylistsAsync(owner);
+var getPlaylistsAsync = function (issuer) {
+	return _playlistSaveService.getPlaylistsAsync(issuer);
 };
 
 // BEGIN Add/Insert Playlist
 
-var addPlaylistAsync = function (playlistDto, owner) {
-	return insertPlaylistAsync(playlistDto, owner, null);
+var addPlaylistAsync = function (playlistDto, issuer) {
+	return insertPlaylistAsync(playlistDto, issuer, null);
 };
 
-var insertPlaylistAsync = function (playlistDto, owner, index) {
+var insertPlaylistAsync = function (playlistDto, issuer, index) {
 	var prepareAndGetPosition;
 	if (!index) { // We'll append medium
-		prepareAndGetPosition = _playlistSaveService.getPlaylistsCountAsync(owner);
+		prepareAndGetPosition = _playlistSaveService.getPlaylistsCountAsync(issuer);
 	} else {
-		prepareAndGetPosition = makeRoomForPlaylistAtIndexAsync(index, owner)
+		prepareAndGetPosition = makeRoomForPlaylistAtIndexAsync(index, issuer)
 			.then(function() { return index });
 	}
 
 	return prepareAndGetPosition
 		.then(function(position) {
 			return playlistDto.isVirtual()
-				? buildAndInsertVirtualPlaylistAsync(playlistDto, position, owner)
-				: buildAndInsertPhysicalPlaylistAsync(playlistDto, position, owner);
+				? buildAndInsertVirtualPlaylistAsync(playlistDto, position, issuer)
+				: buildAndInsertPhysicalPlaylistAsync(playlistDto, position, issuer);
 		});
 };
 
-var buildAndInsertVirtualPlaylistAsync = function (playlistDto, index, owner) {
-	var emptyPlaylist = _playlistBuilder.buildEmptyVirtualPlaylist(playlistDto.name, index, owner);
+var buildAndInsertVirtualPlaylistAsync = function (playlistDto, index, issuer) {
+	var emptyPlaylist = _playlistBuilder.buildEmptyVirtualPlaylist(playlistDto.name, index, issuer);
 	return utils.saveModelAsync(emptyPlaylist);
 };
 
-var buildAndInsertPhysicalPlaylistAsync = function (playlistDto, index, owner) {
-	return buildAndInsertEmptyPlaylistFromDtoAsync(playlistDto, index, owner)
+var buildAndInsertPhysicalPlaylistAsync = function (playlistDto, index, issuer) {
+	return buildAndInsertEmptyPlaylistFromDtoAsync(playlistDto, index, issuer)
 		.then(function(emptyPlaylist) {
-			return _playlistDirector.feedPhysicalPlaylistWithMediaAndSaveAsync(emptyPlaylist, owner);
+			return _playlistDirector.feedPhysicalPlaylistWithMediaAndSaveAsync(emptyPlaylist, issuer);
 		});
 };
 
-var buildAndInsertEmptyPlaylistFromDtoAsync = function(dtoPlaylist, index, owner) {
+var buildAndInsertEmptyPlaylistFromDtoAsync = function(dtoPlaylist, index, issuer) {
 	return _playlistBuilder.buildEmptyPhysicalPlaylistAsync(
 		dtoPlaylist.filePath,
 		dtoPlaylist.name,
 		index,
-		owner
+		issuer
 	).then(function(emptyPlaylist) {
 		return utils.saveModelAsync(emptyPlaylist);
 	});
 };
 
-var makeRoomForPlaylistAtIndexAsync = function (desiredIndex, owner) {
+var makeRoomForPlaylistAtIndexAsync = function (desiredIndex, issuer) {
 	return _playlistSaveService
-		.getPlaylistsCountAsync(owner)
+		.getPlaylistsCountAsync(issuer)
 		.then(function(count) {
 			if (desiredIndex == null) {
 				desiredIndex = count;
@@ -79,7 +79,7 @@ var makeRoomForPlaylistAtIndexAsync = function (desiredIndex, owner) {
 			// If we insert between playlists, then move below playlist down by one.
 			if (desiredIndex < count) {
 				return _playlistSaveService
-					.getPlaylistIdsLowerThanAsync(desiredIndex, true, owner)
+					.getPlaylistIdsLowerThanAsync(desiredIndex, true, issuer)
 					.then(function(plIdIndexesToOffset) {
 						var steps = 1;
 						for (var index = 0; index < plIdIndexesToOffset.length; index++) {
@@ -88,7 +88,7 @@ var makeRoomForPlaylistAtIndexAsync = function (desiredIndex, owner) {
 						return plIdIndexesToOffset;
 					})
 					.then(function (plIdIndexesToOffset) {
-						return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdIndexesToOffset, owner)
+						return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdIndexesToOffset, issuer)
 					});
 			}
 		});
@@ -96,13 +96,13 @@ var makeRoomForPlaylistAtIndexAsync = function (desiredIndex, owner) {
 
 // END Add/Insert Playlist
 
-var movePlaylistsAsync = function (playlistIdIndexes, steps, owner) { // TODO To be tested
+var movePlaylistsAsync = function (playlistIdIndexes, steps, issuer) { // TODO To be tested
 	if (!playlistIdIndexes || !playlistIdIndexes.length || playlistIdIndexes.length == 0) {
 		throw "playlists cannot be empty";
 	}
 
 	return _playlistSaveService
-		.getPlaylistIdIndexesAsync(owner)
+		.getPlaylistIdIndexesAsync(issuer)
 		.then(function (plIdIndexes) {
 			var lowerIndex = from(plIdIndexes).select(function(x) {return x.index}).min();
 			var higherIndex = from(plIdIndexes).select(function(x) {return x.index}).max();
@@ -164,43 +164,43 @@ var movePlaylistsAsync = function (playlistIdIndexes, steps, owner) { // TODO To
 			return plIdIndexes_;
 		})
 		.then(function (plIdsToList) {
-			return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdsToList, owner)
+			return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdsToList, issuer)
 		});
 };
 
-var moveMediasToPlaylistAsync = function (srcPlaylistId, mediaIds, destPlaylistId, owner) { // TODO
+var moveMediasToPlaylistAsync = function (srcPlaylistId, mediaIds, destPlaylistId, issuer) { // TODO
 };
 
-var removePlaylistAsync = function (playlistId, owner) {
+var removePlaylistAsync = function (playlistId, issuer) {
 	return _playlistSaveService
-		.findIndexFromPlaylistIdAsync(playlistId, owner)
+		.findIndexFromPlaylistIdAsync(playlistId, issuer)
 		.then(assertOnPlaylistNotFound)
 		.then(function(playlist) { // TODO This parameter is a playlist or an Index ??
-			return getPlaylistsIdIndexToUpdateForReorderAsync(playlist, owner);
+			return getPlaylistsIdIndexToUpdateForReorderAsync(playlist, issuer);
 		})
 		.then(function(plIdLowIdSet) {
 			if (plIdLowIdSet.lowerIds.length > 0) {
-				return reorderLowerPlaylists(plIdLowIdSet, playlistId, owner);
+				return reorderLowerPlaylists(plIdLowIdSet, playlistId, issuer);
 			}
 		})
 		.then(function () {
-			return _playlistSaveService.removePlaylistByIdAsync(playlistId, owner)
+			return _playlistSaveService.removePlaylistByIdAsync(playlistId, issuer)
 		});
 };
 
-var getPlaylistsIdIndexToUpdateForReorderAsync = function (playlist, owner) {
+var getPlaylistsIdIndexToUpdateForReorderAsync = function (playlist, issuer) {
 	var lowestIndex = playlist.index;
 
 	var deferred = Q.defer();
 	_playlistSaveService
-		.getPlaylistIdsLowerThanAsync(lowestIndex, false, owner)
+		.getPlaylistIdsLowerThanAsync(lowestIndex, false, issuer)
 		.then(function(plIdsLower) {
 			deferred.resolve( { lowerIds: plIdsLower, lowestIndex: lowestIndex });
 		});
 	return deferred.promise;
 };
 
-var reorderLowerPlaylists = function (plIdLowerSet, playlistIdsToRemove, owner) {
+var reorderLowerPlaylists = function (plIdLowerSet, playlistIdsToRemove, issuer) {
 	var index = plIdLowerSet.lowestIndex;
 
 	var plIdReordered = from(plIdLowerSet.lowerIds)
@@ -213,7 +213,7 @@ var reorderLowerPlaylists = function (plIdLowerSet, playlistIdsToRemove, owner) 
 		})
 		.toArray();
 
-	return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdReordered, owner);
+	return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdReordered, issuer);
 };
 
 var PlaylistsDirector = function (playlistDirector, physicalPlaylistServices, playlistSaveService, playlistBuilder) {

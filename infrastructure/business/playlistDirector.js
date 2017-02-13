@@ -32,20 +32,20 @@ var PlaylistDirector = function(
 	_mediaBuilder = mediaBuilder;
 };
 
-PlaylistDirector.prototype.updatePlaylistAsync = function(playlistId, playlistDto, owner) {
-	return _playlistSaveService.updatePlaylistDtoAsync(playlistId, playlistDto, owner);
+PlaylistDirector.prototype.updatePlaylistAsync = function(playlistId, playlistDto, issuer) {
+	return _playlistSaveService.updatePlaylistDtoAsync(playlistId, playlistDto, issuer);
 };
 
-PlaylistDirector.prototype.getMediaFromPlaylistByIdAsync = function (playlistId, owner) {
+PlaylistDirector.prototype.getMediaFromPlaylistByIdAsync = function (playlistId, issuer) {
 	return _playlistSaveService
-		.getPlaylistWithMediaAsync(playlistId, owner)
+		.getPlaylistWithMediaAsync(playlistId, issuer)
 		.then(assertOnNotFound)
 		.then(function (playlist) {
 			if (playlist.isVirtual) {
 				// A virtual playlist won't change outside (compared to physical)
 				return { playlist: playlist, reloaded: false };
 			} else {
-				return ifPhysicalPlaylistChangeThenUpdateAsync(playlist, owner);
+				return ifPhysicalPlaylistChangeThenUpdateAsync(playlist, issuer);
 			}
 		})
 		.then(ifPlaylistNotReloadedCheckMediaAvailabilityAsync)
@@ -97,13 +97,13 @@ function ifPlaylistNotReloadedCheckMediaAvailabilityAsync(plReloadedSet) {
 		});
 }
 
-function ifPhysicalPlaylistChangeThenUpdateAsync(playlist, owner) {
+function ifPhysicalPlaylistChangeThenUpdateAsync(playlist, issuer) {
 	return Q
 		.nfcall(fs.stat, playlist.filePath)
 		.then(function(stat) {
 			var lastUpdateOn = stat.mtime;
 			if (playlistHasChanged(playlist.updatedOn, lastUpdateOn)) {
-				return updatePlaylistDateReloadMediaAndSaveAsync(playlist, lastUpdateOn, owner)
+				return updatePlaylistDateReloadMediaAndSaveAsync(playlist, lastUpdateOn, issuer)
 					.then(function(pl) {
 						return { playlist: pl, reloaded: true }
 					});
@@ -112,9 +112,9 @@ function ifPhysicalPlaylistChangeThenUpdateAsync(playlist, owner) {
 		});
 }
 
-function updatePlaylistDateReloadMediaAndSaveAsync(playlist, lastUpdateOn, owner) {
+function updatePlaylistDateReloadMediaAndSaveAsync(playlist, lastUpdateOn, issuer) {
 	return _playlistSaveService
-		.removeAllMediaFromPlaylistAsync(playlist.id, owner)
+		.removeAllMediaFromPlaylistAsync(playlist.id, issuer)
 		.then(function(cleanPl) {
 			return cleanPl.setUpdatedOn(lastUpdateOn);
 		})
@@ -128,29 +128,29 @@ function playlistHasChanged(currentPlaylistUpdateDate, lastUpdateDate) {
 	return lastUpdateDate > currentPlaylistUpdateDate;
 }
 
-PlaylistDirector.prototype.addMediumByFilePathAsync = function (playlistId, mediaFilePaths, owner) {
-	return this.insertMediumByFilePathAsync(playlistId, mediaFilePaths, null, owner);
+PlaylistDirector.prototype.addMediumByFilePathAsync = function (playlistId, mediaFilePaths, issuer) {
+	return this.insertMediumByFilePathAsync(playlistId, mediaFilePaths, null, issuer);
 };
 
-PlaylistDirector.prototype.insertMediumByFilePathAsync = function (playlistId, mediaFilePath, index, owner) {
+PlaylistDirector.prototype.insertMediumByFilePathAsync = function (playlistId, mediaFilePath, index, issuer) {
 	var prepareAndGetPosition;
 	if (!index) { // We'll append medium
-		prepareAndGetPosition = _playlistSaveService.getMediaCountForPlaylistByIdAsync(playlistId, owner);
+		prepareAndGetPosition = _playlistSaveService.getMediaCountForPlaylistByIdAsync(playlistId, issuer);
 	} else {
-		prepareAndGetPosition = makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, index, owner)
+		prepareAndGetPosition = makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, index, issuer)
 			.then(function() { return index });
 	}
 
 	return prepareAndGetPosition
 		.then(function(mediaPosition) {
-			return buildAndInsertMediumByFilePathAsync(playlistId, mediaFilePath, mediaPosition, owner);
+			return buildAndInsertMediumByFilePathAsync(playlistId, mediaFilePath, mediaPosition, issuer);
 		})
 		.then(function(unlinkedMedium) {
-			return _playlistSaveService.insertMediaToPlaylistAsync(playlistId, unlinkedMedium, owner);
+			return _playlistSaveService.insertMediaToPlaylistAsync(playlistId, unlinkedMedium, issuer);
 		})
 		.then(function(linkedMedium) {
 			return _playlistSaveService
-				.getPlaylistWithMediaAsync(playlistId, owner)
+				.getPlaylistWithMediaAsync(playlistId, issuer)
 				.then(function(playlist) {
 					// if virtual, then update file
 					if (!playlist.isVirtual) {
@@ -172,16 +172,16 @@ function saveMediaAsync(media) {
 	return Q.all(addMediaPromises);
 }
 
-function buildAndInsertMediumByFilePathAsync(playlistId, mediaFilePath, desiredIndex, owner) {
+function buildAndInsertMediumByFilePathAsync(playlistId, mediaFilePath, desiredIndex, issuer) {
 	mediaFilePath = _fileExplorerService.normalizePathForCurrentOs(mediaFilePath);
 	return _mediaBuilder
-		.buildMediumAsync(playlistId, mediaFilePath, desiredIndex, owner)
+		.buildMediumAsync(playlistId, mediaFilePath, desiredIndex, issuer)
 		.then(utils.saveModelAsync);
 }
 
-function makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, desiredIndex, owner) { // TODO Why playlistId is demanded ?
+function makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, desiredIndex, issuer) { // TODO Why playlistId is demanded ?
 	return _playlistSaveService
-		.getPlaylistsCountAsync(owner)
+		.getPlaylistsCountAsync(issuer)
 		.then(function(count) {
 			if (desiredIndex == null) {
 				desiredIndex = count;
@@ -192,7 +192,7 @@ function makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, desiredIndex, ow
 			// If we insert between playlists, then move below playlist down by one.
 			if (desiredIndex < count) {
 				return _playlistSaveService
-					.getPlaylistIdsLowerThanAsync(desiredIndex, true, owner)
+					.getPlaylistIdsLowerThanAsync(desiredIndex, true, issuer)
 					.then(function(plIdIndexesToOffset) {
 						var steps = 1;
 						for (var index = 0; index < plIdIndexesToOffset.length; index++) {
@@ -201,38 +201,38 @@ function makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, desiredIndex, ow
 						return plIdIndexesToOffset;
 					})
 					.then(function (plIdIndexesToOffset) {
-						return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdIndexesToOffset, owner)
+						return _playlistSaveService.updatePlaylistIdsPositionAsync(plIdIndexesToOffset, issuer)
 					});
 			}
 		});
 }
 
-PlaylistDirector.prototype.removeMediaAsync = function (playlistId, mediaId, owner) {
+PlaylistDirector.prototype.removeMediaAsync = function (playlistId, mediaId, issuer) {
 	return _mediaSaveService
-		.findIndexFromMediaIdsAsync(mediaId, owner)
+		.findIndexFromMediaIdsAsync(mediaId, issuer)
 		.then(assertOnNotFound)
 		.then(function(mediaIndex) {
-			return getMediaIdIndexToUpdateForReorderAsync(playlistId, mediaIndex, owner);
+			return getMediaIdIndexToUpdateForReorderAsync(playlistId, mediaIndex, issuer);
 		})
 		.then(function(plIdLowIdSet) {
 			if (plIdLowIdSet.lowerIds.length > 0) {
-				return reorderLowerMedia(plIdLowIdSet, mediaId, owner);
+				return reorderLowerMedia(plIdLowIdSet, mediaId, issuer);
 			}
 		})
 		.then(function () {
-			return _playlistSaveService.removeMediaFromPlaylistAsync(playlistId, mediaId, owner);
+			return _playlistSaveService.removeMediaFromPlaylistAsync(playlistId, mediaId, issuer);
 		});
 };
 
-function getMediaIdIndexToUpdateForReorderAsync(playlistId, mediaIndex, owner) {
+function getMediaIdIndexToUpdateForReorderAsync(playlistId, mediaIndex, issuer) {
 	return _playlistSaveService
-		.getMediaIdsLowerThanAsync(playlistId, mediaIndex, false, owner)
+		.getMediaIdsLowerThanAsync(playlistId, mediaIndex, false, issuer)
 		.then(function(mediaIdsLower) {
 			return { lowerIds: mediaIdsLower, lowestIndex: mediaIndex };
 		});
 }
 
-function reorderLowerMedia(mediaIdsLowerSet, mediaIdToRemove, owner) {
+function reorderLowerMedia(mediaIdsLowerSet, mediaIdToRemove, issuer) {
 	var index = mediaIdsLowerSet.lowestIndex;
 
 	var mediaIdsReordered = from(mediaIdsLowerSet.lowerIds)
@@ -245,26 +245,26 @@ function reorderLowerMedia(mediaIdsLowerSet, mediaIdToRemove, owner) {
 		})
 		.toArray();
 
-	return _mediaSaveService.updateMediaIndexByIdsAsync(mediaIdsReordered, owner);
+	return _mediaSaveService.updateMediaIndexByIdsAsync(mediaIdsReordered, issuer);
 }
 
-PlaylistDirector.prototype.feedPhysicalPlaylistWithMediaAndSaveAsync = function(emptyPlaylist, owner) {
-	return innerFeedPhysicalPlaylistWithMediaAndSaveAsync(emptyPlaylist, owner);
+PlaylistDirector.prototype.feedPhysicalPlaylistWithMediaAndSaveAsync = function(emptyPlaylist, issuer) {
+	return innerFeedPhysicalPlaylistWithMediaAndSaveAsync(emptyPlaylist, issuer);
 };
 
-function innerFeedPhysicalPlaylistWithMediaAndSaveAsync(emptyPlaylist, owner) {
-	return loadMediaFromPhysicalPlaylistAsync(emptyPlaylist, owner) // Should give new Pl with media not yet persisted
+function innerFeedPhysicalPlaylistWithMediaAndSaveAsync(emptyPlaylist, issuer) {
+	return loadMediaFromPhysicalPlaylistAsync(emptyPlaylist, issuer) // Should give new Pl with media not yet persisted
 		.then(saveMediaAsync)
 		.then(function(media) {
 			return _playlistSaveService.insertMediaToPlaylistReturnSelfAsync(
 				emptyPlaylist.id,
 				media,
-				owner
+				issuer
 			);
 		});
 }
 
-function loadMediaFromPhysicalPlaylistAsync(emptyPlaylist, owner) {
+function loadMediaFromPhysicalPlaylistAsync(emptyPlaylist, issuer) {
 	if (!emptyPlaylist) {
 		throw "PlaylistDirector.injectMediaToPhysicalPlaylistAsync: playlist must be set";
 	}
@@ -282,7 +282,7 @@ function loadMediaFromPhysicalPlaylistAsync(emptyPlaylist, owner) {
 	var plId = emptyPlaylist.id;
 	return physicalPlaylistService
 		.loadMediaSummariesFromPlaylistAsync(filePath)
-		.then(function(ms) { return _mediaBuilder.toMediaAsync(ms, plId, owner) });
+		.then(function(ms) { return _mediaBuilder.toMediaAsync(ms, plId, issuer) });
 }
 
 function findPhysicalPlaylistServiceFor(plFilePath) {

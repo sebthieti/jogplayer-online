@@ -11,31 +11,31 @@ function UserPermissionsDirector (userSaveService, userPermissionsModel) { // TO
 	UserPermissionsModel = userPermissionsModel;
 }
 // TODO Check for rights before doing (directory should do not service layer)
-UserPermissionsDirector.prototype.getUserPermissions = function(userId, owner) {
-	if (owner.role !== 'admin') {
+UserPermissionsDirector.prototype.getUserPermissions = function(userId, issuer) {
+	if (issuer.role !== 'admin') {
 		throw 'Not authorized no manage users.';
 	}
 	return _userSaveService.getUsersAsync();
 };
 
-UserPermissionsDirector.prototype.addUserPermissionsAsync = function(permissionsDto, owner) {//userId, allowedPaths
-	if (!owner.permissions.isRoot && !owner.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
+UserPermissionsDirector.prototype.addUserPermissionsAsync = function(permissionsDto, issuer) {//userId, allowedPaths
+	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
 		throw 'Not authorized no manage users.';
 	}
 	var userPermissionsModel = new UserPermissionsModel(permissionsDto);
 
-	return utils.saveModelAsync(userPermissionsModel);//_userPermissionsSaveService.addUserAsync(user, owner);
+	return utils.saveModelAsync(userPermissionsModel);//_userPermissionsSaveService.addUserAsync(user, issuer);
 };
 
-UserPermissionsDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, owner) {
-	if (!owner.permissions.isRoot && !owner.permissions.isAdmin) {
+UserPermissionsDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, issuer) {
+	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) {
 		throw 'Not authorized no manage users.';
 	}
-	return _userSaveService.updateFromUserDtoAsync(userId, userDto, owner);
+	return _userSaveService.updateFromUserDtoAsync(userId, userDto, issuer);
 };
 
-UserPermissionsDirector.prototype.removeUserByIdAsync = function(userId, owner) {
-	if (!owner.permissions.isRoot && !owner.permissions.isAdmin) {
+UserPermissionsDirector.prototype.removeUserByIdAsync = function(userId, issuer) {
+	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) {
 		throw 'Not authorized no manage users.';
 	}
 
@@ -45,7 +45,7 @@ UserPermissionsDirector.prototype.removeUserByIdAsync = function(userId, owner) 
 			if (user.isRoot === true) {
 				throw 'Root user cannot be removed.';
 			}
-			return _userSaveService.removeUserByIdAsync(user, owner);
+			return _userSaveService.removeUserByIdAsync(user, issuer);
 		});
 };
 

@@ -6,6 +6,7 @@ var mongoose = require('mongoose'),
 var _userRoutes;
 
 var userSchema = new Schema({
+	isActive: Boolean,
 	username: { type: String, required: 'Username is mandatory' },
 	password: { type: String, required: 'Password is mandatory' },
 	passwordSalt: { type: String, required: 'PasswordSalt is mandatory' },

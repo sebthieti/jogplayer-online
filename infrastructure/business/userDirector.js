@@ -14,15 +14,15 @@ function UserDirector (userPermissionsDirector, userSaveService, userPermissions
 	_userPermissionsSaveService = userPermissionsSaveService;
 }
 // TODO Check for rights before doing (directory should do not service layer)
-UserDirector.prototype.getUsersAsync = function(owner) {
-	if (!owner.permissions.isRoot || !owner.permissions.isAdmin) {
+UserDirector.prototype.getUsersAsync = function(issuer) {
+	if (!issuer.permissions.isRoot || !issuer.permissions.isAdmin) {
 		throw 'Not authorized no manage users.';
 	}
 	return _userSaveService.getUsersAsync();
 };
 
-UserDirector.prototype.addUserAsync = function(userDto, owner) {
-	if (!owner.permissions.isRoot || !owner.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
+UserDirector.prototype.addUserAsync = function(userDto, issuer) {
+	if (!issuer.permissions.isRoot || !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
 		throw 'Not authorized no manage users.';
 	}
 	// Generate password salt
@@ -34,25 +34,25 @@ UserDirector.prototype.addUserAsync = function(userDto, owner) {
 	userDto.password = hashedPassword; // TODO Rename in model to hashedPassword
 
 	return _userPermissionsDirector //_userPermissionsSaveService
-		.addUserPermissionsAsync(userDto.permissions, owner)
+		.addUserPermissionsAsync(userDto.permissions, issuer)
 		.then(function(userPermissionsModel) {
-			return _userSaveService.addUserAsync(userDto, userPermissionsModel, owner);
+			return _userSaveService.addUserAsync(userDto, userPermissionsModel, issuer);
 		});
 };
 
-UserDirector.prototype.addUserPermissionsAsync = function(userId, allowedPaths, owner) {
-	if (!owner.permissions.isRoot || !owner.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
+UserDirector.prototype.addUserPermissionsAsync = function(userId, allowedPaths, issuer) {
+	if (!issuer.permissions.isRoot || !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
 		throw 'Not authorized no manage users.';
 	}
 
 	return _userPermissionsSaveService
 		.addUserPermissionsAsync(userId, allowedPaths)
 		.then(function(userPermissionsModel) {
-			return _userSaveService.addUserPermissionsAsync(userId, userPermissionsModel, owner)
+			return _userSaveService.addUserPermissionsAsync(userId, userPermissionsModel, issuer)
 		});
 };
 
-UserDirector.prototype.getUserPermissionsByUserId = function(userId, owner) {
+UserDirector.prototype.getUserPermissionsByUserId = function(userId, issuer) {
 	return _userSaveService
 		.getUserByIdWithPermissionsAsync(userId)
 		.then(function(userPermissionsModel) {
@@ -60,8 +60,8 @@ UserDirector.prototype.getUserPermissionsByUserId = function(userId, owner) {
 		});
 };
 
-UserDirector.prototype.getAllUserPermissionsAsync = function(userId, allowedPaths, owner) {
-	//if (owner.role !== 'admin') { // TODO Use role or isAdmin ? There is redundancy
+UserDirector.prototype.getAllUserPermissionsAsync = function(userId, allowedPaths, issuer) {
+	//if (issuer.role !== 'admin') { // TODO Use role or isAdmin ? There is redundancy
 	//	throw 'Not authorized no manage users.';
 	//}
 
@@ -69,18 +69,18 @@ UserDirector.prototype.getAllUserPermissionsAsync = function(userId, allowedPath
 		.getAllUserPermissionsAsync();
 };
 
-UserDirector.prototype.updateUserPermissionsByUserIdAsync = function(userId, userDto, owner) {
-	//if (owner.role !== 'admin') {
+UserDirector.prototype.updateUserPermissionsByUserIdAsync = function(userId, userPermissionsDto, issuer) {
+	//if (issuer.role !== 'admin') {
 	//	throw 'Not authorized no manage users.';
 	//}
 	return _userSaveService
 		.getUserByIdWithPermissionsAsync(userId)
 		.then(function(userPermissionsModel) {
-			for (var key in userDto) { // TODO Is there already some method to update instance model ?
-				if (!userDto.hasOwnProperty(key)) {
+			for (var key in userPermissionsDto) { // TODO Is there already some method to update instance model ?
+				if (!userPermissionsDto.hasOwnProperty(key)) {
 					continue;
 				}
-				userPermissionsModel.permissions[key] = userDto[key];
+				userPermissionsModel.permissions[key] = userPermissionsDto[key];
 			}
 			return utils.saveModelAsync(userPermissionsModel.permissions);
 		});
@@ -88,11 +88,15 @@ UserDirector.prototype.updateUserPermissionsByUserIdAsync = function(userId, use
 
 
 
-UserDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, owner) {
-	if (!owner.permissions.isRoot || !owner.permissions.isAdmin) {
+UserDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, issuer) {
+	if (!issuer.permissions.isRoot || !issuer.permissions.isAdmin) {
 		throw 'Not authorized no manage users.';
 	}
-	return _userSaveService.updateFromUserDtoAsync(userId, userDto, owner);
+	return this.updateUserPermissionsByUserIdAsync(userId, userDto.permissions, issuer)
+		.then(function() {
+			delete userDto.permissions;
+			return _userSaveService.updateFromUserDtoAsync(userId, userDto, issuer);
+		});
 };
 
 UserDirector.prototype.removeUserByIdAsync = function(userId, currentUser) {

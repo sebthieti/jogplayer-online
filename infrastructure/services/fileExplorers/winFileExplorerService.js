@@ -48,7 +48,7 @@ var WinFileExplorerService = function() {
 				onSucceed(stdOut
 					.match(anyDriveLetterPattern)
 					.map(function(drive) {
-						return new FileInfo(drive, FileInfo.Directory, true);
+						return new FileInfo('/' + drive + '/', drive, FileInfo.Directory, true);
 					})
 				);
 			});

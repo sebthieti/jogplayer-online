@@ -21,18 +21,19 @@ FileExplorerController.prototype.init = function() {
 		res.render("index");
 	});
 
-	// Explore path TODO Use constants for url instead
+	// Explore directory path TODO Use constants for url instead
 	_app.get(/^\/api\/explore\/(.*[\/])*$/, _authDirector.ensureApiAuthenticated, function (req, res) {
 		_fileExplorerDirector
-			.getFolderContentAsync(extractUrlFromParams(req.params))
+			.getFolderContentAsync(extractUrlFromParams(req.params), req.user)
 			.then(function(fileDetails) { res.send(fileDetails) })
 			.catch(function(err) { res.send(400, err) })
 			.done();
 	});
 
+	// Get file info by path
 	_app.get(/^\/api\/explore\/(.*[\/].*)*$/, _authDirector.ensureApiAuthenticated, function (req, res) {
 		_fileExplorerDirector
-			.getFileInfoAsync(extractUrlFromParams(req.params))
+			.getFileInfoAsync(extractUrlFromParams(req.params), req.user)
 			.then(function(fileDetails) { res.send(fileDetails) })
 			.catch(function(err) { res.send(400, err) })
 			.done();

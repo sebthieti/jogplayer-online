@@ -53,7 +53,7 @@ UserPermissionsSaveService.prototype.getUserPermissionsAsync = function(userId) 
 //	return defer.promise;
 //};
 
-UserPermissionsSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, owner) {
+UserPermissionsSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, issuer) {
 	if (!userDto) {
 		throw "UserStateSaveService.updateFromUserDtoAsync: user must be set";
 	}
@@ -64,7 +64,7 @@ UserPermissionsSaveService.prototype.updateFromUserDtoAsync = function (userId, 
 	var defer = Q.defer();
 
 	UserPermissions.findOneAndUpdate(
-		{ _id: userId }, // , ownerId: owner.id
+		{ _id: userId }, // , ownerId: issuer.id
 		userDto.getDefinedFields(),
 		function(err, user) {
 			if (err) { defer.reject(err) }
@@ -75,7 +75,7 @@ UserPermissionsSaveService.prototype.updateFromUserDtoAsync = function (userId, 
 	return defer.promise;
 };
 
-UserPermissionsSaveService.prototype.removeUserByIdAsync = function (userId, owner) {
+UserPermissionsSaveService.prototype.removeUserByIdAsync = function (userId, issuer) {
 	if (!userId) {
 		throw "UserStateSaveService.removeUserByIdAsync: userId must be set";
 	}

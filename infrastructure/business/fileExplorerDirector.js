@@ -1,9 +1,11 @@
 'use strict';
 
 require('../extentions').StringExtentions;
+
 var Q = require('q'),
 	from = require('fromjs'),
 	path = require('path'),
+	_ = require('underscore'),
 	linkBuilder = require('../utils/linkBuilder');
 
 var _fileExplorerService;
@@ -12,20 +14,36 @@ function FileExplorerDirector(fileExplorerService) {
 	_fileExplorerService = fileExplorerService;
 }
 
-FileExplorerDirector.prototype.getFolderContentAsync = function (urlPath) {
-	return exploreFilePathAsync(urlPath);
+FileExplorerDirector.prototype.getFolderContentAsync = function (urlPath, issuer) {
+	if (!acceptPath(urlPath, issuer.permissions)) {
+		throw 'Unauthorized access'; // TODO Should become HTTP 403
+	}
+	var urlPathOrDefault = urlPath || issuer.permissions.homePath;
+	return exploreFilePathAsync(urlPathOrDefault, issuer);
 };
 
-function exploreFilePathAsync(urlPath) {
+function exploreFilePathAsync(urlPath, issuer) {
 	var isRoot = urlPath === '/';
 	return _fileExplorerService
 		.readFolderContentAsync(urlPath)
+		.then(function(files) {
+			return filterAuthorizedPaths(files, isRoot, urlPath, issuer)
+		})
 		.then(function(files) {
 			return filterFilesIfNotRoot(files, isRoot)
 		})
 		.then(function(files) {
 			return linkBuilder.toFolderContentDto(urlPath, files);
 		});
+}
+
+function filterAuthorizedPaths(fileInfos, isRoot, urlPath, issuer) {
+	return from(fileInfos)
+		.where(function (fileInfo) {
+			//var path = urlPath + fileInfo.getName() + (fileInfo.isDirectory() ? '/' : '');
+			return acceptPath(fileInfo.filePath, issuer.permissions); // fileInfo.isDirectory()
+		})
+		.toArray();
 }
 
 function filterFilesIfNotRoot(folderContent, isRoot) {
@@ -60,7 +78,11 @@ function isSupportedMediaExt(ext) {
 	}
 }
 
-FileExplorerDirector.prototype.getFileInfoAsync = function (urlPath) {
+FileExplorerDirector.prototype.getFileInfoAsync = function (urlPath, issuer) {
+	if (!acceptPath(urlPath, issuer.permissions)) {
+		throw 'Unauthorized access'; // TODO Should become HTTP 403
+	}
+
 	return getFileInfoPathAsync(urlPath);
 };
 
@@ -71,6 +93,23 @@ function getFileInfoPathAsync(urlPath) {
 			var dirPath = path.dirname(urlPath) + '/';
 			return linkBuilder.toFileInfoDto(dirPath, file);
 		});
+}
+
+function acceptPath(urlPath, permissions) {
+	if (permissions.isRoot || permissions.isAdmin) {
+		return true;
+	}
+
+	var isPathDenied = _.any(permissions.denyPaths, function(denyPath) {
+		return urlPath.startsWith(denyPath);
+	});
+	return !isPathDenied;
+
+	//var hasAcceptedPath = _.any(permissions.allowPaths, function(allowPath) {
+	//	return urlPath.startsWith(allowPath);
+	//});
+	//
+	//return hasAcceptedPath;
 }
 
 module.exports = FileExplorerDirector;

@@ -3,6 +3,7 @@
 jpoApp.factory('UserModel', ['jpoModelBuilder', function(jpoModelBuilder) {
 	var userSchema = {
 		id: String, // TODO Import ObjectId ?
+		isActive: Boolean,
 		username: String,
 		email: String,
 		password: String,

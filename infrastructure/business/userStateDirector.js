@@ -6,16 +6,16 @@ function UserStateDirector (userStateSaveService) {
 	_userStateSaveService = userStateSaveService;
 }
 
-UserStateDirector.prototype.getUserStateAsync = function(owner) {
-	return _userStateSaveService.getUserStateAsync(owner._id);
+UserStateDirector.prototype.getUserStateAsync = function(issuer) {
+	return _userStateSaveService.getUserStateAsync(issuer._id);
 };
 
-UserStateDirector.prototype.addUserStateAsync = function(userStateDto, owner) {
-	return _userStateSaveService.addUserStateAsync(owner._id, userStateDto);
+UserStateDirector.prototype.addUserStateAsync = function(userStateDto, issuer) {
+	return _userStateSaveService.addUserStateAsync(issuer._id, userStateDto);
 };
 
-UserStateDirector.prototype.updateFromUserStateDtoAsync = function(userStateId, userStateDto, owner) {
-	return _userStateSaveService.updateFromUserStateDtoAsync(userStateId, owner._id, userStateDto);
+UserStateDirector.prototype.updateFromUserStateDtoAsync = function(userStateId, userStateDto, issuer) {
+	return _userStateSaveService.updateFromUserStateDtoAsync(userStateId, issuer._id, userStateDto);
 };
 
 UserStateDirector.prototype.removeUserStateByIdAsync = function(userId, currentUser) {

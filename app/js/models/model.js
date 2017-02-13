@@ -9,7 +9,7 @@ jpoApp.factory('Model', ['serviceFactory', function(serviceFactory) {
 		if (!entity) {
 			return;
 		}
-		this.originalEntity = entity.clone();
+		this.originalEntity = angular.copy(entity);
 
 		for (var key in entity) {
 			if (!entity.hasOwnProperty(key)) {

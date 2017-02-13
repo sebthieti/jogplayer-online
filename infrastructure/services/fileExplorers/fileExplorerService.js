@@ -73,6 +73,7 @@ var queryFileStatAsync = function (fullFilePath, fileName) {
 				return FileInfo.invalid;
 			}
 			return new FileInfo(
+				fullFilePath + fileName + (fileStat.isDirectory() ? '/' : ''),
 				fileName,
 				fileStat.isDirectory() ? FileInfo.directory : FileInfo.file,
 				false

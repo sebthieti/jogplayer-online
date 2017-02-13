@@ -5,13 +5,14 @@ jpoApp.factory('playlistExplorerBusiness', ['explorerBusinessFactory', function(
 }]).factory('fileExplorerBusiness', ['explorerBusinessFactory', function(explorerBusinessFactory) {
 	return explorerBusinessFactory.buildFileExplorerBusiness();
 }]).factory('explorerBusinessFactory', [
+	'$filter',
 	'favoriteBusiness',
 	'mediaQueueBusiness',
 	'fileExplorerService',
 	'folderContentBuilder',
 	'FileExplorerModel',
-	'$filter',
-	function(favoriteBusiness, mediaQueueBusiness, fileExplorerService, folderContentBuilder, FileExplorerModel, $filter) {
+	'authBusiness',
+	function($filter, favoriteBusiness, mediaQueueBusiness, fileExplorerService, folderContentBuilder, FileExplorerModel, authBusiness) {
 		function ExplorerBusiness(doLinkToFavorites, fileFilter) {
 			var folderContentSubject = new Rx.BehaviorSubject();
 			var selectedFilesSubject = new Rx.BehaviorSubject();
@@ -63,14 +64,22 @@ jpoApp.factory('playlistExplorerBusiness', ['explorerBusinessFactory', function(
 			};
 
 			var startExplore = function() {
-				FileExplorerModel
-					.getAllAsync()
-					.then(filterAndOrderFiles)
-					.then(function(filesResult) {
-						folderContentSubject.onNext(filesResult);
-						//viewModelBuilder.buildEditableViewModel(filesResult)
-					})
-				;
+				authBusiness.observeAuthenticatedUser().getValueAsync(function(user) {
+					if (user.permissions.homePath) {
+						loadFolderContentAsync(user.permissions.homePath)
+							.then(function(filesResult) {
+								folderContentSubject.onNext(filesResult);
+							});
+					} else {
+						FileExplorerModel
+							.getAllAsync()
+							.then(filterAndOrderFiles)
+							.then(function(filesResult) {
+								folderContentSubject.onNext(filesResult);
+								//viewModelBuilder.buildEditableViewModel(filesResult)
+							});
+					}
+				});
 			};
 
 			var filterAndOrderFiles = function(folderContent) {

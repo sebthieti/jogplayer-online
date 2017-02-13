@@ -17,7 +17,7 @@
     "less-middleware": "*",
     "m3u": "0.0.2",
     "mongodb": "^1.4.3",
-    "mongoose": "^3.8.15",
+    "mongoose": "^3.9.7",
     "node-ffprobe": "^1.2.2",
     "node-linq": "0.0.3",
     "passport": "^0.2.1",

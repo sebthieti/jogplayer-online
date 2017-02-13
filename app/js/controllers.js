@@ -9,6 +9,8 @@ angular.module('jpoApp.controllers', []).controller('mainCtrl', [
 	function($scope, $timeout, audioPlayerBusiness, authBusiness) {
 		$scope.currentUser = null;
 
+		$scope.isAdmin = true;
+
 		$scope.manageUserVisible = false;
 		$scope.toggleUserManager = function() {
 			$scope.manageUserVisible = !$scope.manageUserVisible;
