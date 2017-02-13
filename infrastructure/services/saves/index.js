@@ -7,3 +7,4 @@ exports.FavoriteSaveService = require("./favoriteSaveService");
 exports.UserSaveService = require('./userSaveService');
 exports.UserStateSaveService = require('./userStateSaveService');
 exports.UserPermissionsSaveService = require('./userPermissionsSaveService');
+exports.ConfigSaveService = require('./configSaveService');

@@ -9,3 +9,4 @@ exports.AuthDirector = require("./authDirector");
 exports.UserDirector = require("./userDirector");
 exports.UserStateDirector = require("./userStateDirector");
 exports.UserPermissionsDirector = require("./userPermissionsDirector");
+exports.ConfigDirector = require("./configDirector");

@@ -9,3 +9,4 @@ exports.StateController = require('./stateController');
 exports.AuthController = require('./authController');
 exports.UserController = require('./userController');
 exports.UserStateController = require('./userStateController');
+exports.SetupController = require('./setupController');

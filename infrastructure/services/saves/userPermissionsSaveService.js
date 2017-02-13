@@ -55,10 +55,10 @@ UserPermissionsSaveService.prototype.getUserPermissionsAsync = function(userId) 
 
 UserPermissionsSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, issuer) {
 	if (!userDto) {
-		throw "UserStateSaveService.updateFromUserDtoAsync: user must be set";
+		throw "SetupSaveService.updateFromUserDtoAsync: user must be set";
 	}
 	if (!userId) {
-		throw "UserStateSaveService.updateFromUserDtoAsync: user.Id should be set";
+		throw "SetupSaveService.updateFromUserDtoAsync: user.Id should be set";
 	}
 
 	var defer = Q.defer();
@@ -77,7 +77,7 @@ UserPermissionsSaveService.prototype.updateFromUserDtoAsync = function (userId, 
 
 UserPermissionsSaveService.prototype.removeUserByIdAsync = function (userId, issuer) {
 	if (!userId) {
-		throw "UserStateSaveService.removeUserByIdAsync: userId must be set";
+		throw "SetupSaveService.removeUserByIdAsync: userId must be set";
 	}
 
 	var defer = Q.defer();

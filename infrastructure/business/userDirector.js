@@ -13,16 +13,38 @@ function UserDirector (userPermissionsDirector, userSaveService, userPermissions
 	_userSaveService = userSaveService;
 	_userPermissionsSaveService = userPermissionsSaveService;
 }
+
+UserDirector.prototype.isRootUserSetAsync = function() {
+	return _userSaveService.isRootUserSetAsync();
+};
+
 // TODO Check for rights before doing (directory should do not service layer)
 UserDirector.prototype.getUsersAsync = function(issuer) {
-	if (!issuer.permissions.isRoot || !issuer.permissions.isAdmin) {
+	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) {
 		throw 'Not authorized no manage users.';
 	}
 	return _userSaveService.getUsersAsync();
 };
 
+// TODO Refactor needed (use code from addUserAsync)
+UserDirector.prototype.addRootUserAsync = function(rootUserDto) {
+	// Generate password salt
+	var passwordSalt = hasher.createSalt();
+	var hashedPassword = hasher.computeHash(rootUserDto.password, passwordSalt);
+
+	// TODO userDto s/not be altered
+	rootUserDto.passwordSalt = passwordSalt;
+	rootUserDto.password = hashedPassword; // TODO Rename in model to hashedPassword
+
+	return _userPermissionsDirector //_userPermissionsSaveService
+		.addRootUserPermissionsAsync()
+		.then(function(userPermissionsModel) {
+			return _userSaveService.addRootUserAsync(rootUserDto, userPermissionsModel);
+		});
+};
+
 UserDirector.prototype.addUserAsync = function(userDto, issuer) {
-	if (!issuer.permissions.isRoot || !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
+	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
 		throw 'Not authorized no manage users.';
 	}
 	// Generate password salt
@@ -41,7 +63,7 @@ UserDirector.prototype.addUserAsync = function(userDto, issuer) {
 };
 
 UserDirector.prototype.addUserPermissionsAsync = function(userId, allowedPaths, issuer) {
-	if (!issuer.permissions.isRoot || !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
+	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
 		throw 'Not authorized no manage users.';
 	}
 
@@ -89,7 +111,7 @@ UserDirector.prototype.updateUserPermissionsByUserIdAsync = function(userId, use
 
 
 UserDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, issuer) {
-	if (!issuer.permissions.isRoot || !issuer.permissions.isAdmin) {
+	if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) {
 		throw 'Not authorized no manage users.';
 	}
 	return this.updateUserPermissionsByUserIdAsync(userId, userDto.permissions, issuer)

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+	<title></title>
+	<link href="lib/jquery.easyWizard.demo/css/bootstrap.min.css" rel="stylesheet">
+	<link href="lib/jquery.easyWizard.demo/css/jquery.snippet.min.css" rel="stylesheet">
+	<link href="lib/jquery.easyWizard.demo/css/styles.css" rel="stylesheet">
+</head>
+<body>
+	<h1>JogPlayer Online - Setup</h1>
+
+	<form id="wizard" method="post" class="form-horizontal">
+		<!--<section class="step" data-step-title="Database">-->
+			<!--<div class="container">-->
+				<!--<div class="row">-->
+					<!--<div class="col-xs-6">-->
+						<!--<div class="control-group">-->
+							<!--<label class="control-label" for="host">Host</label>-->
+							<!--<div class="controls">-->
+								<!--<input type="text" id="host" name="host" placeholder="Host" class="input-xlarge" title="Host is required !" required />-->
+							<!--</div>-->
+
+							<!--<label class="control-label" for="port">Port</label>-->
+							<!--<div class="controls">-->
+								<!--<input type="text" id="port" name="port" value="27017" placeholder="Port" class="input-xlarge" title="Port is required !" required />-->
+							<!--</div>-->
+
+							<!--<label class="control-label" for="dbName">DbName</label>-->
+							<!--<div class="controls">-->
+								<!--<input type="text" id="dbName" name="dbName" value="JogPlayerOnline" placeholder="DbName" class="input-xlarge" title="DbName is required !" required />-->
+							<!--</div>-->
+						<!--</div>-->
+					<!--</div>-->
+					<!--<div class="col-xs-6">-->
+						<!--<div class="control-group">-->
+							<!--<label class="control-label" for="dbUserName">DbUserName</label>-->
+							<!--<div class="controls">-->
+								<!--<input type="text" id="dbUserName" name="dbUserName" placeholder="DbUserName" class="input-xlarge" />-->
+							<!--</div>-->
+
+							<!--<label class="control-label" for="dbPassword">DbPassword</label>-->
+							<!--<div class="controls">-->
+								<!--<input type="text" id="dbPassword" name="dbPassword" placeholder="DbPassword" class="input-xlarge" />-->
+							<!--</div>-->
+						<!--</div>-->
+					<!--</div>-->
+				<!--</div>-->
+			<!--</div>-->
+		<!--</section>-->
+		<!--<section class="step" data-step-title="Main user account">-->
+			<div class="control-group">
+				<label class="control-label" for="username">Username</label>
+				<div class="controls">
+					<input type="text" id="username" name="username" placeholder="Username" class="input-xlarge" />
+				</div>
+
+				<label class="control-label" for="password">Password</label>
+				<div class="controls">
+					<input type="text" id="password" name="password" placeholder="Password" class="input-xlarge" />
+				</div>
+			</div>
+		<!--</section>-->
+		<button>Setup</button>
+	</form>
+
+	<script src="lib/jquery/dist/jquery.min.js"></script>
+	<script src="lib/jquery.easyWizard.demo/js/bootstrap.min.js"></script>
+	<script src="lib/jquery.easyWizard.demo/js/jquery.snippet.min.js"></script>
+	<script src="lib/jquery.easyWizard/jquery.easyWizard.js"></script>
+	<script src="lib/jquery.easyWizard.demo/js/scripts.js"></script>
+	<script src="js/setup.js"></script>
+</body>
+</html>

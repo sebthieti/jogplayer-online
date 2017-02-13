@@ -24,7 +24,7 @@
     "passport-local": "^1.0.0",
     "playlist-parser": "0.0.8",
     "q": "^1.0.1",
-    "rx": "^2.3.14",
+    "rx": "^2.4.1",
     "socket.io": "^0.9.17",
     "underscore": "^1.7.0",
     "validator": "^3.22.1",

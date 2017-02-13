@@ -1,6 +1,7 @@
 'use strict';
 
-var Q = require('q');
+var Q = require('q'),
+	_ = require('underscore');
 
 var _saveService,
 	User;
@@ -9,6 +10,27 @@ function UserSaveService(saveService, userModel) {
 	_saveService = saveService;
 	User = userModel;
 }
+
+UserSaveService.prototype.isRootUserSetAsync = function() {
+	var defer = Q.defer();
+
+	User.find({})
+		.populate('permissions')
+		.exec(function(err, users) {
+			if (err) { defer.reject(err) }
+			else {
+				var isRootUserSet = _.any(users
+					.map(function(user) {return user.permissions})
+					.filter(function (permission) {
+						return permission.isRoot === true;
+					}));
+
+				defer.resolve(isRootUserSet)
+			}
+		});
+
+	return defer.promise;
+};
 
 UserSaveService.prototype.getUsersAsync = function() { // TODO getUsersWithPermissionsAsync
 	var defer = Q.defer();
@@ -49,15 +71,44 @@ UserSaveService.prototype.getUserByUsernameAsync = function(username) {
 	return defer.promise;
 };
 
-UserSaveService.prototype.addUserAsync = function (userDto, userPermissionsModel, issuer) {
+UserSaveService.prototype.addRootUserAsync = function (userDto, userPermissionsModel) {
 	if (!userDto) {
-		throw "UserStateSaveService.addUserAsync: favorite must be set";
-	}
-	if (!issuer) {
-		throw "UserStateSaveService.addUserAsync: issuer must be set";
+		throw "SetupSaveService.addUserAsync: favorite must be set";
 	}
 	if (userDto._id) {
-		throw "UserStateSaveService.addUserAsync: user.Id should not be set";
+		throw "SetupSaveService.addUserAsync: user.Id should not be set";
+	}
+
+	var defer = Q.defer();
+	//delete userDto.permissions;
+	userDto.permissions = null;
+	//var userFields = userDto.getDefinedFields();
+
+	User.create(
+		userDto,
+		function(err, newUser) {
+			if (err) { defer.reject(err) }
+			else {
+				newUser.permissions = userPermissionsModel;
+				newUser.save(function(writeError) {
+					if (writeError) { defer.reject(writeError) }
+					else { defer.resolve(newUser) }
+				});
+			}
+		});
+
+	return defer.promise;
+};
+
+UserSaveService.prototype.addUserAsync = function (userDto, userPermissionsModel, issuer) {
+	if (!userDto) {
+		throw "SetupSaveService.addUserAsync: favorite must be set";
+	}
+	if (!issuer) {
+		throw "SetupSaveService.addUserAsync: issuer must be set";
+	}
+	if (userDto._id) {
+		throw "SetupSaveService.addUserAsync: user.Id should not be set";
 	}
 
 	var defer = Q.defer();
@@ -104,10 +155,10 @@ UserSaveService.prototype.addUserPermissionsAsync = function (userId, permission
 
 UserSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, issuer) {
 	if (!userDto) {
-		throw "UserStateSaveService.updateFromUserDtoAsync: user must be set";
+		throw "SetupSaveService.updateFromUserDtoAsync: user must be set";
 	}
 	if (!userId) {
-		throw "UserStateSaveService.updateFromUserDtoAsync: user.Id should be set";
+		throw "SetupSaveService.updateFromUserDtoAsync: user.Id should be set";
 	}
 
 	var defer = Q.defer();
@@ -126,7 +177,7 @@ UserSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, is
 
 UserSaveService.prototype.removeUserByIdAsync = function (userId, issuer) {
 	if (!userId) {
-		throw "UserStateSaveService.removeUserByIdAsync: userId must be set";
+		throw "SetupSaveService.removeUserByIdAsync: userId must be set";
 	}
 
 	var defer = Q.defer();

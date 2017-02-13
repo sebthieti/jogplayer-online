@@ -4,7 +4,6 @@
 var os = require('os'),
 	dependable = require('dependable'),
 	container = dependable.container(),
-	config = require('config'),
 	from = require('fromjs'),
 	passport = require('passport'),
 	LocalStategy = require('passport-local').Strategy;
@@ -21,9 +20,6 @@ var routes = require('./routes'),
 
 // Composite root principle
 function registerControllers(app, io) {
-	container.register('homeController', function(routes) {
-		return new Controllers.HomeController(app, routes);
-	});
 	container.register('playMediaController', function (mediaStreamer, routes, authDirector, mediaDirector) {
 		return new Controllers.PlayMediaController(app, routes.media, routes.file, mediaStreamer, authDirector, mediaDirector);
 	});
@@ -54,6 +50,9 @@ function registerBusinesses() {
 	container.register('mediaDirector', function (mediaService, mediaSaveService) {
 		return new Business.MediaDirector(mediaService, mediaSaveService);
 	});
+	container.register('authDirector', function (userSaveService) {
+		return new Business.AuthDirector (userSaveService);
+	});
 	container.register('playlistDirector', function (fileExplorerService, mediaDirector, physicalPlaylistServices, playlistSaveService, mediaSaveService, mediaService, mediaBuilder) {
 		return new Business.PlaylistDirector(fileExplorerService, mediaDirector, physicalPlaylistServices, playlistSaveService, mediaSaveService, mediaService, mediaBuilder);
 	});
@@ -66,9 +65,6 @@ function registerBusinesses() {
 	container.register('favoriteDirector', function (favoriteSaveService) {
 		return new Business.FavoriteDirector (favoriteSaveService);
 	});
-	container.register('authDirector', function (userSaveService) {
-		return new Business.AuthDirector (userSaveService);
-	});
 	container.register('userDirector', function (userPermissionsDirector, userSaveService, userPermissionsSaveService) {
 		return new Business.UserDirector (userPermissionsDirector, userSaveService, userPermissionsSaveService);
 	});
@@ -80,8 +76,7 @@ function registerBusinesses() {
 	});
 }
 
-function registerConfigAndPaths() {
-	container.register('config', config);
+function registerPaths() {
 	container.register('routes', routes);
 }
 
@@ -102,8 +97,8 @@ function registerModels() {
 
 function registerServices() {
 	container.register('mediaService', Services.mediaService);
-	container.register('saveService', function(config) {
-		return new Services.Saves.SaveService(config);
+	container.register('saveService', function(configService) {
+		return new Services.Saves.SaveService(configService.observeConfigFile());
 	});
 	container.register('metaTagServices', [ new Services.MetaTagId3v1Service() ]);
 	container.register('physicalPlaylistServices', function (mediaBuilder, fileExplorerService, pathBuilder) {
@@ -149,7 +144,8 @@ function registerServices() {
 	});
 }
 
-function registerAuthentication(app) {
+function registerAuthenticationStack(app) {
+	// Must be executed before any http request
 	container.resolve(function(authDirector) {
 		passport.use(new LocalStategy(authDirector.verifyUser));
 		passport.serializeUser(function(user, next) {
@@ -182,19 +178,39 @@ function registerOther() {
 	});
 }
 
-function bootstrap() {
+function registerHome(app) {
+	container.register('homeController', function(routes, configDirector) {
+		return new Controllers.HomeController(app, configDirector, routes);
+	});
+}
+
+function bootstrap(app, io) {
+	registerPaths();
+	registerSetupStack(app);
+	registerHome(app);
+
+	registerOther();
+	registerModels();
+	registerServices();
+	registerBusinesses();
+	registerControllers(app, io);
+	registerAuthenticationStack(app);
+
 	container.resolve(function(
+		setupController,
 		homeController,
-		playMediaController,
+	    playMediaController,
 		playlistController,
 		fileExplorerController,
 		favoriteController,
 		stateController,
-	    authController,
-	    userController,
+		authController,
+		userController,
 		userStateController
 	) {
 		homeController.init();
+		setupController.init();
+
 		playMediaController.init();
 		playlistController.init();
 		fileExplorerController.init();
@@ -206,14 +222,22 @@ function bootstrap() {
 	});
 }
 
-module.exports.init = function (app, io) {
-	registerConfigAndPaths();
-	registerOther();
-	registerModels();
-	registerServices();
-	registerBusinesses();
-	registerControllers(app, io);
-	registerAuthentication(app);
+function registerSetupStack(app) {
+	container.register('setupController', function (configDirector, routes) {
+		return new Controllers.SetupController(app, configDirector, routes);
+	});
+	container.register('configDirector', function (configService, userDirector, configSaveService) {
+		return new Business.ConfigDirector(configService, userDirector, configSaveService);
+	});
+	container.register('configService', function() {
+		return new Services.ConfigService();
+	});
+	container.register('configSaveService', function () {
+		return new Services.Saves.ConfigSaveService();
+	});
+}
+
+exports.init = function (app, io) {
 	// Must be the last one to initialise
-	bootstrap();
+	bootstrap(app, io);
 };

@@ -24,7 +24,7 @@ userSchema.methods.toJSON = function() {
 
 	obj.links = this.links;
 
-	delete obj._id;
+	delete obj._id; // TODO Use select method pattern instead
 	delete obj.permissions;
 	obj.permissions = this.permissions.toJSON();
 	//delete obj.canWrite;
