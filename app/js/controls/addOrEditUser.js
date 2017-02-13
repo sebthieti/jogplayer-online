@@ -69,8 +69,6 @@ jpoApp.directive("addOrEditUser", [
 				$scope.isRootUser = hasAdminPermissions();
 			}
 
-			$scope.submitCaption = $scope.isNewUser ? "Add" : "Done";
-
 			$scope.canShowAddUserPanel = false;
 			$scope.addDenyPathToNewUser = function(userVm) {
 				userVm.model.permissions.denyPaths.push({ path: $scope.selectedDenyPath  });

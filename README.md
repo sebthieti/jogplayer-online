@@ -1,8 +1,11 @@
 JogPlayer Online
 ================
 
-How to install JogPlayer Online:
---------------------------------
+JogPlayer Online is a media server web application. You can listen to your music remotely.
+
+
+How to install
+--------------
 
 Clone a copy of the JogPlayer Online repo by running:
 

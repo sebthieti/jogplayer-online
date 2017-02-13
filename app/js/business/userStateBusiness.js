@@ -33,6 +33,7 @@ jpoApp.factory('userStateBusiness', [
 							initializingState = true;
 							userStateSubject.onNext(userState);
 							if (!userState) {
+								initializingState = false;
 								return;
 							}
 

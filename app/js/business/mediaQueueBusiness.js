@@ -261,7 +261,7 @@ jpoApp.factory('mediaQueueBusiness', [
 		return observeQueueEndedWithMediumSubject;
 	}
 
-	//onFirstMediumInQueueStartPlay();
+	onFirstMediumInQueueStartPlay();
 	onLastMediumEndAndNewOneAppendedStartPlay();
 
 	return {

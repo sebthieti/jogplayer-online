@@ -73,7 +73,10 @@
 				<button type="button" ng-click="addDenyPathToNewUser(userVm)">Validate Path</button>
 			</div>
 		</div>
-		<!--Update/Add-->
-		<button type="submit" ng-bind="submitCaption"></button>
+
+		<button type="submit"
+		        class="block-large btn-middle"
+						ng-class="{ 'icon-checkmark': !isNewUser, 'icon-user-plus': isNewUser }">
+		</button>
 	</form>
 </div>

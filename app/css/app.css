@@ -701,7 +701,17 @@ welcome>div.animate-show.ng-hide-add.ng-hide-add-active,welcome>div.animate-show
 #add-user-btn {
   background-color: #c8c8c8;
   width:100%;
-  border:0 }
+  border:0;
+  font-size: 1.5em }
+
+.block-large {
+  background-color: #c8c8c8;
+  width:100%;
+  border:0;
+  font-size: 1.5em }
+
+.block-large:hover {
+  background-color: #E4E3E3 }
 
 #add-user-btn:hover {
   background-color: #dedede }
