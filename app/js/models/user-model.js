@@ -10,6 +10,7 @@ jpoApp.factory('UserModel', ['jpoModelBuilder', function(jpoModelBuilder) {
 		isAdmin: Boolean,
 		isRoot: Boolean,
 		canWrite: Boolean,
+		permissions: [ String ],
 		links: [{ href: String, rel: String }],
 		methods: { }
 	};

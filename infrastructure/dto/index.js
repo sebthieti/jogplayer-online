@@ -1,10 +1,14 @@
-module.exports.Dto = require('./Dto');
-module.exports.PlaylistDto = require('./playlistDto');
-module.exports.FolderContentDto = require('./folderContentDto');
-module.exports.FileInfoDto = require('./fileInfoDto');
-module.exports.LinkDto = require('./linkDto');
-module.exports.ResourceLinksDto = require('./resourceLinksDto');
-module.exports.Media = require('./media');
-module.exports.FavoriteDto = require('./favoriteDto');
-module.exports.UserDto = require('./userDto');
-module.exports.Id31Metadata = require('./id3v1Metadata');
+'use strict';
+
+exports.Dto = require('./Dto');
+exports.PlaylistDto = require('./playlistDto');
+exports.FolderContentDto = require('./folderContentDto');
+exports.FileInfoDto = require('./fileInfoDto');
+exports.LinkDto = require('./linkDto');
+exports.ResourceLinksDto = require('./resourceLinksDto');
+exports.Media = require('./media');
+exports.FavoriteDto = require('./favoriteDto');
+exports.UserDto = require('./userDto');
+exports.UserPermissionsDto = require('./userPermissionsDto');
+exports.UserStateDto = require('./userStateDto');
+exports.Id31Metadata = require('./id3v1Metadata');

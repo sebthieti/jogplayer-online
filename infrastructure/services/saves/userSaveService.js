@@ -10,10 +10,11 @@ function UserSaveService(saveService, userModel) {
 	User = userModel;
 }
 
-UserSaveService.prototype.getUsersAsync = function() {
+UserSaveService.prototype.getUsersAsync = function() { // TODO getUsersWithPermissionsAsync
 	var defer = Q.defer();
 
 	User.find({})
+		.populate('permissions')
 		.exec(function(err, users) {
 			if (err) { defer.reject(err) }
 			else { defer.resolve(users) }
@@ -22,10 +23,14 @@ UserSaveService.prototype.getUsersAsync = function() {
 	return defer.promise;
 };
 
-UserSaveService.prototype.getUserByIdAsync = function(userId) {
+UserSaveService.prototype.getUserByIdWithPermissionsAsync = function(userId) {
 	var defer = Q.defer();
 
 	User.findOne({ _id: userId})
+		.populate({
+			path: 'permissions',
+			select: '_id'
+		})
 		.exec(function(err, user) {
 			if (err) { defer.reject(err) }
 			else { defer.resolve(user) }
@@ -38,6 +43,7 @@ UserSaveService.prototype.getUserByUsernameAsync = function(username) {
 	var defer = Q.defer();
 
 	User.findOne({ username: username})
+		.populate('permissions')
 		.exec(function(err, user) {
 			if (err) { defer.reject(err) }
 			else { defer.resolve(user) }
@@ -48,13 +54,13 @@ UserSaveService.prototype.getUserByUsernameAsync = function(username) {
 
 UserSaveService.prototype.addUserAsync = function (user, owner) {
 	if (!user) {
-		throw "UserSaveService.addUserAsync: favorite must be set";
+		throw "UserStateSaveService.addUserAsync: favorite must be set";
 	}
 	if (!owner) {
-		throw "UserSaveService.addUserAsync: owner must be set";
+		throw "UserStateSaveService.addUserAsync: owner must be set";
 	}
 	if (user._id) {
-		throw "UserSaveService.addUserAsync: user.Id should not be set";
+		throw "UserStateSaveService.addUserAsync: user.Id should not be set";
 	}
 
 	var defer = Q.defer();
@@ -71,12 +77,33 @@ UserSaveService.prototype.addUserAsync = function (user, owner) {
 	return defer.promise;
 };
 
+UserSaveService.prototype.addUserPermissionsAsync = function (userId, permissionsArray, owner) {
+	var defer = Q.defer();
+
+	User
+		.findOne({ _id: userId }) // , ownerId: owner.id
+		.populate({ path: 'permissions', select: '_id' })
+		.exec(function(readError, user) {
+			if (readError) {
+				defer.reject(readError);
+			} else {
+				user.permissions = user.permissions.concat(permissionsArray);
+				user.save(function(writeError) {
+					if (writeError) { defer.reject(writeError) }
+					else { defer.resolve(permissionsArray) }
+				});
+			}
+		});
+
+	return defer.promise;
+};
+
 UserSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, owner) {
 	if (!userDto) {
-		throw "UserSaveService.updateFromUserDtoAsync: user must be set";
+		throw "UserStateSaveService.updateFromUserDtoAsync: user must be set";
 	}
 	if (!userId) {
-		throw "UserSaveService.updateFromUserDtoAsync: user.Id should be set";
+		throw "UserStateSaveService.updateFromUserDtoAsync: user.Id should be set";
 	}
 
 	var defer = Q.defer();
@@ -95,7 +122,7 @@ UserSaveService.prototype.updateFromUserDtoAsync = function (userId, userDto, ow
 
 UserSaveService.prototype.removeUserByIdAsync = function (userId, owner) {
 	if (!userId) {
-		throw "UserSaveService.removeUserByIdAsync: userId must be set";
+		throw "UserStateSaveService.removeUserByIdAsync: userId must be set";
 	}
 
 	var defer = Q.defer();

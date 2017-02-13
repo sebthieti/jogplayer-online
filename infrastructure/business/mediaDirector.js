@@ -13,9 +13,13 @@ function MediaDirector (mediaService, mediaSaveService) {
     _mediaSaveService = mediaSaveService;
 }
 
-MediaDirector.prototype.getBinaryChunkAndFileSizeByIdAsync = function (mediaId, fromOffset, toOffset, owner) {
+MediaDirector.prototype.getMediumByIdAndPlaylistIdAsync = function (playlistId, mediumId, owner) {
+	return _mediaSaveService.getMediumByIdAndPlaylistIdAsync(playlistId, mediumId, owner);
+};
+
+MediaDirector.prototype.getBinaryChunkAndFileSizeByIdAsync = function (mediumId, fromOffset, toOffset, owner) {
 	return _mediaSaveService
-		.getMediaByIdAsync(mediaId, owner)
+		.getMediaByIdAsync(mediumId, owner)
 		.then(function(media) {
 			return getOffsetAndFileSizeAsync(media.filePath, toOffset) // TODO Later use repositories to save fileSize (save file size)
 				.then(function(offsetAndFileSize) {

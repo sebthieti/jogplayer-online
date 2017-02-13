@@ -250,15 +250,27 @@ jpoApp.factory('playlistBusiness', [
 				.asAsyncValue()
 				.whereIsNotNull()
 				.selectMany(function(selectedPlaylistViewModel) {
-					var mediaFilePaths = _.map(fileViewModels, function(fileVm) {
-						return fileVm.model.selectSelfPhysicalFromLinks();
-					});
+					//var mediaFilePathPromises = fileViewModels.map(function(fileVm) {
+					//	var mediaFilePath = fileVm.model.selectSelfPhysicalFromLinks();
+					//	return selectedPlaylistViewModel.model.addMediumByFilePathToPlaylist(mediaFilePath);
+					//});
+					//$q.all(mediaFilePathPromises)
+					//	.then(function(mediaFilePath) {
+					//		mediaFilePath.map(function(mediumFilePath) {
+					//			return {
+					//				selectedPlaylistViewModel: selectedPlaylistViewModel,
+					//				newMedia: mediumFilePath
+					//			};
+					//		})
+					//	});
+
 					return Rx.Observable
 						.fromArray(mediaFilePaths)
 						.select(function(mediaFilePath) {
 							return Rx.Observable.fromPromise(selectedPlaylistViewModel.model.addMediumByFilePathToPlaylist(mediaFilePath))
 						})
-						.selectMany(function(rx) { return rx })
+						.selectMany(function(rx) {
+							return rx })
 						.toArray()
 						.select(function(newMedia) {
 							return {
@@ -266,6 +278,8 @@ jpoApp.factory('playlistBusiness', [
 								newMedia: newMedia
 							};
 						});
+
+
 				}) // TODO Cannot insert multiple media on pl without fail
 				.do(function(plMediaSetCurrentPl) {
 					var plVm = plMediaSetCurrentPl.selectedPlaylistViewModel;

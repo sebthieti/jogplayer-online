@@ -6,15 +6,17 @@ var mongoose = require('mongoose'),
 var _plRoutes;
 
 var userSchema = new Schema({
-	username: String,
-	password: String,
-	passwordSalt: String,
+	username: { type: String, required: 'Username is mandatory' },
+	password: { type: String, required: 'Password is mandatory' },
+	passwordSalt: { type: String, required: 'PasswordSalt is mandatory' },
 	fullName: String,
 	email: String,
 	canWrite: Boolean,
 	isAdmin: Boolean,
 	isRoot: Boolean, // TODO This one must be read only
-	role: String
+	role: String,
+	//state: { type: Schema.Types.ObjectId, ref: 'UserState' }
+	permissions: { type: Schema.Types.ObjectId, ref: 'UserPermissions' }
 });
 userSchema.set('toJSON', { virtuals: true });
 // virtuals: false to avoid inserting links to database

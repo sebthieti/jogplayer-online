@@ -70,7 +70,7 @@ var execMediumConvertionAsync = function (mediaFilePath, outputFormat) {
 		.on('error', function (err) {
 			deferred.reject(err);
 		})
-		.run();
+		.run(); // TODO Maybe add somewhere the fact that medium has been converted, to avoid to do it again
 
 	return deferred.promise;
 };

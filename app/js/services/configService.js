@@ -1,6 +1,6 @@
 'use strict';
 
-jpoApp.factory("configService", function ($http, $q, jpoProxy) {
+jpoApp.factory("configService__", function ($http, $q, jpoProxy) {
 	return {
 		sendPlayableTypes: function(playableTypes) {
 			return jpoProxy.getApiLinkAsync('config')

@@ -1,7 +1,9 @@
 'use strict';
 
-module.exports.SaveService = require("./saveService");
-module.exports.PlaylistSaveService = require("./playlistSaveService");
-module.exports.MediaSaveService = require("./mediaSaveService");
-module.exports.FavoriteSaveService = require("./favoriteSaveService");
-module.exports.UserSaveService = require('./userSaveService');
+exports.SaveService = require("./saveService");
+exports.PlaylistSaveService = require("./playlistSaveService");
+exports.MediaSaveService = require("./mediaSaveService");
+exports.FavoriteSaveService = require("./favoriteSaveService");
+exports.UserSaveService = require('./userSaveService');
+exports.UserStateSaveService = require('./userStateSaveService');
+exports.UserPermissionsSaveService = require('./userPermissionsSaveService');

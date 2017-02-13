@@ -3,11 +3,20 @@
 require('../extentions').StringExtentions;
 var Q = require('q'),
 	from = require('fromjs'),
+	path = require('path'),
 	linkBuilder = require('../utils/linkBuilder');
 
 var _fileExplorerService;
 
-var exploreFilePathAsync = function (urlPath) {
+function FileExplorerDirector(fileExplorerService) {
+	_fileExplorerService = fileExplorerService;
+}
+
+FileExplorerDirector.prototype.getFolderContentAsync = function (urlPath) {
+	return exploreFilePathAsync(urlPath);
+};
+
+function exploreFilePathAsync(urlPath) {
 	var isRoot = urlPath === '/';
 	return _fileExplorerService
 		.readFolderContentAsync(urlPath)
@@ -17,15 +26,15 @@ var exploreFilePathAsync = function (urlPath) {
 		.then(function(files) {
 			return linkBuilder.toFolderContentDto(urlPath, files);
 		});
-};
+}
 
-var filterFilesIfNotRoot = function(folderContent, isRoot) {
+function filterFilesIfNotRoot(folderContent, isRoot) {
 	return isRoot
 		? folderContent
 		: filterBySupportedMediaTypes(folderContent);
-};
+}
 
-var filterBySupportedMediaTypes = function (fileInfos) {
+function filterBySupportedMediaTypes(fileInfos) {
 	return from(fileInfos)
 		.where(function (fileInfo) {
 			if (fileInfo.isDirectory()) {
@@ -35,9 +44,9 @@ var filterBySupportedMediaTypes = function (fileInfos) {
 			return isSupportedMediaExt(ext);
 		})
 		.toArray();
-};
+}
 
-var isSupportedMediaExt = function (ext) {
+function isSupportedMediaExt(ext) {
 	switch(ext) {
 		case ".mp3":
 		case ".flac":
@@ -49,18 +58,19 @@ var isSupportedMediaExt = function (ext) {
 		default:
 			return false;
 	}
-};
-
-var FileExplorerDirector = function (fileExplorerService) {
-	_fileExplorerService = fileExplorerService;
 }
 
-FileExplorerDirector.prototype = {
-
-	getFolderContentAsync: function (urlPath) {
-		return exploreFilePathAsync(urlPath);
-	}
-
+FileExplorerDirector.prototype.getFileInfoAsync = function (urlPath) {
+	return getFileInfoPathAsync(urlPath);
 };
+
+function getFileInfoPathAsync(urlPath) {
+	return _fileExplorerService
+		.readFileInfoAsync(urlPath)
+		.then(function(file) {
+			var dirPath = path.dirname(urlPath) + '/';
+			return linkBuilder.toFileInfoDto(dirPath, file);
+		});
+}
 
 module.exports = FileExplorerDirector;

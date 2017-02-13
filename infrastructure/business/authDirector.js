@@ -37,7 +37,7 @@ AuthDirector.prototype.serializeUser = function(user, next) {
 };
 
 AuthDirector.prototype.deserializeUser = function(username, next) {
-	this.getUserByUsernameAsync(username)
+	this.getUserByUsernameAsync(username) // TODO Really need of cache to avoid exessive queries
 		.then(function(user) {
 			next(null, user);
 		}, function(err) {

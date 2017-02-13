@@ -16,21 +16,34 @@ jpoApp.factory('PlaylistMediaModel', ['jpoModelBuilder', 'Model', function(jpoMo
 		methods: {
 			selectSelfPlayFromLinks: function () {
 				return linkHelpers.selectActionFromLinks('self.play', this.links);
+			},
+			getMediaFrom: function(playlistModel) {
+				var self = this;
+				return this.service
+					.getByLinkAsync(playlistModel.selectActionFromLinks('media', playlistModel.links))
+					.then(function(rawMedia) {
+						self.validateArray(rawMedia, self.schema);
+						var mediaModels = Model.build(self.endpointName, self.schema, rawMedia);
+						mediaModels.forEach(function(medium) {
+							medium.playlistId = playlistModel.id;
+						});
+						return mediaModels;
+					});
+			},
+			getMediumFromLinkUrl: function(mediumLinkUrl) {
+				var self = this;
+				return this.service
+					.getByLinkAsync(mediumLinkUrl)
+					.then(function(rawMedium) {
+						self.validateSchema(rawMedium, self.schema);
+						var mediumModels = Model.build(self.endpointName, self.schema, rawMedium);
+						//mediaModels.forEach(function(medium) { // TODO What to do with that ?
+						//	medium.playlistId = playlistModel.id;
+						//});
+						return mediumModels;
+					});
 			}
 		}
-	};
-	playlistMediaSchema.methods.getMediaFrom = function(playlistModel) {
-		var self = this;
-		return this.service
-			.getByLinkAsync(playlistModel.selectActionFromLinks('media', playlistModel.links))
-			.then(function(rawMedia) {
-				self.validateArray(rawMedia, self.schema);
-				var mediaModels = Model.build(self.endpointName, self.schema, rawMedia);
-				mediaModels.forEach(function(medium) {
-					medium.playlistId = playlistModel.id;
-				});
-				return mediaModels;
-			});
 	};
 
 	return jpoModelBuilder.model('playlists', playlistMediaSchema);

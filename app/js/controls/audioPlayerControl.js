@@ -4,11 +4,16 @@ jpoApp.factory("AudioPlayerControl", function () {
 	function AudioPlayerControl(controlElements) {
 		var ButtonMap = Jpo.ButtonMap;
 		var PlayerState = Jpo.PlayerState;
+		var mediumPositionSubject = new Rx.Subject();
 
 		var _currentStateSubject = new Rx.BehaviorSubject(PlayerState.Unknown);
 		var _isDraggingCursor = false;
 
 		var _audioPlayerElements;
+
+		function observeMediumPosition() {
+			return mediumPositionSubject;
+		}
 
 		function init(controlDomElement) {
 			var audioPlayerElements = controlElements.mapOwnProperties(function(controlElement) {
@@ -60,6 +65,8 @@ jpoApp.factory("AudioPlayerControl", function () {
 				var currentTime = audioPlayer.currentTime;
 				var audioDuration = audioPlayer.duration;
 				var timeRemaining = audioDuration - currentTime;
+
+				mediumPositionSubject.onNext(currentTime);
 
 				var format = getTimeFormatForDuration(currentTime);
 				var currentTimeHHMMSS = (new Date)
@@ -348,7 +355,8 @@ jpoApp.factory("AudioPlayerControl", function () {
 			playMedium: playMedium,
 			playOrPause: playOrPause,
 			stopMedium: stopMedium,
-			observeCurrentState: observeCurrentState
+			observeCurrentState: observeCurrentState,
+			observeMediumPosition: observeMediumPosition
 		}
 	}
 	return AudioPlayerControl;

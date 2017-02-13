@@ -21,7 +21,7 @@ FileExplorerController.prototype.init = function() {
 		res.render("index");
 	});
 
-	// Explore path
+	// Explore path TODO Use constants for url instead
 	_app.get(/^\/api\/explore\/(.*[\/])*$/, _authDirector.ensureApiAuthenticated, function (req, res) {
 		_fileExplorerDirector
 			.getFolderContentAsync(extractUrlFromParams(req.params))
@@ -29,6 +29,15 @@ FileExplorerController.prototype.init = function() {
 			.catch(function(err) { res.send(400, err) })
 			.done();
 	});
+
+	_app.get(/^\/api\/explore\/(.*[\/].*)*$/, _authDirector.ensureApiAuthenticated, function (req, res) {
+		_fileExplorerDirector
+			.getFileInfoAsync(extractUrlFromParams(req.params))
+			.then(function(fileDetails) { res.send(fileDetails) })
+			.catch(function(err) { res.send(400, err) })
+			.done();
+	});
+
 };
 
 module.exports = FileExplorerController;

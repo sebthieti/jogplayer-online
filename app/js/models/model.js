@@ -1,8 +1,8 @@
 'use strict';
 
-jpoApp.factory('Model', ['serviceProxy', function(serviceProxy) {
+jpoApp.factory('Model', ['serviceFactory', function(serviceFactory) {
 	function Model(endpointName, schema, entity) {
-		this.service = serviceProxy.getServiceFor(endpointName);
+		this.service = serviceFactory.getServiceFor(endpointName);
 		this.schema = schema;
 		this.endpointName = endpointName;
 
@@ -10,6 +10,7 @@ jpoApp.factory('Model', ['serviceProxy', function(serviceProxy) {
 			return;
 		}
 		this.originalEntity = entity.clone();
+
 		for (var key in entity) {
 			if (!entity.hasOwnProperty(key)) {
 				continue;
@@ -50,7 +51,12 @@ jpoApp.factory('Model', ['serviceProxy', function(serviceProxy) {
 	}
 
 	function buildStartObject(endpointName, schema, entity) { //rootIsObject
+		if (!angular.isObject(entity)) {
+			return entity;
+		}
+
 		var model = new Model(endpointName, schema, entity);
+		// Inject methods to model
 		for (var methodName in schema) {
 			if (!schema.hasOwnProperty(methodName)) {
 				continue;
@@ -112,7 +118,7 @@ jpoApp.factory('Model', ['serviceProxy', function(serviceProxy) {
 			// media: only ids in original, but nothing in updated
 			var originalValue = original[key];
 			var updatedValue = updated[key];
-			if (updatedValue !== originalValue){
+			if (!angular.equals(originalValue, updatedValue)){
 				updatedFields[key] = updatedValue;
 			}
 		}
@@ -140,27 +146,34 @@ jpoApp.factory('Model', ['serviceProxy', function(serviceProxy) {
 		if (Array.isArray(entities)) {
 			this.validateArray(entities, schema);
 		} else {
-			// find for each field in obj, the schema name. Not present => throw invalid. bad time, same. other not desired => bad
-			for (var key in entities) {
-				if (!entities.hasOwnProperty(key)) {
-					continue;
-				}
-				// Find key in schema to get type
-				var type = schema[key];
-				if (angular.isDefined(type)) {
-					var value = entities[key];
-					if (Array.isArray(type)) { // If schema prop. is array, drill down
-						this.validateArray(value, _.first(type));
+
+			if (angular.isObject(entities)) {
+				// find for each field in obj, the schema name. Not present => throw invalid. bad time, same. other not desired => bad
+				for (var key in entities) {
+					if (!entities.hasOwnProperty(key)) {
 						continue;
-					} else {
-						if (typeof value === getFunctionName(type)) {
-							continue; // Ok, there's a match, we both found the key and type is correct.
+					}
+					// Find key in schema to get type
+					var type = schema[key];
+					if (angular.isDefined(type)) {
+						var value = entities[key];
+						if (Array.isArray(type)) { // If schema prop. is array, drill down
+							this.validateArray(value, _.first(type));
+							continue;
 						} else {
-							throw 'Type of ' + key + ' in DTO is unexpected';
+							if (typeof value === getFunctionName(type)) {
+								continue; // Ok, there's a match, we both found the key and type is correct.
+							} else {
+								throw 'Type of ' + key + ' in DTO is unexpected';
+							}
 						}
 					}
+					throw '[Model].[Property]: [' + this.endpointName + '].[' + key + '] in DTO has not been found in schema';
 				}
-				throw '[Model].[Property]: [' + this.endpointName + '].[' + key + '] in DTO has not been found in schema';
+			} else {
+				if (typeof entities !== getFunctionName(schema)) {
+					throw '[Model].[Property]: [' + this.endpointName + '].[' + schema + '] in DTO has not been found in schema';
+				}
 			}
 		}
 	};

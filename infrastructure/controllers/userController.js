@@ -1,7 +1,9 @@
 'use strict';
 
 var Q = require('q'),
-	UserDto = require('../dto').UserDto;
+	Dto = require('../dto'),
+	UserDto = Dto.UserDto,
+	UserPermissionsDto = Dto.UserPermissionsDto;
 
 var _app,
 	_userDirector,
@@ -9,6 +11,7 @@ var _app,
 	_authDirector;
 
 var assertAndGetUserId = function (obj) {
+
 	if (!obj || !obj.userId) {
 		throw 'Id must be set.';
 	}
@@ -31,14 +34,24 @@ UserController.prototype.init = function() {
 			.done();
 	});
 
-	_app.post(_routes.users.insertPath, _authDirector.ensureApiAuthenticated, function(req, res) {
-		Q.fcall(UserDto.toDto, req.body)
+	_app.post(_routes.userPermissions.insertPath, _authDirector.ensureApiAuthenticated, function(req, res) {
+		Q.fcall(UserPermissionsDto.toDto, req.body)
 		.then(function(dto) {
-			return _userDirector.addUserAsync(dto, req.user);
+			return _userDirector.addUserPermissionsAsync(dto.userId, dto.allowedPaths, req.user);
 		})
 		.then(function(data) { res.send(data) })
 		.catch(function(err) { res.send(400, err) })
 		.done();
+	});
+
+	_app.post(_routes.users.insertPath, _authDirector.ensureApiAuthenticated, function(req, res) {
+		Q.fcall(UserDto.toDto, req.body)
+			.then(function(dto) {
+				return _userDirector.addUserAsync(dto, req.user);
+			})
+			.then(function(data) { res.send(data) })
+			.catch(function(err) { res.send(400, err) })
+			.done();
 	});
 
 	_app.patch(_routes.users.updatePath, _authDirector.ensureApiAuthenticated, function(req, res) {

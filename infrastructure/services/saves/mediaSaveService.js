@@ -26,6 +26,21 @@ MediaSaveService.prototype.getMediaByIdAsync = function(mediaId, owner) {
 	return defer.promise;
 };
 
+MediaSaveService.prototype.getMediumByIdAndPlaylistIdAsync = function(playlistId, mediumId, owner) {
+	var defer = Q.defer();
+
+	Media.findOne({
+		_id: mediumId,
+		_playlistId: playlistId,
+		ownerId: owner.id
+	}, function(err, media) {
+		if (!err) { defer.resolve(media) }
+		else { defer.reject(err) }
+	});
+
+	return defer.promise;
+};
+
 MediaSaveService.prototype.findIndexFromMediaIdsAsync = function(mediaId, owner) {
 	var defer = Q.defer();
 

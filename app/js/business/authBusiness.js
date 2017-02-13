@@ -1,6 +1,6 @@
 'use strict';
 
-jpoApp.factory('authBusiness', ['$http', 'UserModel', 'serviceProxy', function($http, UserModel, serviceProxy) {
+jpoApp.factory('authBusiness', ['$http', 'UserModel', 'serviceFactory', function($http, UserModel, serviceFactory) {
 	var authenticationStatusSubject = new Rx.BehaviorSubject(JpoAuthenticationStatus.Undetermined);
 	var currentUserAuthSubject = new Rx.BehaviorSubject();
 
@@ -50,7 +50,7 @@ jpoApp.factory('authBusiness', ['$http', 'UserModel', 'serviceProxy', function($
 	}
 
 	function observeOnUnauthorizedInvalidateUser() {
-		serviceProxy
+		serviceFactory
 			.observeError()
 			.where(isUnauthorized)
 			.do(function() {

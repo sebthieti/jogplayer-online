@@ -1,9 +1,11 @@
 'use strict';
 
-module.exports.FileExplorerDirector = require("./fileExplorerDirector");
-module.exports.MediaDirector = require("./mediaDirector");
-module.exports.PlaylistDirector = require("./playlistDirector");
-module.exports.PlaylistsDirector = require("./playlistsDirector");
-module.exports.FavoriteDirector = require("./favoriteDirector");
-module.exports.AuthDirector = require("./authDirector");
-module.exports.UserDirector = require("./userDirector");
+exports.FileExplorerDirector = require("./fileExplorerDirector");
+exports.MediaDirector = require("./mediaDirector");
+exports.PlaylistDirector = require("./playlistDirector");
+exports.PlaylistsDirector = require("./playlistsDirector");
+exports.FavoriteDirector = require("./favoriteDirector");
+exports.AuthDirector = require("./authDirector");
+exports.UserDirector = require("./userDirector");
+exports.UserStateDirector = require("./userStateDirector");
+exports.UserPermissionsDirector = require("./userPermissionsDirector");

@@ -1,11 +1,13 @@
 'use strict';
 
-module.exports.Bookmark = require("./bookmark");
-module.exports.Favorite = require("./favorite");
-module.exports.Media = require("./media");
-module.exports.MediaSummary = require('./media-summary');
-module.exports.MediaType = require("./mediatype");
-module.exports.Playlist = require("./playlist");
-module.exports.FileInfo = require("./fileInfo");
-module.exports.MediumInfo = require("./mediumInfo");
-module.exports.User = require('./user');
+exports.Bookmark = require("./bookmark");
+exports.Favorite = require("./favorite");
+exports.Media = require("./media");
+exports.MediaSummary = require('./media-summary');
+exports.MediaType = require("./mediatype");
+exports.Playlist = require("./playlist");
+exports.FileInfo = require("./fileInfo");
+exports.MediumInfo = require("./mediumInfo");
+exports.User = require('./user');
+exports.UserState = require('./userState');
+exports.UserPermissions = require('./userPermissions');

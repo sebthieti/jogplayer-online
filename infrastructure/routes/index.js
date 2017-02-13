@@ -16,6 +16,9 @@ module.exports = function () {
 			},{
 				rel: 'users',
 				href: '/api/users/'
+			},{
+				rel: 'user-states',
+				href: '/api/user-states/'
 			}/*,{
 				sendConfig: '/api/config/playableType'
 			}*/
@@ -52,12 +55,12 @@ module.exports = function () {
 			}
 		},
 		media: {
-			selfPath: '/api/playlists/:playlistId/media/:mediaId',
-			selfPlay: '/api/media/play/:mediaIdWithExt',
+			selfPath: '/api/playlists/:playlistId/media/:mediumId',
+			selfPlay: '/api/media/play/:mediumIdWithExt',
 			getPath: '/api/playlists/:playlistId',
 			insertPath: '/api/playlists/:playlistId/media/',
-			updatePath: '/api/playlists/:playlistId/media/:mediaId',
-			deletePath: '/api/playlists/:playlistId/media/:mediaId'
+			updatePath: '/api/playlists/:playlistId/media/:mediumId',
+			deletePath: '/api/playlists/:playlistId/media/:mediumId'
 		},
 		file: {
 			selfPlayPattern: /^\/api\/media\/play\/path\/(.*[^\/])$/
@@ -68,8 +71,21 @@ module.exports = function () {
 			updatePath: '/api/users/:userId',
 			insertPath: '/api/users/',
 			deletePath: '/api/users/:userId'
-		}
-		/*,
+		},
+		userPermissions: {
+			selfPath: '/api/users/:userId/permissions/:userPermissionId',
+			getPath: '/api/users/:userId/permissions/',
+			updatePath: '/api/users/:userId/permissions/:userPermissionId',
+			insertPath: '/api/users/:userId/permissions/',
+			deletePath: '/api/users/:userId/permissions/:userPermissionId'
+		},
+		userStates: {
+			selfPath: '/api/user-states/:userStateId',
+			currentUserStatePath: '/api/user-states/current-user-state',
+			updatePath: '/api/user-states/:userStateId',
+			insertPath: '/api/user-states/',
+			deletePath: '/api/user-states/:userStateId'
+		}/*,
 		config: {
 			sendConfig: '/api/config/playableTypes'
 		}*/

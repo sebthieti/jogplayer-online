@@ -2,8 +2,15 @@
 
 var fs = require('fs'),
 	from = require('fromjs'),
+	path = require('path'),
 	Q = require('q'),
 	FileInfo = require('../../models').FileInfo;
+
+var readFileInfoAsync = function(urlPath) {
+	var realPath = mapUrlToServerPath.call(this, urlPath);
+	var fileName = path.basename(realPath);
+	return queryFileStatAsync(realPath, fileName);
+};
 
 var readFolderContentAsync = function (urlPath) {
 	var isRoot = urlPath === '/';
@@ -70,7 +77,7 @@ var queryFileStatAsync = function (fullFilePath, fileName) {
 				fileStat.isDirectory() ? FileInfo.directory : FileInfo.file,
 				false
 			);
-		}, function() { // onError
+		}, function(e) { // onError
 			// errno:34 code:ENOENT when no drive
 			// TODO What error for drive empty CD drive?
 			return FileInfo.invalid;
@@ -81,7 +88,8 @@ var FileExplorerService = function() {
 };
 
 FileExplorerService.prototype = {
-	readFolderContentAsync: readFolderContentAsync
+	readFolderContentAsync: readFolderContentAsync,
+	readFileInfoAsync: readFileInfoAsync
 };
 
 module.exports = FileExplorerService;

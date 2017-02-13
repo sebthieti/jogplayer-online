@@ -79,9 +79,11 @@
 		<script src="js/models/jpo-model-builder.js"></script>
 		<script src="js/models/favorite-model.js"></script>
 		<script src="js/models/file-explorer-model.js"></script>
+		<script src="js/models/file-model.js"></script>
 		<script src="js/models/playlist-media-model.js"></script>
 		<script src="js/models/playlist-model.js"></script>
 		<script src="js/models/user-model.js"></script>
+		<script src="js/models/user-state-model.js"></script>
 
 		<script src="js/services.js"></script>
 		<script src="js/services/fileExplorerService.js"></script>
@@ -89,7 +91,7 @@
 		<script src="js/helpers/pathHelper.js"></script>
 		<script src="js/services/playlistService.js"></script>
 		<script src="js/services/mediaService.js"></script>
-		<script src="js/services/serviceBase.js"></script>
+		<script src="js/services/serviceFactory.js"></script>
 
 		<script src="js/business/audioPlayerBusiness.js"></script>
 		<script src="js/business/fileExplorerBusiness.js"></script>
@@ -101,6 +103,7 @@
 		<script src="js/business/loadBusiness.js"></script>
 		<script src="js/business/authBusiness.js"></script>
 		<script src="js/business/userBusiness.js"></script>
+		<script src="js/business/userStateBusiness.js"></script>
 
 		<script src="js/controls/selectorBase.js"></script>
 

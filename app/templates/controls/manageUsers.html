@@ -35,6 +35,10 @@
 
 							<label for="can-write-edit">Can Write</label>
 							<input id="can-write-edit" name="canWrite" type="checkbox" ng-model="userVm.model.canWrite">
+
+							<input placeholder="AllowedPath" name="allowedPath" type="allowedPath" ng-model="userVm.model.permissions.allowedPaths">
+
+
 							<button type="submit" ng-click="endEditUser(userVm)">Commit</button>
 						</form>
 					</div>

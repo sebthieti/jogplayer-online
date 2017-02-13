@@ -49,20 +49,20 @@ mediumSchema.virtual('links').get(function() {
 		rel: 'self',
 		href: _mediaRoutes.selfPath
 			.replace(':playlistId', this._playlistId)
-			.replace(':mediaId', this._id)
+			.replace(':mediumId', this._id)
 	},{
 		rel: 'self.play',
-		href: _mediaRoutes.selfPlay.replace(':mediaIdWithExt', this._id + this.ext)
+		href: _mediaRoutes.selfPlay.replace(':mediumIdWithExt', this._id + this.ext)
 	},{
 		rel: 'update',
 		href: _mediaRoutes.updatePath
 			.replace(':playlistId', this._playlistId)
-			.replace(':mediaId', this._id)
+			.replace(':mediumId', this._id)
 	},{
 		rel: 'remove',
 		href: _mediaRoutes.deletePath
 			.replace(':playlistId', this._playlistId)
-			.replace(':mediaId', this._id)
+			.replace(':mediumId', this._id)
 	}];
 });
 mediumSchema.methods.setIsAvailable = function (isAvailable) {

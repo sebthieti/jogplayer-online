@@ -1,13 +1,13 @@
 'use strict';
 
-jpoApp.factory("serviceProxy", function ($http, $q, jpoProxy) {
+jpoApp.factory("serviceFactory", function ($http, $q, jpoProxy) {
 	var errorSubject = new Rx.Subject();
 
-	function ServiceBase(serviceName) {
+	function Service(serviceName) {
 		this._serviceName = serviceName;
 	}
 
-	ServiceBase.prototype.getAsync = function () {
+	Service.prototype.getAsync = function () {
 		var deferred = $q.defer();
 
 		jpoProxy.getApiLinkAsync(this._serviceName)
@@ -24,7 +24,25 @@ jpoApp.factory("serviceProxy", function ($http, $q, jpoProxy) {
 		return deferred.promise;
 	};
 
-	ServiceBase.prototype.getByLinkAsync = function (link) {
+	Service.prototype.getFromRelativeUrlAsync = function (relativeUrl) {
+		var deferred = $q.defer();
+
+		jpoProxy.getApiLinkAsync(this._serviceName)
+			.then(function(link) {
+				return $http.get(link + relativeUrl)
+			})
+			.then(function (result) {
+				deferred.resolve(result.data);
+			}, function(err) {
+				deferred.reject(err);
+				errorSubject.onNext(err);
+			});
+
+		return deferred.promise;
+	};
+
+
+	Service.prototype.getByLinkAsync = function (link) {
 		var deferred = $q.defer();
 
 		$http.get(link)
@@ -38,7 +56,7 @@ jpoApp.factory("serviceProxy", function ($http, $q, jpoProxy) {
 		return deferred.promise;
 	};
 
-	ServiceBase.prototype.addAsync = function(model) {
+	Service.prototype.addAsync = function(model) {
 		var deferred = $q.defer();
 
 		jpoProxy.getApiLinkAsync(this._serviceName)
@@ -55,7 +73,7 @@ jpoApp.factory("serviceProxy", function ($http, $q, jpoProxy) {
 		return deferred.promise;
 	};
 
-	ServiceBase.prototype.addByLinkAsync = function(link, model) {
+	Service.prototype.addByLinkAsync = function(link, model) {
 		var deferred = $q.defer();
 
 		$http.post(link, model)
@@ -69,7 +87,7 @@ jpoApp.factory("serviceProxy", function ($http, $q, jpoProxy) {
 		return deferred.promise;
 	};
 
-	ServiceBase.prototype.updateAsync = function(model, updateLink) {
+	Service.prototype.updateAsync = function(model, updateLink) {
 		var deferred = $q.defer();
 
 		$http({
@@ -87,7 +105,7 @@ jpoApp.factory("serviceProxy", function ($http, $q, jpoProxy) {
 		return deferred.promise;
 	};
 
-	ServiceBase.prototype.removeAsync = function(removeLink) {
+	Service.prototype.removeAsync = function(removeLink) {
 		var deferred = $q.defer();
 
 		$http.delete(removeLink)
@@ -105,10 +123,10 @@ jpoApp.factory("serviceProxy", function ($http, $q, jpoProxy) {
 
 	var serviceByNameStore = {};
 
-	return { // serviceProxy
+	return { // serviceFactory
 		getServiceFor: function(endpointName) {
 			if (!serviceByNameStore[endpointName]) {
-				serviceByNameStore[endpointName] = new ServiceBase(endpointName);
+				serviceByNameStore[endpointName] = new Service(endpointName);
 			}
 			return serviceByNameStore[endpointName];
 		},

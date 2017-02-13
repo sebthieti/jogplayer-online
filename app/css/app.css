@@ -129,7 +129,7 @@ file-explorer>div{position:relative}
 @keyframes see_me{from{}to{}}
 
 #clear-queue{font-size:1.3em}
-#queue-container{width:100%;background-color:#dbdbdb;position:absolute;bottom:0;left:0}
+#queue-container{width:100%;background-color:#dbdbdb;position:absolute;bottom:0;left:0;z-index: 2}
 #queue-container-list{overflow-x:auto;width:100%}
 #queue{}
 #queue .remove,#queue .error{background-color:#e53636}
@@ -181,6 +181,3 @@ welcome>div.animate-show.ng-hide-remove.ng-hide-remove-active {
 #user-list ol{display: inline-block}
 
 #add-user{background-color: #DFDFDF}
-/*#add-user{width: 400px;overflow-x: auto;}
-#add-user-button-area {display: inline-block;width: 300px;background-color: aliceblue;}
-#add-user-form-area{display: inline-block;width: 300px;background-color: antiquewhite;}*/

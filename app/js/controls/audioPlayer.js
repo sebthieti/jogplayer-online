@@ -59,6 +59,13 @@ jpoApp.directive("audioPlayer", [
 					})
 					.silentSubscribe();
 
+				audioPlayerControl
+					.observeMediumPosition()
+					.do(function(pos) {
+						audioPlayerBusiness.setMediumPosition(pos);
+					})
+					.silentSubscribe();
+
 				audioPlayerBusiness
 					.observePlayingMedium()
 					.select(function(x) {return x.model})

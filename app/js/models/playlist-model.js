@@ -16,14 +16,12 @@ jpoApp.factory('PlaylistsModel', ['Model', 'jpoModelBuilder', function(Model, jp
 	};
 	playlistsSchema.methods.addMediumByFilePathToPlaylist = function(mediaFilePath) {
 		var self = this;
-		return this.service
-			.addByLinkAsync(
+		return this.service.addByLinkAsync(
 			this.selectActionFromLinks('media.insert'),
 			{ index: 'end', mediaFilePath: mediaFilePath }
-		)
-			.then(function(mediumEntity) {
-				return Model.build(self.endpointName, self.schema, mediumEntity);
-			});
+		).then(function(mediumEntity) {
+			return Model.build(self.endpointName, self.schema, mediumEntity);
+		});
 	};
 
 	return jpoModelBuilder.model('playlists', playlistsSchema);

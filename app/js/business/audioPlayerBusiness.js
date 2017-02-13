@@ -5,50 +5,66 @@ jpoApp.factory('audioPlayerBusiness', function() {
 
 	var playingMediumSubject = new Rx.BehaviorSubject();
 	var playControlSubject = new Rx.BehaviorSubject(PlayerState.Unknown);
+	var lastMediumPosition = 0;
 
-	var observePlayingMedium = function() {
+	function observePlayingMedium() {
 		return playingMediumSubject.whereIsDefined();
-	};
+	}
 
-	var getAndObservePlayControl = function() {
+	function observeMediumPosition() {
+		return mediumPositionSubject;
+	}
+
+	function getMediumPosition() {
+		return lastMediumPosition;
+	}
+
+	function setMediumPosition(pos) {
+		lastMediumPosition = pos;
+	}
+
+	function getAndObservePlayControl() {
 		return playControlSubject;
-	};
+	}
 
-	var playMedium = function(mediumQueueVm) {
+	function playMedium(mediumQueueVm) {
 		playingMediumSubject.onNext(mediumQueueVm);
-	};
+	}
 
-	var playFirst = function() {
+	function playFirst() {
 		playControlSubject.onNext(PlayerState.PlayFirst);
-	};
+	}
 
-	var playNext = function() {
+	function playNext() {
 		playControlSubject.onNext(PlayerState.Next);
-	};
+	}
 
-	var playPrevious = function() {
+	function playPrevious() {
 		playControlSubject.onNext(PlayerState.Previous);
-	};
+	}
 
-	var stop = function() {
+	function stop() {
 		playControlSubject.onNext(PlayerState.Stop);
-	};
+	}
 
-	var playEnded = function() {
+	function playEnded() {
 		playControlSubject.onNext(PlayerState.Ended);
-	};
+	}
 
-	var play = function() {
+	function play() {
 		playControlSubject.onNext(PlayerState.Play);
-	};
+	}
 
-	var mediumError = function() {
+	function mediumError() {
 		playControlSubject.onNext(PlayerState.Error);
-	};
+	}
 
 	return {
 		observePlayingMedium: observePlayingMedium,
+		observeMediumPosition: observeMediumPosition,
 		getAndObservePlayControl: getAndObservePlayControl,
+		getMediumPosition: getMediumPosition,
+		setMediumPosition: setMediumPosition,
 		playMedium: playMedium,
 		stop: stop,
 		playEnded: playEnded,

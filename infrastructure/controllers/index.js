@@ -1,10 +1,11 @@
 'use strict';
 
-module.exports.HomeController = require("./homeController");
-module.exports.PlaylistController = require("./playlistController");
-module.exports.PlayMediaController = require("./playMediaController");
-module.exports.FileExplorerController = require("./fileExplorerController");
-module.exports.FavoriteController = require("./favoriteController");
-module.exports.StateController = require('./stateController');
-module.exports.AuthController = require('./authController');
-module.exports.UserController = require('./userController');
+exports.HomeController = require("./homeController");
+exports.PlaylistController = require("./playlistController");
+exports.PlayMediaController = require("./playMediaController");
+exports.FileExplorerController = require("./fileExplorerController");
+exports.FavoriteController = require("./favoriteController");
+exports.StateController = require('./stateController');
+exports.AuthController = require('./authController');
+exports.UserController = require('./userController');
+exports.UserStateController = require('./userStateController');

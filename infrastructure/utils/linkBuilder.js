@@ -2,53 +2,57 @@
 
 var Dto = require('../dto');
 
-var buildFolderContentDto = function(urlPath, files) {
+function buildFolderContentDto(urlPath, files) {
 	return new Dto.FolderContentDto()
 		.setLinks(buildFolderLinks(urlPath))
 		.setFiles(buildFilesLinks(files, urlPath));
-};
+}
 
-var buildFolderLinks = function (urlPath) {
+function buildFolderLinks (urlPath) {
 	return new Dto.ResourceLinksDto()
 		.addLink(makeSelfLinkToRes(urlPath))
 		.addLink(tryMakeFolderSelfPhysLink(urlPath))
 		.addLink(tryMakeParentLink(urlPath));
-};
+}
 
-var buildFilesLinks = function (files, urlPath) {
+function buildFilesLinks(files, urlPath) {
 	return files.map(function (file) {
-		return new Dto.FileInfoDto(
-			file.name,
-			file.type,
-			buildFileLinks(file, urlPath)
-		);
+		return buildFileInfoDto(urlPath, file);
 	});
-};
+}
 
-var buildFileLinks = function(file, parentFolderPath) {
+function buildFileInfoDto(urlPath, file) {
+	return new Dto.FileInfoDto(
+		file.name,
+		file.type,
+		buildFileLinks(file, urlPath)
+	);
+}
+
+function buildFileLinks(file, parentFolderPath) {
 	return new Dto.ResourceLinksDto()
 		.addLink(makeSelfLinkToRes(parentFolderPath, file))
 		.addLink(tryMakeFileSelfPhysLink(parentFolderPath, file))
 		.addLink(tryMakeSelfPlayLink(parentFolderPath, file));
-};
+}
 
-var tryMakeFolderSelfPhysLink = function (folderPath) {
+function tryMakeFolderSelfPhysLink(folderPath) {
 	if (!folderPath || folderPath === '/') {
 		return;
 	}
 	return new Dto.LinkDto('self.phys', folderPath);
-};
+}
 
-var tryMakeFileSelfPhysLink = function (parentFolderPath, file) {
+function tryMakeFileSelfPhysLink(parentFolderPath, file) {
 	var fullFilePath = (parentFolderPath || '') + file.name;
 	if (!fullFilePath || fullFilePath === '/') {
 		return;
 	}
 
 	return new Dto.LinkDto('self.phys', fullFilePath);
-};
+}
 
-var makeSelfLinkToRes = function (parentFolderPath, file) {
+function makeSelfLinkToRes(parentFolderPath, file) {
 	// encode url, no '/' if just file
 	// ^\/api\/explore\/(.*[\/])*$/
 	var fullFilePath;
@@ -60,17 +64,17 @@ var makeSelfLinkToRes = function (parentFolderPath, file) {
 		fullFilePath = parentFolderPath;
 	}
 	return new Dto.LinkDto('self', '/api/explore' + fullFilePath);
-};
+}
 
-var tryMakeParentLink = function (urlPath) {
+function tryMakeParentLink(urlPath) {
 	var upPath = tryMakeUpPath(urlPath);
 	if (!upPath) {
 		return;
 	}
 	return new Dto.LinkDto('parent', '/api/explore' + upPath);
-};
+}
 
-var tryMakeUpPath = function(urlPath){
+function tryMakeUpPath(urlPath){
 	var noTrailingSlash;
 	if (urlPath.endsWith('/')) {
 		noTrailingSlash = urlPath.substring(0, urlPath.length-1);
@@ -79,24 +83,26 @@ var tryMakeUpPath = function(urlPath){
 	}
 	var upPath = noTrailingSlash.substring(0, noTrailingSlash.lastIndexOf('/') + 1);
 	return upPath;
-};
+}
 
-var tryMakeSelfPlayLink = function (parentFolderPath, file) {
+function tryMakeSelfPlayLink(parentFolderPath, file) {
 	if (file.type && file.type === 'F') {
 		var fullFilePath = parentFolderPath + file.name;
 		// TODO only when playable
 		return new Dto.LinkDto('self.play', '/api/media/play/path' + fullFilePath);
 	}
-};
+}
 
-var isBrowsableFile = function(file) {
+function isBrowsableFile(file) {
 	return !file.type || file.type === 'D';
-};
+}
 
 module.exports = {
-
 	toFolderContentDto: function (urlPath, files) {
 		return buildFolderContentDto(urlPath, files);
-	}
+	},
 
+	toFileInfoDto: function (urlPath, file) {
+		return buildFileInfoDto(urlPath, file);
+	}
 };

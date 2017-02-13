@@ -24,8 +24,8 @@ function registerControllers(app, io) {
 	container.register('homeController', function(routes) {
 		return new Controllers.HomeController(app, routes);
 	});
-	container.register('playMediaController', function (mediaStreamer, routes, authDirector) {
-		return new Controllers.PlayMediaController(app, routes.media, routes.file, mediaStreamer, authDirector);
+	container.register('playMediaController', function (mediaStreamer, routes, authDirector, mediaDirector) {
+		return new Controllers.PlayMediaController(app, routes.media, routes.file, mediaStreamer, authDirector, mediaDirector);
 	});
 	container.register('playlistController', function (routes, playlistDirector, playlistsDirector, authDirector) {
 		return new Controllers.PlaylistController(app, routes.playlists, routes.media, playlistDirector, playlistsDirector, authDirector);
@@ -44,6 +44,9 @@ function registerControllers(app, io) {
 	});
 	container.register('userController', function (routes, authDirector, userDirector) {
 		return new Controllers.UserController (app, routes, authDirector, userDirector)
+	});
+	container.register('userStateController', function (routes, authDirector, userStateDirector) {
+		return new Controllers.UserStateController (app, routes, authDirector, userStateDirector)
 	});
 }
 
@@ -66,8 +69,14 @@ function registerBusinesses() {
 	container.register('authDirector', function (userSaveService) {
 		return new Business.AuthDirector (userSaveService);
 	});
-	container.register('userDirector', function (userSaveService) {
-		return new Business.UserDirector (userSaveService);
+	container.register('userDirector', function (userSaveService, userPermissionsSaveService) {
+		return new Business.UserDirector (userSaveService, userPermissionsSaveService);
+	});
+	container.register('userStateDirector', function (userStateSaveService) {
+		return new Business.UserStateDirector (userStateSaveService);
+	});
+	container.register('userPermissionsDirector', function () {
+		return new Business.UserPermissionsDirector ();
 	});
 }
 
@@ -84,7 +93,9 @@ function registerModels() {
 			Media: Models.Media(routes.media),
 			MediaType: Models.MediaType,
 			Playlist: Models.Playlist(routes.playlists, routes.media),
-			User: Models.User(routes.users)
+			User: Models.User(routes.users),
+			UserState: Models.UserState(routes.userStates),
+			UserPermissions: Models.UserPermissions(routes.userPermissions)
 		}
 	});
 }
@@ -109,6 +120,12 @@ function registerServices() {
 	});
 	container.register('userSaveService', function (saveService, Models) {
 		return new Services.Saves.UserSaveService(saveService, Models.User);
+	});
+	container.register('userStateSaveService', function (saveService, Models) {
+		return new Services.Saves.UserStateSaveService(saveService, Models.UserState);
+	});
+	container.register('userPermissionsSaveService', function (saveService, Models) {
+		return new Services.Saves.UserPermissionsSaveService(saveService, Models.UserPermissions);
 	});
 	container.register('fileExplorerService', function () {// anyDriveLetterRegex
 		var fileExplorerServices = [
@@ -174,7 +191,8 @@ function bootstrap() {
 		favoriteController,
 		stateController,
 	    authController,
-	    userController
+	    userController,
+		userStateController
 	) {
 		homeController.init();
 		playMediaController.init();
@@ -184,6 +202,7 @@ function bootstrap() {
 		stateController.init();
 		authController.init();
 		userController.init();
+		userStateController.init();
 	});
 }
 

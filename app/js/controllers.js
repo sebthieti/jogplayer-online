@@ -5,6 +5,7 @@ angular.module('jpoApp.controllers', []).controller('mainCtrl', [
 	'$timeout',
 	'audioPlayerBusiness',
 	'authBusiness',
+	'userStateBusiness',
 	function($scope, $timeout, audioPlayerBusiness, authBusiness) {
 		$scope.currentUser = null;
 
