@@ -35,6 +35,17 @@ UserDirector.prototype.addUserPermissionsAsync = function(userId, allowedPaths, 
 		});
 };
 
+UserDirector.prototype.geAllUserPermissionsAsync = function(userId, allowedPaths, owner) {
+	//if (owner.role !== 'admin') { // TODO Use role or isAdmin ? There is redundancy
+	//	throw 'Not authorized no manage users.';
+	//}
+
+	return _userPermissionsSaveService
+		.getAllUserPermissionsAsync();
+};
+
+
+
 UserDirector.prototype.updateFromUserDtoAsync = function(userId, userDto, owner) {
 	if (owner.role !== 'admin') {
 		throw 'Not authorized no manage users.';

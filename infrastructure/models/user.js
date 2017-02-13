@@ -16,7 +16,7 @@ var userSchema = new Schema({
 	isRoot: Boolean, // TODO This one must be read only
 	role: String,
 	//state: { type: Schema.Types.ObjectId, ref: 'UserState' }
-	permissions: { type: Schema.Types.ObjectId, ref: 'UserPermissions' }
+	permissions: { type: Schema.Types.ObjectId, ref: 'UserPermission' }
 });
 userSchema.set('toJSON', { virtuals: true });
 // virtuals: false to avoid inserting links to database
@@ -26,6 +26,8 @@ userSchema.methods.toJSON = function() {
 	// TODO This id is used only for client side's ui. Client should rather only use its own ids
 	obj.id = obj._id;
 	obj.links = this.links;
+	obj.permissions = obj.permissions.allowedPath || obj.permissions.allowedPaths;
+
 	delete obj._id;
 	//delete obj.canWrite;
 	//delete obj.isAdmin;

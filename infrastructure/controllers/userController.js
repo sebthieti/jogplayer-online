@@ -11,7 +11,6 @@ var _app,
 	_authDirector;
 
 var assertAndGetUserId = function (obj) {
-
 	if (!obj || !obj.userId) {
 		throw 'Id must be set.';
 	}

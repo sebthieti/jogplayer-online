@@ -10,6 +10,18 @@ function UserPermissionsSaveService(saveService, userPermissionsModel) {
 	UserPermissions = userPermissionsModel;
 }
 
+UserPermissionsSaveService.prototype.getAllUserPermissionsAsync = function() {
+	var defer = Q.defer();
+
+	UserPermissions.find({})
+		.exec(function(err, userPermissions) {
+			if (err) { defer.reject(err) }
+			else { defer.resolve(userPermissions) }
+		});
+
+	return defer.promise;
+};
+
 UserPermissionsSaveService.prototype.getUserPermissionsAsync = function(userId) { // TODO getUsersWithPermissionsAsync
 	var defer = Q.defer();
 

@@ -134,6 +134,9 @@ jpoApp.factory('Model', ['serviceFactory', function(serviceFactory) {
 	};
 
 	Model.prototype.validateArray = function (array, schema) {
+		if (!array) {
+			return;
+		}
 		if (!Array.isArray(array)) {
 			throw 'Not array';
 		}

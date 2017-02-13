@@ -15,5 +15,5 @@ jpoApp.factory('UserModel', ['jpoModelBuilder', function(jpoModelBuilder) {
 		methods: { }
 	};
 
-	return jpoModelBuilder.model('users', userSchema);
+	return jpoModelBuilder.model('Users', userSchema);
 }]);

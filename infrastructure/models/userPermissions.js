@@ -7,6 +7,7 @@ var _plRoutes;
 
 var userPermissionsSchema = new Schema({
 	userId: { type: Schema.Types.ObjectId, ref: 'User' },
+	allowedPath: [ String ],
 	allowedPaths: [ String ]
 });
 
@@ -19,6 +20,7 @@ userPermissionsSchema.methods.toJSON = function() {
 	//obj.id = obj._id;
 	obj.links = this.links;
 	delete obj._id;
+	delete obj.userId;
 	delete obj.__v;
 	return obj;
 };
@@ -28,12 +30,12 @@ userPermissionsSchema.virtual('links').get(function() {
 		href: _plRoutes.selfPath
 			.replace(':userId', this.id)
 			.replace(':userPermissionId', this.id)
-	},{
+	}, {
 		rel: 'update',
 		href: _plRoutes.updatePath
 			.replace(':userId', this.id)
 			.replace(':userPermissionId', this.id)
-	},{
+	}, {
 		rel: 'remove',
 		href: _plRoutes.deletePath
 			.replace(':userId', this.id)
@@ -43,5 +45,5 @@ userPermissionsSchema.virtual('links').get(function() {
 
 module.exports = function(plRoutes){
 	_plRoutes = plRoutes;
-	return mongoose.model('UserPermissions', userPermissionsSchema);
+	return mongoose.model('UserPermission', userPermissionsSchema);
 };

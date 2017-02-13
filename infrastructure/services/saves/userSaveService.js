@@ -27,10 +27,7 @@ UserSaveService.prototype.getUserByIdWithPermissionsAsync = function(userId) {
 	var defer = Q.defer();
 
 	User.findOne({ _id: userId})
-		.populate({
-			path: 'permissions',
-			select: '_id'
-		})
+		.populate('permissions')
 		.exec(function(err, user) {
 			if (err) { defer.reject(err) }
 			else { defer.resolve(user) }
