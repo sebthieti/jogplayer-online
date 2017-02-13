@@ -56,9 +56,13 @@ MediaStreamer.prototype.streamByMediaPath = function(rawPath, req, res) {
 	}
 
 	return _mediaDirector
-		.ensureReadableMediaAsync(realPath, req.headers.accept, req.user)
+		.renameMe(realPath, req.headers.accept, req.user)
 		.then(function(mediaPath) {
-			return _mediaDirector.getBinaryChunkAndFileSizeByPathAsync(mediaPath, chunckParams.startOffset, chunckParams.endOffset)
+			return _mediaDirector.getBinaryChunkAndFileSizeByPathAsync(
+				mediaPath,
+				chunckParams.startOffset,
+				chunckParams.endOffset
+			)
 		})
 		.then(function(dataSet) {
 			prepareAndSendResponseWithData(res, canUseChunkedStratagy, chunckParams, dataSet);
@@ -78,7 +82,7 @@ var injectHeaderInResponse = function (response, useChunkMode, chunckParams, fil
 	var header = {};
 
 	header["Accept-Ranges"] = "bytes";
-	header["Content-Type"] = mimeType;
+	header["Content-Type"] = mimeType;//(mimeType == "audio/ogg") ? "application/ogg" : mimeType;
 
 	if (useChunkMode) {
 		var fileLength = fileSize;
@@ -89,7 +93,9 @@ var injectHeaderInResponse = function (response, useChunkMode, chunckParams, fil
 		header["Content-Range"] = "bytes " + startOffset + "-" + endOffset + "/" + fileLength;
 		header["Content-Length"] = chunckLength;
 		header['Transfer-Encoding'] = 'chunked';
-		header["Connection"] = "close";
+		//header["Connection"] = "close";
+
+		//console.log(header);
 
 		response.writeHead(206, header);
 	} else {

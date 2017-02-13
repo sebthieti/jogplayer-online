@@ -1,7 +1,7 @@
 'use strict';
 
 jpoApp.factory('favoriteBusiness', ['FavoriteModel', 'authBusiness', function(FavoriteModel, authBusiness) {
-	var linkHelper = Helpers.linkHelpers;
+	var linkHelper = Helpers.Link;
 
 	var favoritesSubject = new Rx.BehaviorSubject();
 	var favoriteChangeSubject = new Rx.Subject();

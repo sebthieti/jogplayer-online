@@ -1,15 +1,16 @@
-<div>
-    <span id="clear-queue"
-          class="icon-remove btn-enabled"
-          title="Clear queue"
-          ng-show="hasAny"
-          ng-click="clearQueue()"></span>
-    <div id="queue-container-list">
+<div id="queue-outer">
+    <div id="queue-inner">
+        <button type="button" id="clear-queue"
+              class="icon-bin btn-enabled"
+              title="Clear queue"
+              ng-show="hasAny"
+              ng-click="clearQueue()"></button>
         <ul id="queue">
-            <li ng-repeat="mVm in mediaQueueViewModels track by $index"
+            <li ng-repeat="mVm in mediaQueueViewModels"
                 ng-click="playMedium(mVm)"
+                class="not-selectable"
                 ng-class="mVm.isPlaying ? 'active btn-enabled' : 'btn-enabled'">
-                <span ng-click="innerRemove(mVm)" class="remove" stop-event>[x]</span>
+                <button type="button" ng-click="innerRemove(mVm)" class="remove" stop-event>[x]</button>
                 <span class="error" ng-show="mVm.hasError" stop-event>[!]</span>
                 <span>{{ ::(mVm.model.name || mVm.model.title) }}</span>
             </li>

@@ -6,6 +6,7 @@ jpoApp.factory("FileNavigator", ['SelectorBase', function (SelectorBase) {
 
 		return {
 			controller: function ($scope, explorerBusiness) {
+				this.explorerBusiness = explorerBusiness;
 				base.controller($scope, explorerBusiness);
 
 				$scope.goUp = function (folderViewModel) {
@@ -19,6 +20,19 @@ jpoApp.factory("FileNavigator", ['SelectorBase', function (SelectorBase) {
 					} else {
 						base.updateFileSelection(fileViewModel);
 					}
+				}
+			},
+
+			goUp: function (folderViewModel) {
+				this.explorerBusiness.goUp(folderViewModel);
+			},
+
+			fileSelected: function (fileViewModel) {
+				var isBrowsable = !fileViewModel.model.type || fileViewModel.model.isDirectory();
+				if (isBrowsable) {
+					this.explorerBusiness.browseFolder(fileViewModel.model);
+				} else {
+					base.updateFileSelection(fileViewModel);
 				}
 			},
 

@@ -1,5 +1,5 @@
 jpoApp.factory('folderContentBuilder', function() {
-	var linkHelper = Helpers.linkHelpers;
+	var linkHelper = Helpers.Link;
 
 	return {
 		buildFolderContentViewModel: function(folderContent) {

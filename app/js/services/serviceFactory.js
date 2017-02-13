@@ -1,6 +1,6 @@
 'use strict';
 
-jpoApp.factory("serviceFactory", function ($http, $q, jpoProxy) {
+jpoApp.factory("serviceFactory", ['$http', '$q', 'jpoProxy', function ($http, $q, jpoProxy) {
 	var errorSubject = new Rx.Subject();
 
 	function Service(serviceName) {
@@ -135,4 +135,4 @@ jpoApp.factory("serviceFactory", function ($http, $q, jpoProxy) {
 			return errorSubject;
 		}
 	}
-});
+}]);

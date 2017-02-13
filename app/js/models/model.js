@@ -45,6 +45,9 @@ jpoApp.factory('Model', ['serviceFactory', function(serviceFactory) {
 	};
 
 	function buildStartArray(endpointName, schema, entities) {
+		if (!entities) {
+			return entities;
+		}
 		return entities.map(function(entity) {
 			return buildStartObject(endpointName, schema, entity);
 		}, this);
@@ -126,11 +129,11 @@ jpoApp.factory('Model', ['serviceFactory', function(serviceFactory) {
 	};
 
 	Model.prototype.selectSelfFromLinks = function () {
-		return Helpers.linkHelpers.selectActionFromLinks('self', this.links);
+		return Helpers.Link.selectActionFromLinks('self', this.links);
 	};
 
 	Model.prototype.selectActionFromLinks = function (action) {
-		return Helpers.linkHelpers.selectActionFromLinks(action, this.links);
+		return Helpers.Link.selectActionFromLinks(action, this.links);
 	};
 
 	Model.prototype.validateArray = function (array, schema) {
@@ -169,12 +172,14 @@ jpoApp.factory('Model', ['serviceFactory', function(serviceFactory) {
 						} else { // Neither array nor object, so native type
 							if (typeof value === getFunctionName(type)) {
 								continue; // Ok, there's a match, we both found the key and type is correct.
-							} else {
+							} else if (value){
 								throw 'Type of ' + key + ' in DTO is unexpected';
 							}
 						}
 					}
-					throw '[Model].[Property]: [' + this.endpointName + '].[' + key + '] in DTO has not been found in schema';
+					if (value) {
+						throw '[Model].[Property]: [' + this.endpointName + '].[' + key + '] in DTO has not been found in schema';
+					}
 				}
 			} else {
 				if (typeof entities !== getFunctionName(schema)) {

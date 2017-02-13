@@ -1,7 +1,7 @@
 'use strict';
 // TODO This code should not be accessible from a non-admin
 jpoApp.factory('userBusiness', ['$q', 'UserModel', 'authBusiness', function($q, UserModel, authBusiness) {
-	//var linkHelper = Helpers.linkHelpers;
+	//var linkHelper = Helpers.Link;
 
 	var usersSubject = new Rx.BehaviorSubject();
 

@@ -2,10 +2,10 @@
 
 jpoApp.factory('mediaQueueBusiness', [
 	'$q',
-	'audioPlayerBusiness',
+	'audioService',
 	'authBusiness',
 	'viewModelBuilder',
-	function($q, audioPlayerBusiness, authBusiness, viewModelBuilder) {
+	function($q, audioService, authBusiness, viewModelBuilder) {
 	var PlayerState = Jpo.PlayerState;
 
 	var currentMediumInQueueSubject = new Rx.BehaviorSubject();
@@ -13,7 +13,7 @@ jpoApp.factory('mediaQueueBusiness', [
 	var mediumOnErrorSubject = new Rx.Subject();
 	var observeQueueEndedWithMediumSubject = new Rx.Subject();
 
-	audioPlayerBusiness
+	audioService
 		.observePlayingMedium()
 		.do(function(mediumVm) {
 			// Set state: change current media
@@ -21,10 +21,10 @@ jpoApp.factory('mediaQueueBusiness', [
 		})
 		.silentSubscribe();
 
-	audioPlayerBusiness
-		.getAndObservePlayControl()
-		.do(function(playState) {
-			switch (playState) {
+	audioService
+		.observeEvents()
+		.do(function(e) {
+			switch (e.name) {
 				case PlayerState.Error:
 					displayMediumErrorResumeNext();
 					break;
@@ -48,9 +48,9 @@ jpoApp.factory('mediaQueueBusiness', [
 		authBusiness
 			.observeCurrentUserAuthentication()
 			.whereIsNull()
-			.do(function() {
-				mediaQueueSubject.onNext([]);
-			})
+			.selectMany(function () { return mediaQueueSubject.take(1) })
+			.where(function(mediaQueue) { return mediaQueue.length > 0 })
+			.do(function() { mediaQueueSubject.onNext([]) })
 			.silentSubscribe();
 	}
 
@@ -67,7 +67,7 @@ jpoApp.factory('mediaQueueBusiness', [
 	}
 
 	function playMedium(mediumVm) {
-		audioPlayerBusiness.playMedium(mediumVm);
+		audioService.setMediumToPlayAndPlayAsync(mediumVm);
 	}
 
 	function getMediumVmAtIndexAsync(index) {
@@ -93,7 +93,7 @@ jpoApp.factory('mediaQueueBusiness', [
 				var nextMediumIndex = currentMediumIndex + 1;
 				var nextMediumViewModelInQueue = mediaQueueSet.mediaViewModelsQueue[nextMediumIndex];
 
-				audioPlayerBusiness.playMedium(nextMediumViewModelInQueue);
+				audioService.setMediumToPlayAndPlayAsync(nextMediumViewModelInQueue);
 			})
 			.silentSubscribe();
 	}
@@ -111,7 +111,7 @@ jpoApp.factory('mediaQueueBusiness', [
 				var previousMediaIndex = currentMediumIndex-1;
 				var previousMediaInQueue = mediaQueueSubject.value[previousMediaIndex];
 
-				audioPlayerBusiness.playMedium(previousMediaInQueue);
+				audioService.setMediumToPlayAndPlayAsync(previousMediaInQueue);
 			})
 			.silentSubscribe();
 	}
@@ -143,12 +143,7 @@ jpoApp.factory('mediaQueueBusiness', [
 			})
 			.where(function(x) { return x.mediaAdded })
 			.combineLatest( // TODO Optimize this chain
-				audioPlayerBusiness
-					.getAndObservePlayControl()
-					.where(function(playStatus) {
-						return playStatus === PlayerState.Ended
-					})
-				,
+				audioService.observeMediumEnded(),
 				function(mediaQueueSet, playStatus) {
 					return {mediaQueueSet: mediaQueueSet, playStatus: playStatus}
 				} // TODO rename to getAndObservePlayStatus ?
@@ -163,7 +158,7 @@ jpoApp.factory('mediaQueueBusiness', [
 					var nextMediumIndex = currentMediumIndex + 1;
 					var nextMediumViewModelInQueue = newMediaQueue[nextMediumIndex];
 
-					audioPlayerBusiness.playMedium(nextMediumViewModelInQueue);
+					audioService.setMediumToPlayAndPlayAsync(nextMediumViewModelInQueue);
 				});
 			})
 			.silentSubscribe();
@@ -176,7 +171,7 @@ jpoApp.factory('mediaQueueBusiness', [
 			}
 
 			var firstMediumInQueue = mediaQueue[0];
-			audioPlayerBusiness.playMedium(firstMediumInQueue);
+			audioService.setMediumToPlayAndPlayAsync(firstMediumInQueue);
 		});
 	}
 
@@ -207,7 +202,7 @@ jpoApp.factory('mediaQueueBusiness', [
 			.do(function(mediaQueueSet) {
 				// If medium to remove is current playing...
 				if (mediaQueueSet.currentMediumInQueue && mediaQueueSet.currentMediumInQueue === medium) {
-					audioPlayerBusiness.stop();
+					audioService.stop();
 					currentMediumInQueueSubject.onNext(null);
 				}
 				var updatedMediaQueue = _.filter(mediaQueueSet.mediaViewModelsQueue, function(mediumInQueue) {
@@ -257,7 +252,7 @@ jpoApp.factory('mediaQueueBusiness', [
 	}
 
 	function clearQueue() {
-		audioPlayerBusiness.stop();
+		audioService.stop();
 		currentMediumInQueueSubject.onNext(null);
 		mediaQueueSubject.onNext([]);
 	}
@@ -279,6 +274,7 @@ jpoApp.factory('mediaQueueBusiness', [
 		clearQueue: clearQueue,
 		playNext: playNext,
 		playPrevious: playPrevious,
+		playFirst: playFirst,
 		getMediumVmAtIndexAsync: getMediumVmAtIndexAsync,
 		observeCurrentMediumInQueue: observeCurrentMediumInQueue,
 		observeCurrentMediumIndexInQueue: observeCurrentMediumIndexInQueue,

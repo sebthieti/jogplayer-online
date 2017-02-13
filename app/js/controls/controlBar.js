@@ -7,7 +7,7 @@ jpoApp.directive("controlBar", [
 	'fileExplorerBusiness',
 	'mediaQueueBusiness',
 	function(favoriteBusiness, playlistBusiness, mediaBusiness, fileExplorerBusiness, mediaQueueBusiness) {
-		var linkHelpers = Helpers.linkHelpers;
+		var linkHelpers = Helpers.Link;
 		return {
 			restrict: 'E',
 			templateUrl: '/templates/controls/controlBar.html',

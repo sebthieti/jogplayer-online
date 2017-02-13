@@ -2,14 +2,13 @@
 
 jpoApp.factory('playlistBusiness', [
 	'$q',
-//	'$timeout',
 	'mediaQueueBusiness',
-	'audioPlayerBusiness',
+	'audioService',
 	'PlaylistsModel',
 	'PlaylistMediaModel',
 	'viewModelBuilder',
 	'authBusiness',
-	function($q, mediaQueueBusiness, audioPlayerBusiness, PlaylistsModel, PlaylistMediaModel, viewModelBuilder, authBusiness) {
+	function($q, mediaQueueBusiness, audioService, PlaylistsModel, PlaylistMediaModel, viewModelBuilder, authBusiness) {
 		var playlistViewModelsSubject = new Rx.BehaviorSubject();
 		var playingPlaylistSubject = new Rx.BehaviorSubject();
 		var playingMediumSubject = new Rx.BehaviorSubject();
@@ -55,7 +54,7 @@ jpoApp.factory('playlistBusiness', [
 			});
 		}
 
-		audioPlayerBusiness
+		audioService
 			.observePlayingMedium()
 			.whereIsNotNull()
 			.do(function(currentMediumViewModel) {
@@ -135,9 +134,7 @@ jpoApp.factory('playlistBusiness', [
 		function playlistSelected(playlistViewModel) {
 			if (playlistViewModel.media) {
 				currentPlaylistSubject.onNext(playlistViewModel);
-				var deferred = $q.defer();
-				deferred.resolve(playlistViewModel.media);
-				return deferred.promise;
+				return $q.when(playlistViewModel.media);
 			}
 			return loadMediaAsync(playlistViewModel.model)
 				.then(function(media) {
@@ -250,6 +247,13 @@ jpoApp.factory('playlistBusiness', [
 						playlistViewModels = removePlaylist(playlistViewModels, playlist);
 						playlistViewModels = remapIndexes(playlistViewModels);
 						playlistViewModelsSubject.onNext(playlistViewModels);
+
+						observeCurrentPlaylist().getValueAsync(function (currentPlaylistVm) {
+							if (currentPlaylistVm.model.id === playlist.id) {
+								// Reset current playlist if it was the current one.
+								currentPlaylistSubject.onNext(null);
+							}
+						});
 					});
 					//playlistChangeSubject.onNext({
 					//	entity: playlist.toArray(),
@@ -280,45 +284,29 @@ jpoApp.factory('playlistBusiness', [
 		function addFilesToSelectedPlaylist(fileViewModels) {
 			observeCurrentPlaylist()
 				.asAsyncValue()
-				.whereIsNotNull()
-				.selectMany(function(selectedPlaylistViewModel) {
-					//var mediaFilePathPromises = fileViewModels.map(function(fileVm) {
-					//	var mediaFilePath = fileVm.model.selectSelfPhysicalFromLinks();
-					//	return selectedPlaylistViewModel.model.addMediumByFilePathToPlaylist(mediaFilePath);
-					//});
-					//$q.all(mediaFilePathPromises)
-					//	.then(function(mediaFilePath) {
-					//		mediaFilePath.map(function(mediumFilePath) {
-					//			return {
-					//				selectedPlaylistViewModel: selectedPlaylistViewModel,
-					//				newMedia: mediumFilePath
-					//			};
-					//		})
-					//	});
-
-					return Rx.Observable
-						.fromArray(fileViewModels)
-						.select(function(fileViewModel) {
-							var mediumFilePath = fileViewModel.model.selectSelfPhysicalFromLinks();
-							return Rx.Observable.fromPromise(selectedPlaylistViewModel.model.addMediumByFilePathToPlaylist(mediumFilePath))
-						})
-						.selectMany(function(rx) {
-							return rx })
-						.toArray()
-						.select(function(newMedia) {
-							return {
-								selectedPlaylistViewModel: selectedPlaylistViewModel,
-								newMedia: newMedia
-							};
+				.whereHasValue()
+				.do(function(selectedPlaylistViewModel) {
+					var mediaFilePathPromises = fileViewModels.map(function(fileVm, index) {
+						var mediaFilePath = fileVm.model.selectSelfPhysicalFromLinks();
+						return selectedPlaylistViewModel
+							.model
+							.insertMediumByFilePathToPlaylist(
+								mediaFilePath,
+								index
+							);
+					});
+					$q.all(mediaFilePathPromises)
+					.then(function(mediaFilePaths) {
+						selectedPlaylistViewModel.media = selectedPlaylistViewModel.media.concat(
+							mediaFilePaths.map(viewModelBuilder.buildMediumViewModel)
+						);
+						observeCurrentPlaylist().getValueAsync(function (currentPlaylistVm) {
+							// Reset current playlist if it was the current one.
+							if (currentPlaylistVm.model.id === selectedPlaylistViewModel.model.id) {
+								currentPlaylistSubject.onNext(currentPlaylistVm);
+							}
 						});
-
-
-				}) // TODO Cannot insert multiple media on pl without fail
-				.do(function(plMediaSetCurrentPl) {
-					var plVm = plMediaSetCurrentPl.selectedPlaylistViewModel;
-					plVm.media = plVm.media.concat(
-						plMediaSetCurrentPl.newMedia.map(viewModelBuilder.buildMediumViewModel)
-					);
+					});
 				})
 				.silentSubscribe();
 		}

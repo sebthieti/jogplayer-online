@@ -1,19 +1,26 @@
 'use strict';
 
-angular.module('jpoApp.controllers', []).controller('mainCtrl', [
+angular.module('jpoApp.controllers', [])
+.controller('mainCtrl', [
 	'$scope',
 	'$timeout',
-	'audioPlayerBusiness',
+	'audioService',
 	'authBusiness',
 	'userStateBusiness',
-	function($scope, $timeout, audioPlayerBusiness, authBusiness) {
+	function($scope, $timeout, audioService, authBusiness) {
 		$scope.currentUser = null;
 
 		$scope.isAdmin = false;
+		$scope.canShowMenu = false;
 
 		$scope.manageUserVisible = false;
 		$scope.toggleUserManager = function() {
 			$scope.manageUserVisible = !$scope.manageUserVisible;
+		};
+
+		$scope.canShowMediaQueue = false;
+		$scope.toggleMediaQueue = function() {
+			$scope.canShowMediaQueue = !$scope.canShowMediaQueue;
 		};
 
 		authBusiness
@@ -21,8 +28,10 @@ angular.module('jpoApp.controllers', []).controller('mainCtrl', [
 			.do(function(user) {
 				$timeout(function() {
 					$scope.currentUser = user;
+					$scope.canShowMenu = !!user;
 					if (!user) {
 						$scope.manageUserVisible = false;
+						$scope.canShowMediaQueue = false;
 					} else {
 						$scope.isAdmin = user.permissions.isAdmin || user.permissions.isRoot;
 					}
@@ -34,7 +43,7 @@ angular.module('jpoApp.controllers', []).controller('mainCtrl', [
 			authBusiness.logout();
 		};
 
-		audioPlayerBusiness
+		audioService
 			.observePlayingMedium()
 			.select(function(x) {return x.model})
 			.startWith(null)

@@ -11,11 +11,15 @@ jpoApp.directive("manageUsers", [
 		templateUrl: '/templates/controls/manageUsers.html',
 		controller: function($scope) {
 			$scope.newUserVm = null;
-			$scope.editUserVm = null;
 			$scope.canShowAddUserArea = false;
 			$scope.canShowAddAllowedPathArea = true;
 
 			$scope.beginAddUser = function() {
+				// Toggle all editing users
+				$scope.usersVm.forEach(function(vm) {
+					vm.isEditing = false;
+				});
+
 				$scope.newUserVm = viewModelBuilder.buildEditableViewModel({
 					isActive: true,
 					fullName: '',
@@ -34,19 +38,13 @@ jpoApp.directive("manageUsers", [
 				$scope.canShowAddUserPanel = true;
 			};
 
-			$scope.beginAddAllowedPath = function() {
-				$scope.newAllowedPath = {};
-				//$scope.canShowAddAllowedPathArea = true;
-			};
-
 			$scope.beginEditUser = function(userVm) {
-				//$scope.editUserVm = userVm;
+				$scope.usersVm.forEach(function(vm) {
+					if (vm.model.selectSelfFromLinks() !== userVm.model.selectSelfFromLinks()) {
+						vm.isEditing = false;
+					}
+				});
 				userVm.isEditing = true;
-			};
-
-			$scope.cancelAddAllowedPath = function() {
-				$scope.newAllowedPath = null;
-				//$scope.canShowAddAllowedPathArea = false;
 			};
 
 			$scope.cancelAddUser = function() {
@@ -61,16 +59,6 @@ jpoApp.directive("manageUsers", [
 
 			$scope.removeUser = function(userVm) {
 				userBusiness.removeUser(userVm.model);
-			};
-
-			$scope.beginEditUser = function(userVm) {
-				$scope.editUserVm = userVm;
-				userVm.isEditing = true;
-			};
-
-			$scope.cancelEditUser = function(userVm) {
-				userVm.isEditing = false;
-				$scope.editUserVm = null;
 			};
 
 			authBusiness

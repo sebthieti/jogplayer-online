@@ -1,198 +1,365 @@
 'use strict';
 
-jpoApp.directive("audioPlayer", [
-	'$window',
-	'AudioPlayerControl',
-	'audioPlayerBusiness',
-	function ($window, AudioPlayerControl, audioPlayerBusiness) {
-		var PlayerState = Jpo.PlayerState;
+jpoApp.directive("audioPlayer", ['audioService', 'mediaQueueBusiness', '$timeout', function (audioService, mediaQueueBusiness, $timeout) {
+	var PlayerState = Jpo.PlayerState;
+	var ButtonMap = Jpo.ButtonMap;
+	var controlElements = {
+		elapsedTime: 'elapsed-time',
+		remainingTime: 'remaining-time',
+		loadedChunks: 'loaded-chunks',
+		timeLineContainer: 'time-line-container',
+		timeLine: 'time-line',
+		volumeBar: 'volume-bar',
+		volumeBarContainer: 'volume-bar-container',
+		cursor: 'cursor',
+		btnPlay: 'btnPlay'
+	};
 
-		var audioPlayerControl = new AudioPlayerControl({
-			audioPlayer: 'audioPlayer',
-			elapsedTime: 'elapsed-time',
-			remainingTime: 'remaining-time',
-			loadedChunks: 'loaded-chunks',
-			timeLineContainer: 'time-line-container',
-			timeLine: 'time-line',
-			volumeBar: 'volume-bar',
-			volumeBarContainer: 'volume-bar-container',
-			cursor: 'cursor',
-			btnPlay: 'btnPlay'
-		});
+	return {
+		restrict: 'E',
+		replace: true,
+		templateUrl: '/templates/controls/audioPlayer.html',
+		controller: function($scope) {
+			$scope.isMuting = false;
+			$scope.playOrPause = function() {
+				if (audioService.getState() === PlayerState.Unknown) {
+					mediaQueueBusiness.playFirst();
+				} else {
+					audioService.playOrPause();
+				}
+			};
 
-		return {
-			restrict: 'E',
-			replace: true,
-			templateUrl: '/templates/controls/audioPlayer.html',
-			controller: function($scope) {
-				var ctxMediumQueueVm = null;
+			$scope.playNext = function() {
+				mediaQueueBusiness.playNext();
+			};
 
-				audioPlayerControl.init({
-					setCurrentStateHandler: function(state) {
-						audioPlayerBusiness.playStateChanged(state);
-					},
-					setCurrentMediumHandler: function(mediumModel) { // TODO Revamp ?
-						audioPlayerBusiness.setCurrentMedium(ctxMediumQueueVm);
-					},
-					setCurrentVolume: function(volume) {
-						audioPlayerBusiness.volumeChanged(volume);
-					},
-					controlDomElement: $window.document
+			$scope.playPrevious = function() {
+				mediaQueueBusiness.playPrevious();
+			};
+
+			$scope.mute = function() {
+				$scope.isMuting = !$scope.isMuting;
+				if ($scope.isMuting) {
+					audioService.mute();
+				} else {
+					audioService.unmute();
+				}
+			};
+		},
+		link: function(scope){
+			var isDraggingCursor = false;
+			var audioPlayerElements;
+
+			function init() {
+				audioPlayerElements = controlElements.mapOwnProperties(function(controlElement) {
+					return window.document.getElementById(controlElement);
 				});
+				initAudioPlayer();
+			}
 
-				audioPlayerBusiness.init({
-					setUpdateVolumeHandler: function(vol) {
-						audioPlayerControl.setVolumeFromCode(vol);
-					},
-					setMediumHandler: function(mediumQueueVm) {
-						ctxMediumQueueVm = mediumQueueVm;
-						audioPlayerControl.setMediumToPlayAndPlay(ctxMediumQueueVm.model);
-					},
-					setMediumPositionHandler: function(position) {
-						audioPlayerControl.setMediumTimePosition(position);
-					},
-					playFirstHandler: function() {
+			function initAudioPlayer() {
+				initListenToAudioEvents();
+				initVolumeBar();
+				initTimeLine();
+				initCursorEvents();
+				initCursorVisibleOnMediumSet();
+			}
 
-					},
-					playNextHandler: function playNext() {
+			function initListenToAudioEvents() {
+				updateTimelineAndCursorOnTimeUpdate();
+				updateMediaChunksBufferedOnProgressOrDuration();
+				updatePlayButtonStatusToState();
+				updateVolumeBarOnChange();
+			}
 
-					},
-					playPreviousHandler: function() {
+			function updateTimelineAndCursorOnTimeUpdate() {
+				return audioService
+					.observeTimeUpdate()
+					.do(function(timeUpdateSet) {
+						var currentTime = timeUpdateSet.currentTime;
+						var audioDuration = timeUpdateSet.duration;
+						var timeRemaining = audioDuration - currentTime;
 
-					},
-					//playMediumHandler: function(mediumToPlay) {
-					//	audioPlayerControl.playMedium(mediumToPlay);
-					//},
-					stopHandler: function() {
-						audioPlayerControl.stopMedium();
-					},
-					playHandler: function() {
-						audioPlayerControl.playMedium();
-					},
-					setMediumAndSetCursorAt: function(mediumQueueVm, position) {
-						ctxMediumQueueVm = mediumQueueVm;
-						audioPlayerControl.setMediumToPlay(mediumQueueVm.model);
-						audioPlayerControl.setMediumTimePosition(position);
-						audioPlayerControl.playOrPause();
-					}
-				});
+						var format = getTimeFormatForDuration(currentTime);
+						var currentTimeHHMMSS = (new Date)
+							.clearTime()
+							.addSeconds(currentTime)
+							.toString(format);
+						var timeRemainingHHMMSS = (new Date)
+							.clearTime()
+							.addSeconds(timeRemaining)
+							.toString(format);
 
-				$scope.playNext = function() {
-					audioPlayerBusiness.playNext();
-				};
+						if (isDraggingCursor) {
+							return;
+						}
 
-				$scope.playPrevious = function() {
-					audioPlayerBusiness.playPrevious();
-				};
+						var timeLineContainer = audioPlayerElements.timeLineContainer;
+						var cursorPositionRatio = (currentTime / audioDuration);
+						var cursorOffsetX = timeLineContainer.offsetWidth * cursorPositionRatio;
+						audioPlayerElements.cursor.style.transform = 'translateX(' + cursorOffsetX + 'px)';
 
-				$scope.playOrPause = function() {
-					if (audioPlayerControl.getState() === PlayerState.Unknown) {
-						audioPlayerBusiness.playFirst();
-					} else {
-						audioPlayerControl.playOrPause();
-					}
-				};
-
-				//audioPlayerControl
-				//	.observeCurrentState()
-				//	.do(function(currentState) {
-				//		switch (currentState) {
-				//			case PlayerState.Ended:
-				//				audioPlayerBusiness.playEnded();
-				//				break;
-				//			case PlayerState.Error:
-				//				audioPlayerBusiness.mediumError();
-				//				break;
-				//		}
-				//	})
-				//	.silentSubscribe();
-
-				audioPlayerControl
-					.observeMediumPosition()
-					.do(function(pos) {
-						audioPlayerBusiness.mediumPositionChanged(pos);
+						audioPlayerElements.elapsedTime.textContent = currentTimeHHMMSS;
+						audioPlayerElements.remainingTime.textContent = '-' + timeRemainingHHMMSS;
 					})
 					.silentSubscribe();
-
-				//audioPlayerControl
-				//	.observeCurrentState()
-				//	.do(function(state) {
-				//		audioPlayerBusiness.playStateChanged(state);
-				//	})
-				//	.silentSubscribe();
-
-				//audioPlayerBusiness
-				//	.observeMediumPosition()
-				//	.where(function() {return !userUpdate})
-				//	// where not called from a user notif
-				//	.do(function(vol) {
-				//		audioPlayerControl.setMediumTimePosition(vol);
-				//	})
-				//	.silentSubscribe();
-
-
-
-				//audioPlayerControl // From user change
-				//	.observeVolume()
-				//	.do(function(vol) {
-				//		//userUpdate = true;
-				//		audioPlayerBusiness.volumeChanged(vol);
-				//		//userUpdate = false;
-				//		//audioPlayerControl.setVolumeFromControl(vol);
-				//	})
-				//	.silentSubscribe();
-
-				//audioPlayerBusiness
-				//	.observeVolume()
-				//	.where(function() {return !userUpdate})
-				//	// where not called from a user notif
-				//	.do(function(vol) {
-				//		audioPlayerControl.setVolumeFromCode(vol);
-				//	})
-				//	.silentSubscribe();
-
-				//audioPlayerBusiness
-				//	.observePlayingMedium()
-				//	.select(function(x) {return x.model})
-				//	.do(function(mediumToPlay) {
-				//		audioPlayerControl.playMedium(mediumToPlay);
-				//	})
-				//	.silentSubscribe();
-
-				//audioPlayerBusiness
-				//	.getAndObservePlayControl()
-				//	.where(function(state) {
-				//		return state === PlayerState.Stop;// && _currentState !==  '';
-				//	})
-				//	.do(function(playState) {
-				//		switch (playState) {
-				//			case 'stop':
-				//				audioPlayerControl.stopMedium();
-				//				break;
-				//		}
-				//	})
-				//	.silentSubscribe();
-
-	//			var sendPlayableMediaTypes = function() {
-	//				var audioTypes = [
-	//					'audio/mp4',
-	//					'audio/mpeg',
-	//					'audio/ogg',
-	//					"audio/ogg; codecs='flac'",
-	//					"audio/x-flac",
-	//					'audio/vorbis',
-	//					"audio/ogg; codecs='vorbis'",
-	//					"audio/ogg; codecs='opus'",
-	//					'audio/opus',
-	//					'audio/wav',
-	//					'audio/vnd.wave'
-	//				];
-	//				var audioPlayer = _audioPlayerElements.audioPlayer;
-	//				var playableTypes = {};
-	//				_.each(audioTypes, function(audioType){
-	//					return this[audioType] = audioPlayer.canPlayType(audioType)
-	//				}, playableTypes);
-	//			};
 			}
-		};
+
+			function getTimeFormatForDuration(time) {
+				if (time < 3600) {
+					return 'm:ss';
+				}
+				return 'H:mm:ss';
+			}
+
+			function updateMediaChunksBufferedOnProgressOrDuration() {
+				return audioService
+					.observeEvents()
+					.where(function(e) {
+						return e.name === PlayerState.DurationChange ||
+							e.name === PlayerState.Progress
+					})
+					.select(function(e) { return e.value })
+					.do(function(durationProgressSet) {
+						var buffer = durationProgressSet.buffered;
+						var bufferLength = buffer.length;
+
+						if (bufferLength === 0) {
+							return;
+						}
+						if (!durationProgressSet.duration) {
+							return;
+						}
+
+						var start = buffer.start(0);
+						var end = buffer.end(0);
+						var duration = durationProgressSet.duration;
+
+						// Compute start position in percent
+						var startPercent = (start / duration) * 100;
+
+						// Compute end position in percent
+						var endPercent = (end / duration) * 100;
+						var loadedChunksWidth = endPercent - startPercent;
+
+						var loadedChunks = audioPlayerElements.loadedChunks;
+						loadedChunks.style.left = startPercent + '%';
+						loadedChunks.style.width = loadedChunksWidth + '%';
+					})
+					.silentSubscribe();
+			}
+
+			function updatePlayButtonStatusToState() {
+				audioService
+					.observeEvents()
+					.where(function(e) {
+						return e.name === PlayerState.Unknown ||
+							e.name === PlayerState.Pause ||
+							e.name === PlayerState.Play
+					})
+					.do(function(e) {
+						if (e.name === PlayerState.Play) {
+							turnPlayButtonToPause();
+						} else {
+							turnPauseButtonToPlay();
+						}
+					})
+					.silentSubscribe();
+			}
+
+			function turnPauseButtonToPlay() {
+				var classes = audioPlayerElements.btnPlay.classList;
+				classes.remove('icon-pause2');
+				classes.add('icon-play3');
+			}
+
+			function turnPlayButtonToPause() {
+				var classes = audioPlayerElements.btnPlay.classList;
+				classes.remove('icon-play3');
+				classes.add('icon-pause2');
+			}
+
+			function initVolumeBar() {
+				var volumeBarWidth = audioPlayerElements.volumeBarContainer.clientWidth;
+				var volumeXPos = volumeBarWidth * audioService.getVolume();
+				var volumeOffset = volumeBarWidth - volumeXPos;
+
+				audioPlayerElements.volumeBar.style.transform = 'translateX(' + volumeOffset + 'px)';
+
+				var volumeBarContainer = audioPlayerElements.volumeBarContainer;
+
+				observeElementEvent(volumeBarContainer, 'mousedown')
+					.where(function(event) { return event.button === ButtonMap.Left })
+					.do(function(event) {
+						var volumeBarOffset = event.clientX - event.target.offsetLeft;
+						updateVolume(volumeBarOffset);
+					})
+					.selectMany(function() {
+						return observeElementEvent(volumeBarContainer, 'mousemove');
+					})
+					.do(function(event) {
+						var volumeBarOffset = event.clientX - event.target.offsetLeft;
+						updateVolume(volumeBarOffset);
+					})
+					.takeUntil(observeElementEvent(volumeBarContainer, 'mouseup'))
+					.repeat()
+					.silentSubscribe();
+			}
+
+			function updateVolume(mouseX) {
+				var volumeBar = audioPlayerElements.volumeBarContainer;
+				var volumeBarWidth = volumeBar.clientWidth;
+				var volumePercent = mouseX / volumeBarWidth;
+				var safeVolumePerOne = Math.min(Math.max(volumePercent, 0), 1);
+
+				var volumeOffset = -volumeBarWidth + mouseX;
+				audioPlayerElements.volumeBar.style.transform = 'translateX(' + volumeOffset + 'px)';
+
+				audioService.setVolume(safeVolumePerOne);
+			}
+
+			function updateVolumeBarOnChange() {
+				audioService
+					.observeVolume()
+					.do(function(vol) {
+						$timeout(function() {
+							// To turn back the normal vol icon when user just unmute by changing volume
+							if (scope.isMuting && vol != 0) {
+								scope.isMuting = false;
+							}
+						});
+
+						var volumeBar = audioPlayerElements.volumeBarContainer;
+						var volumeBarWidth = volumeBar.clientWidth;
+						var mouseX = volumeBarWidth * vol;
+
+						var volumeOffset = -volumeBarWidth + mouseX;
+						audioPlayerElements.volumeBar.style.transform = 'translateX(' + volumeOffset + 'px)';
+					})
+					.silentSubscribe();
+			}
+
+			function observeElementEvent(element, eventName) {
+				return Rx.Observable.fromEventPattern(
+					function(h) { element.addEventListener(eventName, h, false) },
+					function(h) { element.removeEventListener(eventName, h, false) }
+				);
+			}
+
+			function initTimeLine() {
+				var timeLine = audioPlayerElements.timeLine;
+				var cursor = audioPlayerElements.cursor;
+
+				timeLine.addEventListener('mousedown', function(event) {
+					if (event.button !== ButtonMap.Left) {
+						return;
+					}
+					if (!isDraggingCursor) {
+						isDraggingCursor = true;
+					}
+					cursor.style.transform = 'translateX(' + event.offsetX + 'px)';
+				}, false);
+
+				timeLine.addEventListener('mouseup', function(event) {
+					if (event.button !== ButtonMap.Left) {
+						return;
+					}
+					if (isDraggingCursor) {
+						isDraggingCursor = false;
+					}
+
+					var cursorX = relativeXFromDirectParent(event);
+					var cursorPercent = cursorX / timeLine.clientWidth;
+
+					audioService.setMediumPositionRatio(cursorPercent);
+				}, false);
+			}
+
+			function initCursorEvents() {
+				var timeLine = audioPlayerElements.timeLine;
+				var cursor = audioPlayerElements.cursor;
+
+				cursor.addEventListener('mousedown', function(event) {
+					if (event.button !== ButtonMap.Left) {
+						return;
+					}
+					if (!isDraggingCursor) {
+						isDraggingCursor = true;
+					}
+
+					var cursorX = relativeXFromDirectParent(event);
+
+					cursor.style.transform = 'translateX(' + cursorX + 'px)';
+				}, false);
+
+				cursor.addEventListener('mousemove', function(event) {
+					if (!isDraggingCursor) {
+						return;
+					}
+
+					var cursorX = relativeXFromDirectParent(event);
+					var cursorParentWidth = event.target.offsetParent.clientWidth;
+					if (cursorX < 0 || cursorX > cursorParentWidth) {
+						return;
+					}
+
+					var cursorPercent = cursorX / timeLine.clientWidth;
+
+					updateLandingPosition(cursorPercent);
+
+					cursor.style.transform = 'translateX(' + cursorX + 'px)';
+				}, false);
+
+				cursor.addEventListener('mouseup', function(event) {
+					if (event.button !== ButtonMap.Left) {
+						return;
+					}
+					if (isDraggingCursor) {
+						isDraggingCursor = false;
+					}
+
+					var cursorX = relativeXFromDirectParent(event);
+					var cursorPercent = cursorX / timeLine.clientWidth;
+
+					audioService.setMediumPositionRatio(cursorPercent);
+				}, false);
+			}
+
+			function relativeXFromDirectParent(event) {
+				var parentX = event.target.offsetParent.offsetLeft;
+				return event.clientX - parentX;
+			}
+
+			function updateLandingPosition(cursorPercent) {
+				var mediumDuration = audioService.getMediumDuration();
+				var currentTime = cursorPercent * mediumDuration;
+				var timeRemaining = mediumDuration - currentTime;
+
+				var format = getTimeFormatForDuration(currentTime);
+				var currentTimeHHMMSS = (new Date)
+					.clearTime()
+					.addSeconds(currentTime)
+					.toString(format);
+				var timeRemainingHHMMSS = (new Date)
+					.clearTime()
+					.addSeconds(timeRemaining)
+					.toString(format);
+
+				audioPlayerElements.elapsedTime.textContent = currentTimeHHMMSS;
+				audioPlayerElements.remainingTime.textContent = '-' + timeRemainingHHMMSS;
+			}
+
+			function initCursorVisibleOnMediumSet() {
+				audioService
+					.observePlayingMedium()
+					.do(function() {
+						// Ensure cursor is visible
+						audioPlayerElements.cursor.classList.remove('hidden');
+					})
+					.silentSubscribe();
+			}
+
+			init();
+		}
+	};
 }]);

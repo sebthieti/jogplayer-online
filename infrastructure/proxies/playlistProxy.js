@@ -50,6 +50,7 @@ PlaylistProxy.prototype.removeAllMediaFromPlaylistAsync = function(playlist, iss
 		.removeAllMediaFromPlaylistAsync(playlist.id, issuer)
 		.then(function(playlist) {
 			_globalCache.createOrUpdateItem(PLAYLIST_GROUP, playlist.id, playlist);
+			_globalCache.createOrUpdateItem(PLAYLIST_MEDIA_COUNT_GROUP, playlist.id, 0);
 			return playlist;
 		});
 };
@@ -74,9 +75,9 @@ PlaylistProxy.prototype.getMediaCountForPlaylistByIdAsync = function(playlistId,
 	return deferred.promise;
 };
 
-PlaylistProxy.prototype.insertMediaToPlaylistAsync = function(playlistId, unlinkedMedium, issuer) {
+PlaylistProxy.prototype.insertMediumToPlaylistAsync = function(playlistId, unlinkedMedium, issuer) {
 	return _playlistSaveService
-		.insertMediaToPlaylistAsync(playlistId, unlinkedMedium, issuer)
+		.insertMediumToPlaylistAsync(playlistId, unlinkedMedium, issuer)
 		.then(function(media) {
 			_globalCache.removeItem(PLAYLIST_GROUP, playlistId);
 			return media;
@@ -122,6 +123,7 @@ PlaylistProxy.prototype.removeMediaFromPlaylistAsync = function(playlistId, medi
 		.removeMediaFromPlaylistAsync(playlistId, mediaId, issuer)
 		.then(function(playlist) {
 			_globalCache.createOrUpdateItem(PLAYLIST_GROUP, playlistId, playlist);
+			_globalCache.createOrUpdateItem(PLAYLIST_MEDIA_COUNT_GROUP, playlist.id, playlist.media.length);
 			return playlist;
 		});
 };
@@ -174,6 +176,7 @@ PlaylistProxy.prototype.insertMediaToPlaylistReturnSelfAsync = function(emptyPla
 			issuer
 		).then(function(playlist) {
 			_globalCache.createOrUpdateItem(PLAYLIST_GROUP, playlist.id, playlist);
+			_globalCache.createOrUpdateItem(PLAYLIST_MEDIA_COUNT_GROUP, playlist.id, playlist.media.length);
 			return playlist;
 		})
 };
@@ -188,6 +191,7 @@ PlaylistProxy.prototype.playlistInserted = function(playlist) {
 
 PlaylistProxy.prototype.invalidatePlaylistById = function(playlistId) {
 	_globalCache.removeItem(PLAYLIST_GROUP, playlistId);//.createOrUpdateItem(PLAYLIST_GROUP, playlistId, null);
+	_globalCache.removeItem(PLAYLIST_MEDIA_COUNT_GROUP, playlistId);
 };
 
 module.exports = PlaylistProxy;

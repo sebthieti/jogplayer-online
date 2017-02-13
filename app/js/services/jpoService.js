@@ -1,10 +1,9 @@
 'use strict';
 
-jpoApp.factory("jpoService", function ($http, $q) {
+jpoApp.factory("jpoService", ['$http', '$q', function ($http, $q) {
 	var API_URL = "/api/";
 
 	return {
-
 		getApiMapAsync: function() {
 			var deferred = $q.defer();
 
@@ -17,15 +16,13 @@ jpoApp.factory("jpoService", function ($http, $q) {
 
 			return deferred.promise;
 		}
-
 	}
-});
+}]);
 
-jpoApp.factory("jpoProxy", function ($q, jpoService) {
+jpoApp.factory("jpoProxy", ['$q', 'jpoService', function ($q, jpoService) {
 	var cache = {};
 
 	return {
-
 		getApiMapAsync: function() {
 			var deferred = $q.defer();
 
@@ -41,7 +38,6 @@ jpoApp.factory("jpoProxy", function ($q, jpoService) {
 
 			return deferred.promise;
 		},
-
 		getApiLinkAsync: function(name) {
 			var deferred = $q.defer();
 
@@ -58,6 +54,5 @@ jpoApp.factory("jpoProxy", function ($q, jpoService) {
 
 			return deferred.promise;
 		}
-
 	}
-});
+}]);

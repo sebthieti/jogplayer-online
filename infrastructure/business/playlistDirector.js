@@ -39,7 +39,17 @@ var PlaylistDirector = function(
 };
 
 PlaylistDirector.prototype.updatePlaylistAsync = function(playlistId, playlistDto, issuer) {
-	return _playlistProxy.updatePlaylistDtoAsync(playlistId, playlistDto, issuer);
+	return _playlistProxy
+		.getMediaCountForPlaylistByIdAsync(playlistId, issuer)
+		.then(function() {
+			return _playlistProxy.updatePlaylistDtoAsync(
+				playlistId,
+				playlistDto,
+				issuer
+			);
+		}/*, function(err) { // In case playlist doesn't exists anymore
+
+		}*/);
 };
 
 PlaylistDirector.prototype.getMediaFromPlaylistByIdAsync = function (playlistId, issuer) {
@@ -153,7 +163,7 @@ PlaylistDirector.prototype.insertMediumByFilePathAsync = function (playlistId, m
 			return buildAndInsertMediumByFilePathAsync(playlistId, mediaFilePath, mediaPosition, issuer);
 		})
 		.then(function(unlinkedMedium) {
-			return _playlistProxy.insertMediaToPlaylistAsync(playlistId, unlinkedMedium, issuer);
+			return _playlistProxy.insertMediumToPlaylistAsync(playlistId, unlinkedMedium, issuer);
 		})
 		.then(function(linkedMedium) {
 			return _playlistProxy
@@ -190,9 +200,9 @@ function makeRoomForMediaAtIndexFromPlaylistIdAsync(playlistId, desiredIndex, is
 	return _playlistsProxy
 		.getPlaylistsCountAsync(issuer)
 		.then(function(count) {
-			if (desiredIndex == null) {
+			if (desiredIndex == null || desiredIndex > count) {
 				desiredIndex = count;
-			} else if (desiredIndex > count || desiredIndex < 0) {
+			} else if (desiredIndex < 0) {
 				throw "The given index is out of bounds"; // TODO To clean exceptions
 			}
 

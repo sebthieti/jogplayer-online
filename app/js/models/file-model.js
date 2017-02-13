@@ -1,7 +1,7 @@
 'use strict';
 
 jpoApp.factory('FileModel', ['jpoModelBuilder', 'Model', function(jpoModelBuilder, Model) {
-	var linkHelpers = Helpers.linkHelpers;
+	var linkHelpers = Helpers.Link;
 
 	var fileSchema = {
 		name: String,
@@ -23,6 +23,24 @@ jpoApp.factory('FileModel', ['jpoModelBuilder', 'Model', function(jpoModelBuilde
 						var mediumModel = Model.build(self.endpointName, self.schema, rawMedium);
 						return mediumModel;
 					});
+			},
+
+			createEntity: function(mediumPlayLinkUrl) {
+				var self = this;
+				return Model.build(self.endpointName, self.schema, {
+					name: mediumPlayLinkUrl.substring(mediumPlayLinkUrl.lastIndexOf("/") + 1),
+					type: "F",
+					links:[{
+							rel: "self",
+							href: mediumPlayLinkUrl
+						},{
+							rel: "self.phys",
+							href: mediumPlayLinkUrl.replace("/api/explore", "")
+						},{
+							rel: "self.play",
+							href: "/api/media/play/path" + mediumPlayLinkUrl.replace("/api/explore", "")
+						}] // TODO Get paths from svc repo
+				});
 			}
 		}
 	};

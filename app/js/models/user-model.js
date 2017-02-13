@@ -21,7 +21,7 @@ jpoApp.factory('userSchema', function() {
 		links: [{ href: String, rel: String }],
 		methods: {
 			selectBrowsingHomePathFromLinks: function () { // TODO s/b place on permissions, but methods doesn't work
-				return Helpers.linkHelpers.selectActionFromLinks('self.browsingFolderPath', this.permissions.links)
+				return Helpers.Link.selectActionFromLinks('self.browsingFolderPath', this.permissions.links)
 			}
 		}
 	};

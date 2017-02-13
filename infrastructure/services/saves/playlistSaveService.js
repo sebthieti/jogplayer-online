@@ -1,7 +1,9 @@
 'use strict';
 
 var Q = require('q'),
-	from = require('fromjs');
+	from = require('fromjs'),
+	ReadWriteLock = require('rwlock'),
+	lock = new ReadWriteLock();
 
 var _saveService,
 	_mediaSaveService,
@@ -103,7 +105,10 @@ PlaylistSaveService.prototype.getMediaCountForPlaylistByIdAsync = function (play
 			select: '_id'
 		})
 		.exec(function(err, playlist) {
-			if (!err) { defer.resolve(playlist.media.length) }
+			if (!err && playlist) { defer.resolve(playlist.media.length) }
+			else if (!playlist) {
+				defer.reject("PlaylistId:" + playlistId + " doesn't exists");
+			}
 			else { defer.reject(err) }
 		});
 
@@ -144,23 +149,32 @@ PlaylistSaveService.prototype.findIndexesFromPlaylistIdsAsync = function(playlis
 	return defer.promise;
 };
 
-PlaylistSaveService.prototype.insertMediaToPlaylistAsync = function (playlistId, mediaArray, issuer) {
+PlaylistSaveService.prototype.insertMediumToPlaylistAsync = function (playlistId, medium, issuer) {
 	var defer = Q.defer();
 
-	Playlist
-		.findOne({ _id: playlistId, ownerId: issuer.id })
-		.populate({ path: 'media', select: '_id' })
-		.exec(function(readError, playlist) {
-			if (readError) {
-				defer.reject(readError);
-			} else {
-				playlist.media = playlist.media.concat(mediaArray);
-				playlist.save(function(writeError) {
-					if (writeError) { defer.reject(writeError) }
-					else { defer.resolve(mediaArray) }
-				});
-			}
-		});
+	if (lock.writeLock(function (release) {
+		Playlist
+			.findOne({_id: playlistId, ownerId: issuer.id})
+			.populate({path: 'media', select: '_id'})
+			.exec(function (readError, playlist) {
+				if (readError) {
+					defer.reject(readError);
+				} else if (!playlist) {
+					defer.reject("PlaylistId:" + playlistId + " doesn't exists");
+				} else {
+					playlist.media = playlist.media.concat(medium);
+					playlist.save(function (writeError) {
+						if (writeError) {
+							defer.reject(writeError);
+						}
+						else {
+							defer.resolve(medium);
+							release();
+						}
+					});
+				}
+			});
+	}));
 
 	return defer.promise;
 };

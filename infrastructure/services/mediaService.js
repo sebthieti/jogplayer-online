@@ -32,9 +32,22 @@ var getBasicMediumInfo = function (filePath) {
 };
 
 var convertMediumToAsync = function (mediaFilePath, outputFormat) {
-	return ensureConvertionOutputFolderExistsAsync()
-		.then(function () {
-			return execMediumConvertionAsync (mediaFilePath, outputFormat)
+	var outputFilePath = generateConvertedMediaFilePath(mediaFilePath, outputFormat);
+
+	return utils
+		.checkFileExistsAsync(outputFilePath)
+		.then(function(fileAlreadyConverted) {
+			if (fileAlreadyConverted) {
+				return outputFilePath;
+			}
+			return ensureConvertionOutputFolderExistsAsync()
+				.then(function (){
+					return execMediumConvertionAsync (
+						mediaFilePath,
+						outputFormat,
+						outputFilePath
+					);
+				});
 		});
 };
 
@@ -53,9 +66,7 @@ var ifNotExistsCreateConvertionOutputFolderAsync = function (folderExists) {
 	}
 };
 
-var execMediumConvertionAsync = function (mediaFilePath, outputFormat) {
-	var outputFilePath = generateConvertedMediaFilePath(mediaFilePath, outputFormat);
-
+var execMediumConvertionAsync = function (mediaFilePath, outputFormat, outputFilePath) {
 	// TODO try -map option (http://www.ffmpeg.org/ffmpeg.html)
 	// TODO try -codec copy (http://www.ffmpeg.org/ffmpeg-all.html)
 	// TODO try -t duration (output), -to position (output) (Xclusive Or), check interesting other next options
@@ -109,26 +120,6 @@ var getFileSizeAsync = function(filePath) {
 var getFileStream = function(filePath, fromOffset, toOffset) {
 	return fs.createReadStream(filePath, { start: fromOffset, end: toOffset });
 };
-
-//function exitHandler(options, err) {
-//	if (options.cleanup) {
-//		if (_dbConnection) {
-//			_dbConnection.disconnect();
-//		}
-//		console.log('before Gracefull exit');
-//	}
-//	if (err) console.log(err.stack);
-//	if (options.exit) process.exit();
-//}
-//
-//// Do something when app is closing
-//process.on('exit', exitHandler.bind(null, { cleanup: true }));
-//
-//// Catches ctrl+c event
-//process.on('SIGINT', exitHandler.bind(null, { exit: true }));
-//
-//// Catches uncaught exceptions
-//process.on('uncaughtException', exitHandler.bind(null, { exit: true }));
 
 module.exports = {
 	getMediumInfosAsync: getMediumInfosAsync,

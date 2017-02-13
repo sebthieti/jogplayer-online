@@ -8,8 +8,8 @@
                 <div ng-show="playlistVm.isEditing">
                     <!-- Editing mode -->
                     <input type="text" ng-model="playlistVm.model.name" focus-when="playlistVm.isEditing" ng-enter="endEditPlaylist(playlistVm)">
-                    <span class="icon-checkmark rename" stop-event ng-click="endEditPlaylist(playlistVm)"></span>
-                    <span class="icon-close cancel" stop-event ng-click="cancelAddPlaylist(playlistVm)"></span>
+                    <button type="button" class="icon-checkmark rename" stop-event ng-click="endEditPlaylist(playlistVm)"></button>
+                    <button type="button" class="icon-close cancel" stop-event ng-click="cancelAddPlaylist(playlistVm)"></button>
                 </div>
                 <span ng-show="!playlistVm.isEditing"
                       class="title">
@@ -17,20 +17,20 @@
                 </span>
                 <div class="tab-tools" ng-show="!playlistVm.isEditing">
                     <!-- Non editing mode -->
-                    <span class="icon-pencil rename" stop-event ng-click="beginEditPlaylist(playlistVm)"></span>
-                    <span class="icon-remove delete" stop-event ng-click="innerRemovePlaylist(playlistVm)"></span>
+                    <button type="button" class="icon-pencil rename" stop-event ng-click="beginEditPlaylist(playlistVm)"></button>
+                    <button type="button" class="icon-cross delete" stop-event ng-click="innerRemovePlaylist(playlistVm)"></button>
                 </div>
             </li>
             <li ng-switch="isAdding" class="btn-enabled">
                 <div ng-switch-when="true">
                     <input type="text" ng-model="newPlaylist.name" ng-enter="endAddVirtualPlaylist()">
-                    <span class="icon-checkmark rename" stop-event ng-click="endAddVirtualPlaylist()"></span>
-                    <span class="icon-close cancel" stop-event ng-click="cancelAddPlaylist()"></span>
+                    <button type="button" class="icon-checkmark rename" stop-event ng-click="endAddVirtualPlaylist()"></button>
+                    <button type="button" class="icon-cross cancel" stop-event ng-click="cancelAddPlaylist()"></button>
                 </div>
 
                 <div ng-switch-default>
-                    <span id="add-playlist-virtual" ng-click="beginAddVirtualPlaylist()">+</span>
-                    <span id="add-playlist-phys" class="icon-download" ng-click="beginAddPhysicalPlaylist()"></span>
+                    <button type="button" id="add-playlist-virtual" ng-click="beginAddVirtualPlaylist()">+</button>
+                    <button type="button" id="add-playlist-phys" class="icon-download" ng-click="beginAddPhysicalPlaylist()"></button>
                 </div>
             </li>
         </ul>
@@ -41,13 +41,13 @@
                 ng-click="mediaSelected(mediumVm)"
                 ng-dblclick="innerPlayMedium(mediumVm)"
                 ng-class="mediumVm.isPlaying || mediumVm.selected ? 'current' : ''"
-                class="btn-enabled">
+                class="btn-enabled not-selectable">
 
-                <span class="icon-close remove btn-enabled" stop-event ng-click="innerRemoveMedium(mediumVm)"></span>
-                <span class="icon-play btn-enabled" ng-click="innerPlayMedium(mediumVm)" stop-event>{{ hasMediaQueueAny ? '+' : '' }}</span>
+                <button type="button" class="icon-play3 btn-enabled" ng-click="innerPlayMedium(mediumVm)" stop-event>{{ hasMediaQueueAny ? '+' : '' }}</button>
 
                 <span class="title">{{ ::mediumVm.model.title || 'Empty' }}</span>
                 <div class="duration">{{ ::mediumVm.model.duration | time}}</div>
+                <button type="button" class="icon-close remove btn-enabled" stop-event ng-click="innerRemoveMedium(mediumVm)"></button>
             </li>
         </ul>
 
@@ -59,11 +59,11 @@
         </file-explorer>
 
         <div id="playlistFinderValidation" ng-show="canShowPlaylistFinderValidate">
-            <span class="icon-checkmark btn-enabled btn-large"
-                  ng-click="endAddPhysicalPlaylist()"></span>
-            <span class="icon-close btn-enabled btn-large"
+            <button type="button" class="icon-checkmark btn-enabled btn-large"
+                  ng-click="endAddPhysicalPlaylist()"></button>
+            <button type="button" class="icon-close btn-enabled btn-large"
                   id="playlistFinderValidationCancel"
-                  ng-click="cancelImport()"></span>
+                  ng-click="cancelImport()"></button>
         </div>
 
     </div>

@@ -50,8 +50,8 @@ function registerControllers(app, io) {
 }
 
 function registerBusinesses() {
-	container.register('mediaDirector', function (mediaService, mediaSaveService) {
-		return new Business.MediaDirector(mediaService, mediaSaveService);
+	container.register('mediaDirector', function (mediaService, mediaSaveService, fileExplorerService) {
+		return new Business.MediaDirector(mediaService, mediaSaveService, fileExplorerService);
 	});
 	container.register('authDirector', function (userProxy) {
 		return new Business.AuthDirector (userProxy);
@@ -266,23 +266,31 @@ function registerSetupStack(app) {
 }
 
 function checkRequiredEnvVar() {
-	// In windows, fluent-ffmpeg can find by itself ffmpeg/ffprobe
-	if (os.platform() === "win32") {
-		return;
-	}
-
 	if (!('FFMPEG_PATH' in process.env)) {
 		// To ensure fluent-ffmpeg will work well
-		process.env.FFMPEG_PATH = path.join(process.cwd(), "ffmpeg");
+		process.env.FFMPEG_PATH = path.join(process.cwd(), getFFMpegRelativePath());
 	}
 	if (!('FFPROBE_PATH' in process.env)) {
 		// To ensure fluent-ffmpeg will work well with ffprobe
-		process.env.FFPROBE_PATH = path.join(process.cwd(), "ffprobe");
+		process.env.FFPROBE_PATH = path.join(process.cwd(), getFFProbeRelativePath());
 	}
+}
+
+function getFFMpegRelativePath() {
+	return os.platform() === "win32"
+		? "./ffmpeg/ffmpeg.exe"
+		: "./ffmpeg/ffmpeg";
+}
+
+function getFFProbeRelativePath() {
+	return os.platform() === "win32"
+		? "./ffmpeg/ffprobe.exe"
+		: "./ffmpeg/ffprobe";
 }
 
 exports.init = function (app, io) {
 	//process.env.FFMPEG_PATH
+	// TODO Move ffmpeg/ffprobe to dedicated folder
 	checkRequiredEnvVar();
 	bootstrap(app, io);
 };

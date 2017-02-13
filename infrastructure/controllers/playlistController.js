@@ -43,7 +43,7 @@ function assertMediumInsertParamsFromRequest(request) {
 	var insertPosition = request.body.index;
 	var mediaFilePath = request.body.mediaFilePath;
 
-	if (!playlistId || !insertPosition || !mediaFilePath) {
+	if (!playlistId || insertPosition === undefined || insertPosition === null || !mediaFilePath) {
 		throw "Playlist object doesn't have all mandatory fields."
 	}
 
@@ -148,7 +148,7 @@ function registerPlaylistMediaRoutes() {
 					: _playlistDirector.insertMediumByFilePathAsync(
 						reqSet.playlistId,
 						reqSet.mediaFilePath,
-						reqSet.index,
+						reqSet.insertPosition,
 						req.user)
 			})
 			.then(function(newMedia) { res.send(newMedia) })

@@ -5,7 +5,7 @@ jpoApp.directive("breadCrumb", [
 	'breadCrumbFileExplorerBusiness',
 	function (breadCrumbPlaylistExplorerBusiness, breadCrumbFileExplorerBusiness) {
 
-	var linkHelpers = Helpers.linkHelpers;
+	var linkHelpers = Helpers.Link;
 	return {
 		restrict: 'E',
 		templateUrl: '/templates/controls/breadCrumb.html',

@@ -1,6 +1,7 @@
 'use strict';
 
-var Q = require('q'),
+var os = require('os'),
+	Q = require('q'),
 	mongodb = require('mongodb'),
 	mongoose = require('mongoose'),
 	util = require('util'),
@@ -40,27 +41,17 @@ function SaveService (configObservable) {
 }
 
 function startDbService() {
-
 	// Following is windows cfg
-	//_dbProcess = child_process.spawn(
-	//	".\\bin\\mongod", [
-	//		'--config',
-	//		"mongod.conf"
-	//	], {
-	//		cwd: 'C:\\_PROJECTS\\GitHub\\jogplayer-online\\db' // TODO S/b config
-	//
-	//	}
-	//);
-
-	_dbProcess = child_process.spawn( // TODO In linux all directory (logs/db data must exist before runnin script)
-		"mongod", [
-		"--config",
-		"./mongod.conf"
+	_dbProcess = child_process.spawn(
+		getMongodExecRelativePath(), [
+			'--config',
+			getMongodConfigRelativePath()
 		], {
-			//cwd: 'C:\\_PROJECTS\\GitHub\\jogplayer-online\\db'
-			cwd: "/home/sebthieti/_Projects/jogplayer-online/db/" // TODO S/b config
+			cwd: getMongodCwdRelativePath()
 		}
 	);
+	// TODO In linux all directory (logs/db data must exist before running script)
+
 	_dbProcess.stdout.on('data', function (data) {
 		console.log('stdout: ' + data);
 	});
@@ -72,6 +63,24 @@ function startDbService() {
 	_dbProcess.on('close', function (code) {
 		console.log('child process exited with code ' + code);
 	});
+}
+
+function getMongodExecRelativePath() {
+	return os.platform() === "win32"
+		? ".\\bin\\mongod.exe"
+		: "./bin/mongod";
+}
+
+function getMongodConfigRelativePath() {
+	return os.platform() === "win32"
+		? "mongod.conf"
+		: "./mongod-unix.conf";
+}
+
+function getMongodCwdRelativePath() {
+	return os.platform() === "win32"
+		? ".\\db"
+		: "./db/";
 }
 
 function observeConfigAndInit(configObservable) {
@@ -87,7 +96,6 @@ function observeConfigAndInit(configObservable) {
 			function() {}
 		);
 	}, 5000);
-
 }
 
 function initDbClientAsync(config) {

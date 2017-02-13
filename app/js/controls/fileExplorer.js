@@ -19,9 +19,10 @@ jpoApp.directive("fileExplorer", [
 				isVisible: '=?',
 				exploreWhenVisible: '=',
 				selectedFiles: '=?',
-				currentFolder: '=?' //fileExplorerBusiness
+				currentFolder: '=?'
 			},
 			controller: function ($scope) {
+				var self = this;
 				this.base = new FileNavigator();
 
 				// TODO Temporary check. Check with better code (observ. sn/b subsc. if fileExp is the left one (no favs))
@@ -50,23 +51,22 @@ jpoApp.directive("fileExplorer", [
 					}
 				});
 
+				$scope.itemSelected = function (fileVm, byDblClick) {
+					var isDir = !fileVm.model.type || fileVm.model.isDirectory();
+					if (byDblClick) { // item: enqueue | folder: navigate
+						if (isDir) {
+							self.base.fileSelected(fileVm);
+						} else {
+							explorerBusiness.playMedium(fileVm);
+						}
+					} else { // item: select it | folder: navigate
+						self.base.fileSelected(fileVm);
+					}
+				};
+
 				$scope.innerPlayMedium = function (file) {
 					explorerBusiness.playMedium(file);
 				};
-
-				//this.observeSelectedFiles = function () {
-				//	return Rx.Observable.create(function(observer) {
-				//		$scope.$watch("selectedFiles", function (selectedFiles) {
-				//			observer.onNext(selectedFiles);
-				//		});
-				//	});
-				//};
-				//this
-				//	.observeSelectedFiles()
-				//	.do(function(selectedFiles) {
-				//		scope[attr.selectedFiles] = selectedFiles;
-				//	})
-				//	.silentSubscribe();
 
 				$scope.exploreFileSystem = function () {
 					startExplore();
@@ -109,31 +109,4 @@ jpoApp.directive("fileExplorer", [
 				});
 			}
 		};
-}])/*.
-directive('selectedFiles', function() {
-	return {
-		restrict: 'A',
-		priority: 3,
-		require: 'fileExplorer',
-		link: function(scope, element, attr, controller) {
-			controller
-				.observeSelectedFiles()
-				.do(function(selectedFiles) {
-					scope[attr.selectedFiles] = selectedFiles;
-				})
-				.silentSubscribe();
-		}
-	}
-})*/
-;
-//.directive('filterFiles', function() {
-//	return {
-//		restrict: 'A',
-//		require: 'fileExplorer',
-//		link: function(scope, element, attr, controller) {
-//			scope.$watch(attr.filterFiles, function (newValue, oldValue){
-//				controller.updateScope('filterFiles', newValue || 'm3u');
-//			});
-//		}
-//	}
-//})
+}]);

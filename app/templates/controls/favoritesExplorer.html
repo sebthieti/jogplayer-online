@@ -2,11 +2,11 @@
     <li ng-repeat="favoriteVm in favoritesVm" ng-switch="favoriteVm.isEditing" class="btn-enabled">
         <span class="icon-heart favorite"></span>
         <input ng-switch-when="true" ng-enter="done(favoriteVm)" focus-when="favoriteVm.isEditing" type="text" ng-model="favoriteVm.model.name">
-        <span ng-switch-when="true" class="icon-checkmark rename" stop-event ng-click="done(favoriteVm)"></span>
-        <span ng-switch-when="true" class="icon-close cancel" stop-event ng-click="cancel(favoriteVm)"></span>
+        <button type="button" ng-switch-when="true" class="icon-checkmark rename" stop-event ng-click="done(favoriteVm)"></button>
+        <button type="button" ng-switch-when="true" class="icon-cross cancel" stop-event ng-click="cancel(favoriteVm)"></button>
 
-        <span ng-switch-default class="favName" ng-click="goToFolder(favoriteVm)">{{ favoriteVm.model.name }}</span>
-        <span ng-switch-default class="icon-pencil rename" stop-event ng-click="editFavorite(favoriteVm)"></span>
-        <span ng-switch-default class="icon-remove delete" stop-event ng-click="innerDeleteFavorite(favoriteVm)"></span>
+        <button type="button" ng-switch-default class="favName" ng-click="goToFolder(favoriteVm)">{{ favoriteVm.model.name }}</button>
+        <button type="button" ng-switch-default class="icon-pencil rename" stop-event ng-click="editFavorite(favoriteVm)"></button>
+        <button type="button" ng-switch-default class="icon-cross delete" stop-event ng-click="innerDeleteFavorite(favoriteVm)"></button>
     </li>
 </ul>

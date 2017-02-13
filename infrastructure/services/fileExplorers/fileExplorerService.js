@@ -73,7 +73,7 @@ var queryFileStatAsync = function (fullFilePath, fileName) {
 				return FileInfo.invalid;
 			}
 			return new FileInfo(
-				fullFilePath + fileName + (fileStat.isDirectory() ? '/' : ''),
+				fullFilePath /*+ fileName*/ + (fileStat.isDirectory() ? '/' : ''),
 				fileName,
 				fileStat.isDirectory() ? FileInfo.directory : FileInfo.file,
 				false
@@ -81,7 +81,10 @@ var queryFileStatAsync = function (fullFilePath, fileName) {
 		}, function(e) { // onError
 			// errno:34 code:ENOENT when no drive
 			// TODO What error for drive empty CD drive?
-			return FileInfo.invalid;
+			throw e;
+		})
+		.catch(function() {
+			return new FileInfo()
 		});
 };
 

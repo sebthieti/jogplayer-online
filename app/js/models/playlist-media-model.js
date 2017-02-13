@@ -1,7 +1,7 @@
 'use strict';
 
 jpoApp.factory('PlaylistMediaModel', ['jpoModelBuilder', 'Model', function(jpoModelBuilder, Model) {
-	var linkHelpers = Helpers.linkHelpers;
+	var linkHelpers = Helpers.Link;
 
 	var playlistMediaSchema = {
 		id: String,

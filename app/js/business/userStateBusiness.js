@@ -2,7 +2,7 @@
 
 jpoApp.factory('userStateBusiness', [
 	'$q',
-	'audioPlayerBusiness',
+	'audioService',
 	'authBusiness',
 	'mediaQueueBusiness',
 	'fileExplorerBusiness',
@@ -10,9 +10,10 @@ jpoApp.factory('userStateBusiness', [
 	'PlaylistMediaModel',
 	'FileModel',
 	'UserStateModel',
-	function($q, audioPlayerBusiness, authBusiness, mediaQueueBusiness, fileExplorerBusiness, playlistBusiness, PlaylistMediaModel, FileModel, UserStateModel) {
+	function($q, audioService, authBusiness, mediaQueueBusiness, fileExplorerBusiness, playlistBusiness, PlaylistMediaModel, FileModel, UserStateModel) {
 		var userStateSubject = new Rx.BehaviorSubject();
 		//var PlayerState = Jpo.PlayerState;
+		var initializingState = false;
 
 		function observeUserState() {
 			return userStateSubject;
@@ -23,49 +24,61 @@ jpoApp.factory('userStateBusiness', [
 				.observeAuthenticatedUser()
 				.whereHasValue()
 				.do(function(__) {
-					audioPlayerBusiness.updateVolume(tryLoadVolumeState());
+					var vol = tryLoadVolumeState() || 1.0;
+					audioService.setVolume(vol);
 
 					UserStateModel
 						.getCurrentUserStateAsync()
 						.then(function(userState) {
+							initializingState = true;
 							userStateSubject.onNext(userState);
 							if (!userState) {
 								return;
 							}
 
-							loadMediaQueueAsync(userState)
-								.then(function() {
-									return loadCurrentMediumAsync(userState);
-								});
-							loadCurrentPlaylist(userState);
+							$q.all([
+								loadMediaQueueAsync(userState)
+									.then(function() {
+										return loadCurrentMediumAsync(userState);
+									}),
+								loadCurrentPlaylist(userState)
+							]).then(function() {
+								initializingState = false;
+							}, function() {
+								initializingState = false;
+							});
 						});
 				})
 				.silentSubscribe();
 		}
 
 		function loadCurrentPlaylist(userState) {
+			if (!userState.openedPlaylistId) {
+				return $q.when({});
+			}
 			return playlistBusiness.selectPlaylistByIdAsync(userState.openedPlaylistId);
 		}
 
 		function loadMediaQueueAsync(userState) {
-			var deferred = $q.defer();
-
-			var mediaInQueuePromises = userState.mediaQueue.map(function(mediumLinkUrl) {
+			var mediaInQueuePromises = (userState.mediaQueue || []).map(function(mediumLinkUrl) {
 				if (mediumLinkUrl.startsWith('/api/playlists/')) {
 					return PlaylistMediaModel.getMediumFromLinkUrl(mediumLinkUrl);
 				} else {
-					return FileModel.getMediumFromLinkUrl(mediumLinkUrl);
+					return FileModel
+						.getMediumFromLinkUrl(mediumLinkUrl)
+						.catch(function(err) {
+							// TODO In the future enhance error handling
+							return FileModel.createEntity(mediumLinkUrl);
+						});
 				}
 			});
-			$q.all(mediaInQueuePromises)
-				.then(function(mediaInQueue) {
-					return mediaQueueBusiness.enqueueMediaAndStartQueue(mediaInQueue);
-				})
-				.then(function() {
-					deferred.resolve();
-				});
 
-			return deferred.promise;
+			return $q.all(mediaInQueuePromises)
+				.then(function(mediaInQueue) { // Si un medium fail, ne laisser que le nom
+					return mediaQueueBusiness.enqueueMediaAndStartQueue(mediaInQueue);
+				}, function(err) {
+					console.log(err)
+				});
 		}
 
 		function loadCurrentMediumAsync(userState) {
@@ -73,9 +86,14 @@ jpoApp.factory('userStateBusiness', [
 			return mediaQueueBusiness
 				.getMediumVmAtIndexAsync(userState.playingMediumInQueueIndex)
 				.then(function(mediumInQueueVm) {
-					//audioPlayerBusiness.playMedium(mediumInQueueVm);
 					if (mediumInQueueVm) {
-						audioPlayerBusiness.setMediumAndSetCursorAt(mediumInQueueVm, userState.playedPosition);
+						// TODO Move the following to audioService ?
+						audioService
+							.setMediumToPlayAsync(mediumInQueueVm)
+							.then(function() {
+								audioService.setMediumPositionByTime(userState.playedPosition);
+								//audioService.playOrPause();
+							});
 					}
 				});
 		}
@@ -103,7 +121,7 @@ jpoApp.factory('userStateBusiness', [
 				.observeAuthenticatedUser()
 				.whereIsNotNull() // TODO Stop when user disconnect
 				.selectMany(function() {
-					return audioPlayerBusiness
+					return audioService
 						.observeVolume()
 						.debounce(500);
 				});
@@ -117,7 +135,9 @@ jpoApp.factory('userStateBusiness', [
 					return Rx.Observable
 						.timer(interval, interval)
 						.withLatestFrom(
-							audioPlayerBusiness.observeMediumPosition(),
+							audioService
+								.observeTimeUpdate()
+								.select(function (value) { return value.currentTime }),
 							function(t, m) { return m }
 						)
 						.distinctUntilChanged(function(x) { return x });
@@ -163,22 +183,26 @@ jpoApp.factory('userStateBusiness', [
 
 		function observeControlsForStateChange() {
 			return Rx.Observable.combineLatest(
-				// TODO Problem here: All observable have to produce a value for first same
-				observeMediumPositionChangeByInterval(5000).select(function(x) {
-					return x;
-				}),
-				observePlaylistSelectionChangeByInterval(5000).select(function(x) {
-					return x;
-				}),
-				observeFileExplorerPathChangeByInterval(5000).select(function(x) {
-					return x;
-				}),
-				observeMediumQueueSelectLinkUrl().select(function(x) {
-					return x;
-				}),
-				observeCurrentMediumIndexInQueue().select(function(x) {
-					return x;
-				}),
+				observeMediumPositionChangeByInterval(5000)
+					.startWith(null).select(function(x) {
+						return x;
+					}),
+				observePlaylistSelectionChangeByInterval(5000)
+					.startWith(null).select(function(x) {
+						return x;
+					}),
+				observeFileExplorerPathChangeByInterval(5000)
+					.startWith(null).select(function(x) {
+						return x;
+					}),
+				observeMediumQueueSelectLinkUrl().
+					startWith(null).select(function(x) {
+						return x;
+					}),
+				observeCurrentMediumIndexInQueue()
+					.startWith(null).select(function(x) {
+						return x;
+					}),
 				function (mediumPosition, currentPlaylistVm, currentFileExplorerPath, mediumQueueLinks, playingMediumInQueueIndex) {
 					return {
 						playedPosition: mediumPosition,
@@ -188,7 +212,10 @@ jpoApp.factory('userStateBusiness', [
 						playingMediumInQueueIndex: playingMediumInQueueIndex
 					}
 				}
-			);
+			)
+			.where(function() {
+				return !initializingState;
+			});
 		}
 
 		function onControlsStateChangeUpdate() {
@@ -199,16 +226,29 @@ jpoApp.factory('userStateBusiness', [
 				.silentSubscribe();
 
 			observeControlsForStateChange()
+				.where(function(controlsState) {
+					return !(controlsState.playedPosition === null &&
+						controlsState.currentPlaylistVm === null &&
+						controlsState.currentFileExplorerPath === null &&
+						controlsState.mediaQueueLinks === null &&
+						controlsState.playingMediumInQueueIndex === null);
+				})
 				.do(function (controlsStates) {
 					observeUserState().getValueAsync(function(userState) {
+						var plId = controlsStates.currentPlaylistVm
+							? controlsStates.currentPlaylistVm.model.id
+							: null;
 						if (userState) { // Just update
 							userState.playedPosition = controlsStates.playedPosition;
 							userState.mediaQueue = controlsStates.mediaQueueLinks;
 							userState.playingMediumInQueueIndex = controlsStates.playingMediumInQueueIndex;
-							userState.openedPlaylistId = controlsStates.currentPlaylistVm.model.id;
+							userState.openedPlaylistId = plId;
 							userState.browsingFolderPath = controlsStates.currentFileExplorerPath;
-							userState.updateAsync();
-
+							userState
+								.updateAsync()
+								.then(function(updatedState) {
+									userStateSubject.onNext(updatedState);
+								});
 						} else { // Insertion
 							var newUserState = UserStateModel
 								.createEmptyUserStateEntity()
@@ -216,7 +256,7 @@ jpoApp.factory('userStateBusiness', [
 								.setPlayedPosition(controlsStates.playedPosition)
 								.setBrowsingFolderPath(controlsStates.currentFileExplorerPath)
 								.setPlayingMediumInQueueIndex(controlsStates.playingMediumInQueueIndex)
-								.setOpenedPlaylistId(controlsStates.currentPlaylistVm.model.id);
+								.setOpenedPlaylistId(plId);
 							UserStateModel
 								.addAsync(newUserState)
 								.then(function (userState) {

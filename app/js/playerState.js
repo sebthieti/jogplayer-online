@@ -4,8 +4,9 @@ if (!window.Jpo) {
 	window.Jpo = {};
 }
 
-window.Jpo.PlayerState = {
+window.Jpo.PlayerState = { // TODO S/b renamed to event
 	Unknown: '',
+	Aborted: 'aborted',
 	Error: 'error',
 	PlayFirst: 'first',
 	Pause: 'paused',
@@ -14,8 +15,12 @@ window.Jpo.PlayerState = {
 	Previous: 'previous',
 	Next: 'next',
 	Ended: 'ended',
-	LoadStart: 'loadstart',
-	LoadedData: 'loadeddata'
+	TimeUpdate: 'time-update',
+	DurationChange: 'duration-change',
+	Progress: 'progress',
+	MediumSet: 'medium-set',
+	MediumLoaded: 'medium-loaded',
+	Volume: 'volume'
 };
 
 window.Jpo.ButtonMap = {

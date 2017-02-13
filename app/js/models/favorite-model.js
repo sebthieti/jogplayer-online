@@ -9,7 +9,7 @@ jpoApp.factory('FavoriteModel', ['jpoModelBuilder', function(jpoModelBuilder) {
 		links: [{ href: String, rel: String }],
 		methods: {
 			selectTargetLinkUrlFromLinks: function () {
-				return Helpers.linkHelpers.selectActionFromLinks('target', this.links);
+				return Helpers.Link.selectActionFromLinks('target', this.links);
 			},
 			createEntity: function(name, folderPath, index) {
 				return {

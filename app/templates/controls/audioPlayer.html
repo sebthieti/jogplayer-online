@@ -1,14 +1,13 @@
 <div id="audio-player">
-    <audio id="audioPlayer" controls></audio>
     <div>
         <div id="previous-container">
-            <span class="icon-previous btn btn-enabled" ng-click="playPrevious()"></span>
+            <button type="button" class="icon-previous2 btn btn-enabled" ng-click="playPrevious()"></button>
         </div>
         <div id="play-container">
-            <span id="btnPlay" class="icon-play btn btn-enabled btn-large" ng-click="playOrPause()"></span>
+            <button type="button" id="btnPlay" class="icon-play3 btn btn-enabled btn-large" ng-click="playOrPause()"></button>
         </div>
         <div id="next-container">
-            <span class="icon-next btn btn-enabled" ng-click="playNext()"></span>
+            <button type="button" class="icon-next2 btn btn-enabled" ng-click="playNext()"></button>
         </div>
         <div id="elapsed-time-container">
             <span id="elapsed-time" class="time">0:00</span>
@@ -25,7 +24,7 @@
             <span id="remaining-time" class="time">0:00</span>
         </div>
         <div id="volume-container">
-            <span class="icon-volume-high btn btn-enabled"></span>
+            <button type="button" class="btn btn-enabled" ng-click="mute()" ng-class="isMuting ? 'icon-volume-mute2' : 'icon-volume-high'"></button>
             <div id="volume-bar-container">
                 <div id="volume-bar" class="btn-enabled"></div>
             </div>

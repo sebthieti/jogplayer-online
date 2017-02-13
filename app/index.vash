@@ -17,12 +17,14 @@
 		<p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
 		<![endif]-->
 
-		<div id="menu">
-			<button class="icon-users btn-rounded-new btn-menu" title="Manage users" ng-show="isAdmin" ng-click="toggleUserManager()"></button>
+		<div id="menu" ng-show="canShowMenu">
+			<button type="button" class="icon-users btn-rounded-new btn-menu" title="Manage users" ng-show="isAdmin" ng-click="toggleUserManager()"></button>
+			<button type="button" class="icon-list2 btn-rounded-new btn-menu" title="Manage users" ng-show="isAdmin" ng-click="toggleMediaQueue()"></button>
 		</div>
 
 		<!-- TODO Use JSonP to inject admin stuff ? -->
 		<manage-users ng-show="manageUserVisible"></manage-users>
+		<media-queue ng-show="canShowMediaQueue"></media-queue>
 
 		<div id="main-container">
 
@@ -32,7 +34,7 @@
 				</div>
 				<div id="user">
 					<span ng-bind="currentUser.fullName"></span>
-					<button id="logout" class="icon-sign-out btn-rounded-new" title="Disconnect" ng-click="logout()"></button>
+					<button type="button" id="logout" class="icon-exit btn-rounded-new" title="Disconnect" ng-click="logout()"></button>
 				</div>
 			</div>
 
@@ -51,10 +53,8 @@
 					</div>
 				</div>
 			</div>
-			<div id="queue-container">
-				<media-queue></media-queue>
-			</div>
 		</div>
+		<audio id="audioPlayer" controls style="display:none"></audio>
 
 		<welcome id="welcome-screen" ng-controller="WelcomeController"></welcome>
 
@@ -66,7 +66,7 @@
 		<script src="js/polyfill.js"></script>
 		<script src="js/rxExtentions.js"></script>
 		<script src="js/entityStatus.js"></script>
-		<script src="js/helpers/linkHelpers.js"></script>
+		<script src="js/helpers/index.js"></script>
 		<script src="js/playerState.js"></script>
 
 		<script src="lib/angular/angular.js"></script>
@@ -91,13 +91,8 @@
 
 		<script src="js/services.js"></script>
 		<script src="js/services/fileExplorerService.js"></script>
-		<script src="js/services/favoriteService.js"></script>
-		<script src="js/helpers/pathHelper.js"></script>
-		<script src="js/services/playlistService.js"></script>
-		<script src="js/services/mediaService.js"></script>
 		<script src="js/services/serviceFactory.js"></script>
 
-		<script src="js/business/audioPlayerBusiness.js"></script>
 		<script src="js/business/fileExplorerBusiness.js"></script>
 		<script src="js/business/breadCrumbBusiness.js"></script>
 		<script src="js/business/favoriteBusiness.js"></script>
@@ -112,16 +107,16 @@
 		<script src="js/controls/selectorBase.js"></script>
 
 		<script src="js/stop-event.js"></script>
-		<script src="js/controls/audioPlayerControl.js"></script>
 		<script src="js/controls/playlistExplorer.js"></script>
 		<script src="js/controls/favoritesExplorer.js"></script>
-		<script src="js/controls/breadCrumb.js"></script>
+		<script src="js/controls/breadcrumb.js"></script>
 		<script src="js/controls/mediaQueue.js"></script>
 		<script src="js/controls/audioPlayer.js"></script>
 		<script src="js/controls/fileExplorer.js"></script>
 		<script src="js/controls/controlBar.js"></script>
 		<script src="js/controls/addOrEditUser.js"></script>
 		<script src="js/services/jpoService.js"></script>
+		<script src="js/services/audioService.js"></script>
 		<script src="js/ngEnter.js"></script>
 		<script src="js/controls/userSummary.js"></script>
 

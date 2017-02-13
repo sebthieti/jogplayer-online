@@ -13,13 +13,13 @@
     <div id="folder-up" ng-show="folderViewModel.canExecuteFolderUp" class="icon-folder btn-enabled" ng-click="goUp(folderViewModel.model)"> ...</div>
     <ul id="file-explorer-list">
         <li ng-repeat="fileVm in folderViewModel.files"
-            ng-click="fileSelected(fileVm)"
             ng-class="fileVm.selected ? 'selected' : ''"
-            class="btn-enabled">
+            class="btn-enabled not-selectable">
             <span class="icon-folder-open folder" ng-show="fileVm.model.isDirectory()" stop-event></span>
-            <span class="icon-play btn-enabled" ng-show="fileVm.model.isFile()" ng-click="innerPlayMedium(fileVm)" stop-event>{{ hasMediaQueueAny ? '+' : '' }}</span>
+            <button type="button" class="icon-play3 btn-enabled" ng-show="fileVm.model.isFile()" ng-click="innerPlayMedium(fileVm)" stop-event>{{ hasMediaQueueAny ? '+' : '' }}</button>
 
-            <span class="name">{{ ::fileVm.model.name }}</span>
+            <button type="button" class="btn-align-left-full-size" ng-dblclick="itemSelected(fileVm, true)"
+                    ng-click="itemSelected(fileVm, false)">{{ ::fileVm.model.name }}</button>
         </li>
     </ul>
 </div>

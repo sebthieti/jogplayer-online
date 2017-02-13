@@ -1,7 +1,9 @@
 'use strict';
 
 var Q = require('q'),
-	from = require('fromjs');
+	from = require('fromjs'),
+	ReadWriteLock = require('rwlock'),
+	lock = new ReadWriteLock();
 
 var _saveService,
 	_mediaBuilder,
@@ -56,26 +58,35 @@ MediaSaveService.prototype.findIndexFromMediaIdsAsync = function(mediaId, issuer
 };
 
 MediaSaveService.prototype.updateMediaIndexByIdsAsync = function (mediaIdIndexesToOffset, issuer) {
-	var updateMediaIdIndexPromises = mediaIdIndexesToOffset.map(function(value) {
-		return this.updateMediaIndexByIdAsync(value._id, value.index, issuer);
-	}, this);
-	return Q.all(updateMediaIdIndexPromises);
+	if (lock.writeLock(function (release) {
+		var updateMediaIdIndexPromises = mediaIdIndexesToOffset.map(function(value) {
+			return this.updateMediaIndexByIdAsync(value._id, value.index, issuer);
+		}, this);
+		return Q.all(updateMediaIdIndexPromises)
+			.then(function() {
+				release();
+			});
+	}));
 };
 
 MediaSaveService.prototype.updateMediaIndexByIdAsync = function (mediaId, newIndex, issuer) {
 	var defer = Q.defer();
 
 	Media
-		.findOne({ _id: mediaId, ownerId: issuer.id })
+		.findOne({_id: mediaId, ownerId: issuer.id})
 		.select('index')
-		.exec(function(readError, medium) {
+		.exec(function (readError, medium) {
 			if (readError) {
 				defer.reject(readError);
 			} else {
 				medium.index = newIndex;
-				medium.save(function(writeError, updatedMedium) {
-					if (writeError) { defer.reject(writeError) }
-					else { defer.resolve(updatedMedium) }
+				medium.save(function (writeError, updatedMedium) {
+					if (writeError) {
+						defer.reject(writeError)
+					}
+					else {
+						defer.resolve(updatedMedium);
+					}
 				});
 			}
 		});

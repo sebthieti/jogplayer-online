@@ -1,0 +1,23 @@
+<div class="user-info">
+	<div class="avatar-container"></div>
+	<div class="user">
+		<div>
+			<div>
+				<span class="full-name" ng-bind="::userVm.model.fullName"></span>&nbsp;<span class="user-name">({{ ::userVm.model.username }})</span>
+			</div>
+			<span class="email" ng-bind="::userVm.model.email"></span>
+		</div>
+		<div>
+			<input id="is-root" name="isRoot" type="checkbox" disabled ng-model="userVm.model.permissions.isRoot">
+			<span>Is Root</span>
+		</div>
+		<div>
+			<input id="is-admin" name="isAdmin" type="checkbox" ng-model="userVm.model.permissions.isAdmin">
+			<span>Is Admin</span>
+		</div>
+		<div>
+			<input id="can-write" name="canWrite" type="checkbox" ng-model="userVm.model.permissions.canWrite">
+			<span>Can Write</span>
+		</div>
+	</div>
+</div>

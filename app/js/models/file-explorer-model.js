@@ -1,7 +1,7 @@
 'use strict';
 
 jpoApp.factory('FileExplorerModel', ['jpoModelBuilder', 'Model', function(jpoModelBuilder, Model) {
-	var linkHelpers = Helpers.linkHelpers;
+	var linkHelpers = Helpers.Link;
 
 	var fileExplorerSchema = {
 		files: [{
