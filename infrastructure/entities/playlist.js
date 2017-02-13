@@ -1,11 +1,11 @@
 var Playlist = (function () {
 	'use strict'
 	
-	function Playlist(id, index, plName, filePath, isSelected, createdOn, updatedOn, medias) {
+	function Playlist(id, index, name, filePath, isSelected, createdOn, updatedOn, medias) {
 		this._id = id;
 		this.createdOn = createdOn;
 		this.updatedOn = updatedOn;
-		this.plName = plName;
+		this.name = name;
 		this.index = index;
 		this.filePath = filePath;
 		this.isSelected = isSelected;
@@ -26,7 +26,7 @@ var Playlist = (function () {
 		return new Playlist(
 			this._id, // TODO another id toString
 			this.index,
-			this.plName,
+			this.name,
 			this.filePath,
 			this.isSelected,
 			this.createdOn,
@@ -39,7 +39,7 @@ var Playlist = (function () {
 		return new Playlist(
 			dtoPlaylist._id, // TODO another id toString
 			dtoPlaylist.index,
-			dtoPlaylist.plName,
+			dtoPlaylist.name, // TODO change db names
 			dtoPlaylist.filePath,
 			dtoPlaylist.isSelected,
 			dtoPlaylist.createdOn,
@@ -53,7 +53,7 @@ var Playlist = (function () {
 //		return new Playlist(
 //			dtoPlaylist._id, // TODO another id toString
 //			dtoPlaylist.index,
-//			dtoPlaylist.plName,
+//			dtoPlaylist.name,
 //			dtoPlaylist.filePath,
 //			dtoPlaylist.isSelected,
 //			dtoPlaylist.createdOn,
@@ -65,7 +65,7 @@ var Playlist = (function () {
 //	Playlist.toDataSafe = function (pl) {
 //		var hasMandatoryFields = pl &&
 //			!pl._id &&
-//			pl.plName &&
+//			pl.name &&
 //			pl.index &&
 //			pl.isSelected &&
 //			pl.createdOn &&
@@ -78,7 +78,7 @@ var Playlist = (function () {
 //		return new Playlist(
 //			dtoPlaylist._id, // TODO another id toString
 //			dtoPlaylist.index,
-//			dtoPlaylist.plName,
+//			dtoPlaylist.name,
 //			dtoPlaylist.filePath,
 //			dtoPlaylist.isSelected,
 //			dtoPlaylist.createdOn,

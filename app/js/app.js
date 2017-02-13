@@ -1,9 +1,9 @@
 'use strict';
 
 // Declare app level module which depends on filters, and services
-angular.module('jpoApp', [
+var jpoApp = angular.module('jpoApp', [
 	'ngRoute',
-	'jpoApp,controllers',
+	'jpoApp.controllers',
 	'jpoApp.filters',
 	'jpoApp.services',
 	'jpoApp.directives'

@@ -1,43 +1,45 @@
 {
-    "name": "JogPlayer Online",
-    "version": "0.0.1",
-	"private": true,
-	"scripts": {
-		"start": "node app.js"
-	},
-	"dependencies": {
-		"express": "3.4.8",
-		"fromjs": "^2.1.7-1",
-		"id3js": "^1.1.3",
-		"jade": "*",
-		"less-middleware": "*",
-		"m3u": "0.0.2",
-		"mongodb": "^1.4.3",
-		"node-linq": "0.0.3",
-		"playlist-parser": "0.0.8",
-		"q": "^1.0.1",
-		"socket.io": "^0.9.17",
-		"xmldom": "^0.1.19"
-	},
-    "devDependencies": {
-        "grunt": "latest",
-        "grunt-karma": "latest",
-        "karma-jasmine": "latest",
-        "karma-chrome-launcher": "latest",
-        "karma-safari-launcher": "latest",
-        "karma-firefox-launcher": "latest",
-        "karma-ie-launcher": "latest",
-        "karma-phantomjs-launcher": "latest",
-        "karma-ng-scenario": "latest",
-        "grunt-contrib-clean": "~0.4.1",
-        "grunt-usemin": "~0.1.12",
-        "grunt-contrib-htmlmin": "~0.1.3",
-        "grunt-contrib-imagemin": "~0.1.4",
-        "grunt-contrib-concat": "~0.3.0",
-        "grunt-contrib-copy": "~0.4.1",
-        "grunt-contrib-cssmin": "~0.6.1",
-        "grunt-contrib-uglify": "~0.2.2",
-        "grunt-rev": "~0.1.0",
-        "grunt-aws": "~0.2.1"
-    }
+  "name": "jogplayer-online",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "dependable": "^0.2.5",
+    "express": "3.4.8",
+    "fromjs": "^2.1.7-1",
+    "id3js": "^1.1.3",
+    "jade": "*",
+    "less-middleware": "*",
+    "m3u": "0.0.2",
+    "mongodb": "^1.4.3",
+    "node-linq": "0.0.3",
+    "playlist-parser": "0.0.8",
+    "q": "^1.0.1",
+    "socket.io": "^0.9.17",
+    "vash": "^0.7.12-1",
+    "xmldom": "^0.1.19"
+  },
+  "devDependencies": {
+    "grunt": "latest",
+    "grunt-karma": "latest",
+    "karma-jasmine": "latest",
+    "karma-chrome-launcher": "latest",
+    "karma-safari-launcher": "latest",
+    "karma-firefox-launcher": "latest",
+    "karma-ie-launcher": "latest",
+    "karma-phantomjs-launcher": "latest",
+    "karma-ng-scenario": "latest",
+    "grunt-contrib-clean": "~0.4.1",
+    "grunt-usemin": "~0.1.12",
+    "grunt-contrib-htmlmin": "~0.1.3",
+    "grunt-contrib-imagemin": "~0.1.4",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-copy": "~0.4.1",
+    "grunt-contrib-cssmin": "~0.6.1",
+    "grunt-contrib-uglify": "~0.2.2",
+    "grunt-rev": "~0.1.0",
+    "grunt-aws": "~0.2.1"
+  }
 }

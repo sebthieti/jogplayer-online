@@ -9,10 +9,12 @@
 var Media = (function () {
 	'use strict'
 	
-	function Media(id, mediaType, title, filePath, duration, mustRelocalize, isSelected, bookmarks, metadatas) {
-		this.id = id;
+	function Media(id, mediaType, index, title, filePath, duration, mustRelocalize, isSelected, bookmarks, metadatas) {
+		//this.id = id;
+		this._id = id;
 		this.mediaType = mediaType;
 		this.title = title;
+		this.index = index;
 		this.filePath = filePath;
 		this.duration = duration;
 		this.mustRelocalize = mustRelocalize;

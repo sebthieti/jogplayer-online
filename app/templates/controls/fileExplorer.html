@@ -1,0 +1,9 @@
+<ul>
+    <li ng-dblclick="goUp()" class="up">[ Up.. ]</li>
+    <li ng-dblclick="fileValidated(f)"
+        ng-click="fileSelected(f)"
+        ng-repeat="f in files | orderBy: ['type','name']"
+        ng-class="f.selected ? 'selected' : ''">
+        {{ f.name }}
+    </li>
+</ul>

@@ -1,29 +1,36 @@
-var PlaylistValidation = require('../infrastructure/validation/playlist-validation');
-var Media = require('../infrastructure/entities/medias/media').Media;
+var playlistValidation = require('../validators').playlistValidation;
 
-(function(playlistController) {
-	'use strict'
+module.exports = (function() {
+	'use strict';
 
-	// TODO: No file paths for pl/media in returned json
-	playlistController.init = function(app, playlistsBusiness) {
+	var _app,
+		_playlistDirector,
+		_playlistsDirector;
 
-		app.get('/api/playlists/', function(req, res) {
-			playlistsBusiness
+	function PlaylistController (app, playlistDirector, playlistsDirector) {
+		_app = app;
+		_playlistDirector = playlistDirector;
+		_playlistsDirector = playlistsDirector;
+	}
+
+	PlaylistController.prototype.init = function() {
+		_app.get('/api/playlists/', function(req, res) {
+			_playlistsDirector
 				.getPlaylistsAsync()
-				.then(res.send)
+				.then(function(data) { return res.send(data) })
 				.catch(function(err) { res.send(400, err) })
 				.done();
 		});
 
-		app.get('/api/playlists/:id', function(req, res) {
-			playlistBusiness
-				.getPlaylistWithMediasAsync(req.params.id)
-				.then(res.send)
+		_app.get('/api/playlists/:id', function(req, res) {
+			_playlistDirector
+				.getMediasFromPlaylistByIdAsync(req.params.id)
+				.then(function(data) { return res.send(data)})
 				.catch(function(err) { res.send(400, err) })
 				.done();
 		});
 
-		app.post('/api/actions/playlists/move/', function(req, res) {
+		_app.put('/api/actions/playlists/move/', function(req, res) {
 			var playlistIds = req.body.ids;
 			var steps = req.body.steps;
 
@@ -32,28 +39,28 @@ var Media = require('../infrastructure/entities/medias/media').Media;
 				return;
 			}
 
-			playlistsBusiness
+			_playlistsDirector
 				.movePlaylistsAsync(playlistIds, steps)
-				.then(res.send)
+				.then(function(data) { res.send(200, data) })
 				.catch(function(err) { res.send(400, err) })
 				.done();
 		});
 
-		app.put('/api/playlists/', function(req, res) {
+		_app.post('/api/playlists/', function(req, res) {
 			var playlist = req.body;
-			if (!PlaylistValidation.isValidDto(playlist)) { // TODO makeConform
+			if (!playlistValidation.isValidDto(playlist)) { // TODO makeConform
 				res.send(400, "Playlist object doesn't have all mandatory fields.");
 				return;
 			}
 
 			if (playlist.index != null) {
-				playlistsBusiness
+				_playlistsDirector
 					.insertPlaylistAsync(playlist, playlist.index)
 					.then(res.send)
 					.catch(function(err) { res.send(400, err) })
 					.done();
 			} else {
-				playlistsBusiness
+				_playlistsDirector
 					.addPlaylistAsync(playlist)
 					.then(function(newPlaylist) { res.send(newPlaylist) })
 					.catch(function(err) { res.send(400, err) })
@@ -61,7 +68,7 @@ var Media = require('../infrastructure/entities/medias/media').Media;
 			}
 		});
 
-		app.delete(/^\/api\/playlists\/(\w+)?$/, function(req, res) {
+		_app.delete(/^\/api\/playlists\/(\w+)?$/, function(req, res) {
 			var playlistIds = null;
 			if (req.params.id !== undefined) {
 				playlistIds = [req.params.id];
@@ -74,12 +81,13 @@ var Media = require('../infrastructure/entities/medias/media').Media;
 				return;
 			}
 
-			playlistsBusiness
+			_playlistsDirector
 				.removePlaylistsAsync(playlistIds)
-				.then(res.send)
+				.then(function() { res.send(200) })
 				.catch(function(err) { res.send(400, err) })
 				.done();
-		});
-	}
+		});		
+	};
 
-})(module.exports);
+	return PlaylistController;
+}());

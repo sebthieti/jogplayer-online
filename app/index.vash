@@ -23,162 +23,121 @@
         <!--<div ng-controller="SampleCtrl">-->
             <!--<span ng-bind="lorem" />-->
         <!--</div>-->
-        <style type="text/css">
-            html, body {
-                margin: 0;
-                height: 100%;
-                background-color: /*#4E4E4E*/#333333;
-            }
-            #main-container {
-                border: 1px dashed yellowgreen;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                margin: 20px;
-            }
-            /* http://css-tricks.com/equidistant-objects-with-css/ */
-            #manager {
-                border: 1px dashed brown;
-                display: flex;
-                justify-content: space-around;
-                height: 40px;
-            }
-            #middle-container {
-                border:1px dashed #00B7FF;
-                display: flex;
-                margin-top: 20px;
-                flex-grow: 1;
-            }
-            /*#manager:after {
-                content: '';
-                width: 100%;
-                display: inline-block;
-            }*/
-            #manager div { /* Commands */
-                border-radius: 50%;
-                width: 40px;
-                height: 40px;
-                border: 2px solid #fff;
-                display: inline-block;
-                text-align: center;
-                line-height: 40px;
-                color: #fff;
-            }
-            #play-pause {
-                border-radius: 50%;
-                width: 60px;
-                height: 60px;
-                border: 2px solid #fff;
-                display: inline-block;
-                text-align: center;
-                line-height: 60px;
-                color: #fff;
-            }
-            #previous, #next {
-                border-radius: 50%;
-                width: 35px;
-                height: 35px;
-                border: 2px solid #fff;
-                display: inline-block;
-                text-align: center;
-                line-height: 35px;
-                color: #fff;
-            }
-            #play-pause img{
-                margin-top: 9px;
-                margin-left: 8px;
-            }
-            #manager div:hover {
-                background-color:#3D8821;
-            }
-            /*#manager div:active {
-                width: 35px;
-                height: 35px;
-            }*/
-            #manager img{
-                margin-top: 8px;
-                margin-left: 1px;
-            }
-            #playlists-container, #medias-container {
-                border:1px dashed red;
-                width: 20%;
-                background-color: #cbcbcb;
-            }
-            #playlists-container ol, #medias-container ol {
-                list-style-type: none;
-                padding: 0;
-            }
-            #playlists-container li:nth-child(odd), #medias-container li:nth-child(odd) {
-                background-color: #8BE2FF;
-            }
-            #playlists-container li:nth-child(even), #medias-container li:nth-child(even) {
-                background-color: #fff5d6;
-            }
 
-            #file-explorer {
-                border:1px dashed greenyellow;
-            }
-            #command-bar {
-                height: 80px;
-            }
-            #play-control {
-
-            }
-        </style>
-
-        <div id="main-container">
+        <div id="main-container" ng-controller="mainCtrl">
 
             <div id="manager">
-                <div id="add"><img src="svg/plus.svg" /></div>
-                <div id="remove"><img src="svg/minus.svg" /></div>
-                <div id="down"><img src="svg/down.svg" /></div>
-                <div id="up"><img src="svg/up.svg" /></div>
-                <div id="copy">Copy</div>
-                <div id="cut">Cut</div>
-                <div id="paste">Paste</div>
-                <div id="undo">Undo</div>
-                <div id="redo">Redo</div>
-                <div id="settings">Settings</div>
-                <div id="about">About</div>
+                <span id="add" ng-click="addPlaylist(elm)"><img src="svg/plus.svg" /></span>
+                <span id="remove"><img src="svg/minus.svg" /></span>
+                <span id="down"><img src="svg/down.svg" /></span>
+                <span id="up"><img src="svg/up.svg" /></span>
+                <!--<span id="copy">Copy</span>-->
+                <!--<span id="cut">Cut</span>-->
+                <!--<span id="paste">Paste</span>-->
+                <!--<span id="undo">Undo</span>-->
+                <!--<span id="redo">Redo</span>-->
+                <!--<span id="settings">Settings</span>-->
+                <!--<span id="about">About</span>-->
+            </div>
+
+            <div id="command-bar">
+
+                <!--<div id="timeline">-->
+                <!--</div>-->
+
+                <audio-player media-url="selectedMediaUrl" play-media="playMediaToCtrl"></audio-player>
+
+                <!--<div id="play-control">-->
+                    <!--<span id="previous"><img src="svg/small.svg" /></span>-->
+                    <!--<span id="play-pause" ng-click="playMedia()"><img src="{{currentBtnUrl}}" /></span>-->
+                    <!--<span id="next"><img src="svg/small-next.svg" /></span>-->
+                    <!--<audio id="audioPlayer" controls src="{{ selectedMediaUrl }}" autoplay></audio>-->
+                <!--</div>-->
+
+                <!--<div id="volume-container">-->
+                <!--<div id="volume"><img src="svg/volume.svg" /></div>-->
+                <!--<div id="volume-bar"></div>-->
+                <!--</div>-->
+
             </div>
 
             <div id="middle-container">
 
                 <div id="playlists-container">
-                    <ol>
-                        <li>Playlist 1</li>
-                        <li>Playlist 2</li>
-                        <li>Playlist 3</li>
-                        <li>Playlist 4</li>
-                    </ol>
+                    <ul>
+                        <li ng-click="playlistSelected(pl)"
+                            ng-class="selectedPlaylist._id == pl._id ? 'selected' : ''"
+                            ng-repeat="pl in playlists | orderBy: 'index'">
+                            <input type="checkbox" ng-checked="pl.isSelected">{{ pl.name || 'Empty' }}
+                        </li>
+                    </ul>
                 </div>
 
                 <div id="medias-container">
-                    <ol>
-                        <li>Media 1</li>
-                        <li>Media 2</li>
-                        <li>Media 3</li>
-                        <li>Media 4</li>
-                    </ol>
+                    <ul>
+                        <li ng-click="mediaSelected(m)"
+                            ng-repeat="m in medias | orderBy: 'index'"
+                            ng-class="selectedMedia._id == m._id ? 'selected' : ''">
+                            <input type="checkbox" ng-checked="m.isSelected">{{ m.title || 'Empty' }}
+                        </li>
+                    </ul>
                 </div>
 
-                <div id="file-explorer"></div>
+                <div id="file-explorer-commands">
+                    <span id="exploreFileSystem" ng-click="exploreFileSystem()" class="button medium"><img src="img/Hard_Disk-128.png"></span>
+                    <span id="addToPlaylist" ng-click="addToPlaylist()" class="button medium"><</span>
+                    <span id="addToQueue" ng-click="enqueueSelection()" class="button medium">+</span>
+                </div>
+
+                <div id="right-section">
+
+                    <div id="breadcrumb-container">
+                        <bread-crumb id="breadcrumb"
+                                     folder-path="currentFileExplorerDirPath"
+                                     desired-folder-path="breadCrumbDirPath">
+                        </bread-crumb>
+                    </div>
+
+                    <div id="file-explorer">
+                        <file-explorer id="explorer"
+                                       play-media="playMedia(selectedMediaUrl)"
+                                       selected-files="explorerSelectedFiles"
+                                       folder-path="currentFileExplorerDirPath"
+                                       desired-folder-path="breadCrumbDirPath">
+                        </file-explorer>
+
+                        <!--<ol id="explorer">-->
+                            <!--<li ng-dblclick="goUp()" class="up">[ Up.. ]</li>-->
+                            <!--<li ng-dblclick="fileValidated(f)"-->
+                                <!--ng-click="fileSelected(f)"-->
+                                <!--ng-repeat="f in files | orderBy: ['type','name']"-->
+                                <!--ng-class="f.selected ? 'selected' : ''">-->
+                                <!--<!--<input type="checkbox" ng-checked="f.selected">-->
+                                <!--{{ f.name }}-->
+                            <!--</li>-->
+                        <!--</ol>-->
+
+                    </div>
+
+                    <div id="favorites-container">
+                        <ul id="favorites">
+                            <li>Fav folder 1</li>
+                            <li>Fav folder 2</li>
+                            <li>Fav folder 3</li>
+                        </ul>
+                    </div>
+
+                </div>
 
             </div>
 
-            <div id="command-bar">
 
-                <div id="timeline">
-
-                </div>
-
-                <div id="play-control">
-                    <div id="previous">|<</div>
-                    <div id="play-pause"><img src="svg/play.svg" /></div>
-                    <div id="next">>|</div>
-                </div>
-
+            <div id="queue-container">
+                <ul id="queue">
+                    <li ng-repeat="m in mediaQueue">{{ m.name }}</li>
+                </ul>
             </div>
+
 
         </div>
 
@@ -186,15 +145,25 @@
         <!-- In production use:-->
         <!--<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular.min.js"></script>-->
 
+        <script src="lib/underscore/underscore.js"></script>
         <script src="lib/angular/angular.js"></script>
         <script src="lib/angular-animate/angular-animate.js"></script>
         <script src="lib/angular-resource/angular-resource.js"></script>
         <script src="lib/angular-route/angular-route.js"></script>
         <!-- build:js ../build/js/app.min.js -->
         <script src="js/controllers.js"></script>
+
         <script src="js/app.js"></script>
 
         <script src="js/services.js"></script>
+        <script src="js/services/fileExplorerService.js"></script>
+        <script src="js/helpers/pathHelper.js"></script>
+        <script src="js/services/playlistService.js"></script>
+
+        <script src="js/controls/breadCrumb.js"></script>
+        <script src="js/controls/audioPlayer.js"></script>
+        <script src="js/controls/fileExplorer.js"></script>
+
         <script src="js/filters.js"></script>
         <script src="js/directives.js"></script>
         <!-- endbuild -->        

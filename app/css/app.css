@@ -1,1 +1,241 @@
-/* app css stylesheet */
+html, body {
+    margin: 0;
+    height: 95%;
+    background-color: /*#4E4E4E*/#333333;
+}
+#main-container {
+    border: 1px dashed yellowgreen;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    margin: 20px;
+}
+#middle-container {
+    border:1px dashed #00B7FF;
+    display: flex;
+    margin-top: 20px;
+    flex-grow: 1;
+}
+/* http://css-tricks.com/equidistant-objects-with-css/ */
+#manager {
+    border: 1px dashed brown;
+    display: flex;
+    justify-content: space-around;
+    height: 40px;
+}
+#manager span { /* Commands */
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    border: 2px solid #fff;
+    display: inline-block;
+    text-align: center;
+    line-height: 40px;
+    color: #fff;
+}
+.button {
+    border-radius: 50%;
+    border: 2px solid #fff;
+    color: #fff;
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+}
+.button.medium {
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+}
+#manager span:hover {
+    background-color:#3D8821;
+}
+#manager img{
+    margin-top: 8px;
+    margin-left: 1px;
+}
+#play-pause {
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    border: 2px solid #fff;
+    display: inline-block;
+    text-align: center;
+    line-height: 60px;
+    color: #fff;
+}
+#previous, #next {
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    border: 2px solid #fff;
+    display: inline-block;
+    text-align: center;
+    line-height: 30px;
+    color: #fff;
+    vertical-align: super;
+}
+#previous img, #next img{
+    margin-top: 4px;
+}
+#previous:hover, #next:hover {
+    background-color:#3D8821;
+}
+#play-pause:hover {
+    background-color:#3D8821;
+}
+#play-pause img{
+    margin-top: 9px;
+    margin-left: 8px;
+}
+
+#play-pause img.pause {
+    background-image: url(svg/pause.svg);
+}
+
+#playlists-container, #medias-container, #file-explorer, #right-section {
+    border:1px dashed red;
+    background-color: #cbcbcb;
+    margin-right: 10px;
+}
+/*#file-explorer {
+    height: 70%;
+}
+#favorites-container {
+    height: 30%;
+}*/
+#playlists-container {
+    width: 15%;
+}
+#medias-container {
+    width: 25%;
+}
+#file-explorer, #right-section {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+#file-explorer-commands {
+    display: flex;
+    flex-direction: column;
+}
+
+#playlists-container ul, #medias-container ul, #file-explorer ul {
+    list-style-type: none;
+    padding: 0;
+}
+#playlists-container li:nth-child(odd), #medias-container li:nth-child(odd) {
+    background-color: #8BE2FF;
+}
+#playlists-container li:nth-child(even), #medias-container li:nth-child(even), #file-explorer li:nth-child(even) {
+    background-color: #fff5d6;
+}
+#file-explorer .up {
+    background-color: #ff987b;
+}
+#playlists-container li:hover, #file-explorer li:hover {
+    background-color: #de9b46;
+}
+#playlists-container li, #medias-container li, #file-explorer li {
+    cursor: pointer;
+}
+#playlists-container li.selected, #medias-container li.selected, #file-explorer li.selected {
+    background-color: #d6571c;
+}
+#file-explorer, #right-section {
+    border:1px dashed greenyellow;
+}
+#command-bar {
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+#play-control {
+    margin: auto 0;
+    display: inline-block;
+}
+#audioPlayer {
+    width: 70%;
+}
+#breadcrumb-container {
+    overflow-x: auto;
+}
+#breadcrumb {
+    display: inline-flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+#breadcrumb ul {
+    padding: 0;
+}
+#breadcrumb li {
+    margin: 0 7px;
+    cursor: pointer;
+    padding: 5px 10px;
+    background-color: #fff5d6;
+    display: inline-block;
+}
+#breadcrumb li:after {
+    /*content: '>';*/
+}
+#exploreFileSystem {
+    background-color: #ffffff;
+}
+#exploreFileSystem img{
+    width: 30px;
+    height: 30px;
+
+}
+#queue ul {
+    list-style: none;
+}
+#queue {
+    display: inline-flex;
+    margin: 0;
+    padding: 0;
+}
+#queue-container {
+    overflow-x: auto;
+}
+#queue li {
+    margin: 0 5px;
+    overflow-wrap: normal;
+    width: 100px;
+    display: inline-block ;
+    color: #404040;
+    cursor: pointer;
+    background-color: #fff5d6;
+}
+#queue li.active {
+    background-color: #d6571c;
+}
+
+/*#volume-container {
+    margin: auto 0;
+}
+
+#volume-container > div{
+    display: inline-block;
+    vertical-align: middle;
+}
+#volume {
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    border: 2px solid #fff;
+    text-align: center;
+    line-height: 30px;
+    color: #fff;
+    vertical-align: super;
+}
+#volume:hover {
+    background-color:#3D8821;
+}
+#volume img {
+    margin-top: 5px;
+}
+#volume-bar {
+    width: 85px;
+    height: 10px;
+    background-color: whitesmoke;
+}*/
