@@ -59,24 +59,28 @@ ul {
   margin-right: 10px }
 
 #menu {
+  right: 10px;
   position: absolute;
-  left: 15px;
-  top: 40px;
-  z-index: 2 }
+  top: 52px;
+  z-index: 2;
+}
 
 #logout {
+  display: block;
+  margin: 0 auto;
   width: 40px;
   border: 0;
   padding: 0;
   height: 40px;
-  margin: 20px 0 }
+}
 
 .btn-menu {
   height: 56px;
   display: block;
   width: 56px;
   background-color: #D5D5D5;
-  margin: 20px 0 }
+  margin: 30px 0;
+}
 
 .btn-rounded-new {
   font-size: 1.1em;
@@ -513,25 +517,57 @@ form label {
   to {} }
 
 #clear-queue {
-  font-size:1.3em }
+  position: absolute;
+  padding-top: 10px;
+  width: 95%;
+  display: block;
+  font-size: 1.3em;
+  background: #B6B6B6;
+  padding-bottom: 10px;
+  bottom: 10px;
+}
 
 #queue {
+  margin-bottom: 10px;
   overflow-y: auto;
-  max-height: 500px }
+  height: 100%;
+}
+
+#queue-toggle {
+  height: 30px;
+  position: absolute;
+  width: 30px;
+  background-color: #ACACAC;
+  top: 0;
+  right: -30px;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
 
 #queue-outer {
+  will-change: left;
+  transition-property: left ;
+  transition-duration: .5s;
+  min-width: 50px;
+  bottom: 0;
+  top: 70px;
+  z-index: 1;
   border: 1px solid #C5c5c5;
-  max-width: 40%;
-  background-color: #dbdbdb;
+  max-width: 500px;
+  float: left;
+  overflow: visible;
+  background-color: #F4F4F4;
   position: absolute;
-  top: 20px;
-  left: 90px;
-  z-index: 2 }
+}
 
 #queue-inner {
+  width: 96%;
+  height: 92%;
+  border: 1px solid #C5c5c5;
+  overflow: hidden;
   background-color: #F4F4F4;
-  border-radius: 5px;
-  padding: 10px 20px 20px 20px }
+  padding: 5px 0px 0px 5px;
+}
 
 #queue .remove,
 #queue .error {
@@ -565,6 +601,7 @@ form label {
   background-color: #858585 }
 
 welcome>div {
+  z-index: 2;
   background-color: #d3d3d3;
   height:100%;
   width:100%;
@@ -652,11 +689,12 @@ welcome>div.animate-show.ng-hide-add.ng-hide-add-active,welcome>div.animate-show
 .edit-container {
   position: relative }
 
+#full-name {right: 63px;position: absolute;}
+
 #manage-users-outer {
   position:absolute;
   top: 0;
-  left:90px;
-  margin-top: 20px;
+  right: 70px;
   z-index: 1;
   overflow-y: scroll;
   max-height: 660px;
@@ -715,3 +753,24 @@ welcome>div.animate-show.ng-hide-add.ng-hide-add-active,welcome>div.animate-show
 
 #add-user-btn:hover {
   background-color: #dedede }
+
+#sidebar {
+  background-color: #EEE;
+  position: absolute;
+  top: 35px;
+  bottom: 0;
+  left: 0;
+  width: 200px;
+  overflow: auto }
+
+#sidebar-resizer {
+  right: 0px;
+  background-color: #B7B7B7;
+  position: absolute;
+  top: 0;
+  bottom: 53px;
+  width: 6px;
+  cursor: e-resize }
+
+#sidebar-resizer:hover, #preview-resizer:hover {
+  background-color: #AAA }
