@@ -1,12 +1,13 @@
 'use strict';
-
+// TODO Rename file to medium not media
 var mongoose = require('mongoose'),
 	Schema = mongoose.Schema;
 
 var _mediaRoutes,
 	Media;
 
-var mediaSchema = new Schema({ // TODO Rename to mediumSchema
+var mediumSchema = new Schema({
+	ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
 	_playlistId: { type: Schema.Types.ObjectId, ref: 'Playlist' },
 	title: String,
 	createdOn: { type: Date },
@@ -22,24 +23,28 @@ var mediaSchema = new Schema({ // TODO Rename to mediumSchema
 	//bookmarks: [{ type: Schema.Types.ObjectId, ref: 'Bookmark' }]
 });
 // TODO Think about remove this and only compute it elsewhere (maybe only put it to DTO ?)
-mediaSchema.virtual('isAvailable').get(function() {
+mediumSchema.virtual('isAvailable').get(function() {
 	return this._isAvailable || false;
 }).set(function(value) {
 	this._isAvailable = value;
 });
-mediaSchema.set('toJSON', { virtuals: true });
-mediaSchema.set('toObject', { virtuals: true });
-mediaSchema.methods.toJSON = function() {
+mediumSchema.set('toJSON', { virtuals: true });
+// virtuals: false to avoid inserting links to database
+mediumSchema.set('toObject', { virtuals: false });
+mediumSchema.methods.toJSON = function() {
 	var obj = this.toObject();
+	obj.id = obj._id;
+	obj.links = this.links;
 	delete obj._id;
 	delete obj.__v;
 	delete obj._playlistId;
+	delete obj.ownerId;
 	delete obj.filePath;
 	delete obj.createdOn;
 	delete obj.updatedOn;
 	return obj;
 };
-mediaSchema.virtual('links').get(function() {
+mediumSchema.virtual('links').get(function() {
 	return [{
 		rel: 'self',
 		href: _mediaRoutes.selfPath
@@ -60,13 +65,13 @@ mediaSchema.virtual('links').get(function() {
 			.replace(':mediaId', this._id)
 	}];
 });
-mediaSchema.methods.setIsAvailable = function (isAvailable) {
+mediumSchema.methods.setIsAvailable = function (isAvailable) {
 	this.isAvailable = isAvailable;
 	return this;
 };
 
 module.exports = function(mediaRoutes){
 	_mediaRoutes = mediaRoutes;
-	Media = mongoose.model('Media', mediaSchema);
+	Media = mongoose.model('Media', mediumSchema);
 	return Media;
 };

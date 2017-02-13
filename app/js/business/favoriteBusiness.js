@@ -1,6 +1,6 @@
 'use strict';
 
-jpoApp.factory('favoriteBusiness', ['FavoriteModel', function(FavoriteModel) {
+jpoApp.factory('favoriteBusiness', ['FavoriteModel', 'authBusiness', function(FavoriteModel, authBusiness) {
 	var linkHelper = Helpers.linkHelpers;
 
 	var favoritesSubject = new Rx.BehaviorSubject();
@@ -103,11 +103,25 @@ jpoApp.factory('favoriteBusiness', ['FavoriteModel', function(FavoriteModel) {
 		selectedFavoriteSubject.onNext(favorite); // TODO Use only link ?
 	};
 
-	FavoriteModel
-		.getAllAsync()
-		.then(function(favorites) {
-			favoritesSubject.onNext(favorites);
-		});
+	//authBusiness
+	//	.observeAuthenticatedUser()
+	//	.do(function(user) {
+	function loadFavorites() {
+		authBusiness
+			.observeAuthenticatedUser()
+			.asAsyncValue()
+			.do(function(__) {
+				FavoriteModel
+					.getAllAsync()
+					.then(function(favorites) {
+						favoritesSubject.onNext(favorites);
+					});
+			})
+			.silentSubscribe();
+	}
+
+		//})
+		//.silentSubscribe();
 
 	return {
 		observeFavorites: observeFavorites, // TODO Starts w/ get but no start with!
@@ -119,6 +133,7 @@ jpoApp.factory('favoriteBusiness', ['FavoriteModel', function(FavoriteModel) {
 		addFolderToFavoritesAsync: addFolderToFavoritesAsync,
 		updateFavoriteAsync: updateFavoriteAsync,
 		deleteFavoriteAsync: deleteFavoriteAsync,
-		changeSelectedFavorite: changeSelectedFavorite
+		changeSelectedFavorite: changeSelectedFavorite,
+		loadFavorites: loadFavorites
 	}
 }]);

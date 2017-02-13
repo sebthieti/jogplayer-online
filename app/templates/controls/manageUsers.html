@@ -1,0 +1,103 @@
+<div id="manage-users-outer">
+
+	<div id="manage-users-inner">
+
+		<ol id="user-list">
+			<li ng-repeat="userVm in usersVm">
+				<div class="user-info">
+					<div class="avatar-container"></div>
+					<div class="user" ng-hide="userVm.isEditing">
+						<div>
+							<div>
+								<span class="full-name" ng-bind="::userVm.model.fullName"></span>&nbsp;<span class="user-name">({{ ::userVm.model.username }})</span>
+							</div>
+							<span class="email" ng-bind="::userVm.model.email"></span>
+						</div>
+						<div class="edit">
+							<button class="btn-rounded-new btn-small icon-pencil" ng-click="beginEditUser(userVm)"></button>
+						</div>
+						<div class="remove" ng-hide="userVm.model.isRoot">
+							<button class="btn-rounded-new btn-small" ng-click="removeUser(userVm)">X</button>
+						</div>
+					</div>
+					<div class="user" ng-show="userVm.isEditing">
+						<div class="remove">
+							<button class="btn-rounded-new btn-small" ng-click="cancelEditUser(userVm)">X</button>
+						</div>
+						<form ng-submit="beginEditUser(userVm)">
+							<div>
+								<input type="text" name="fullName" ng-model="userVm.model.fullName">&nbsp;(<input type="text" name="username" ng-model="userVm.model.username">)
+							</div>
+							<input placeholder="Email" name="email" type="email" ng-model="userVm.model.email">
+
+							<label for="is-admin-edit">Is Admin</label>
+							<input id="is-admin-edit" name="isAdmin" type="checkbox" ng-model="userVm.model.isAdmin">
+
+							<label for="can-write-edit">Can Write</label>
+							<input id="can-write-edit" name="canWrite" type="checkbox" ng-model="userVm.model.canWrite">
+							<button type="submit" ng-click="endEditUser(userVm)">Commit</button>
+						</form>
+					</div>
+
+				</div>
+			</li>
+			<li>
+				<!--canShowAddUserArea-->
+				<div id="add-user" ng-class="canShowAddUserArea ? 'active' : 'inactive'">
+					<!-- TODO Remove ng-show once accordion anim in use -->
+					<div id="add-user-button-area" ng-hide="canShowAddUserArea">
+						<!-- TODO Should not looks like a button -->
+						<button class="icon-user-add btn-middle" ng-click="beginAddUser()"></button>
+					</div>
+					<!-- TODO Remove ng-hide once accordion anim in use -->
+					<div id="add-user-form-area" ng-show="canShowAddUserArea">
+						<button class="btn-rounded-new btn-small" style="position: absolute;right: 22px" ng-click="cancelAddUser()">X</button>
+						<form ng-submit="submitNewUser()">
+							<table>
+								<tr>
+									<td>
+										<input placeholder="Username" name="username" type="text" ng-model="newUser.username">
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<input placeholder="Password" name="password" type="password" ng-model="newUser.password">
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<input placeholder="Full Name" name="fullName" type="text" ng-model="newUser.fullName">
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<input placeholder="Email" name="email" type="email" ng-model="newUser.email">
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<label for="is-admin">Is Admin</label>
+										<input id="is-admin" name="isAdmin" type="checkbox" ng-model="newUser.isAdmin">
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<label for="can-write">Can Write</label>
+										<input id="can-write" name="canWrite" type="checkbox" ng-model="newUser.canWrite">
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<button type="submit">Add</button>
+									</td>
+								</tr>
+							</table>
+						</form>
+					</div>
+				</div>
+			</li>
+		</ol>
+
+	</div>
+
+</div>

@@ -2,6 +2,7 @@
 
 // Declare app level module which depends on filters, and services
 var jpoApp = angular.module('jpoApp', [
+	'ngAnimate',
 	'ngRoute',
 	'jpoApp.controllers',
 	'jpoApp.filters',

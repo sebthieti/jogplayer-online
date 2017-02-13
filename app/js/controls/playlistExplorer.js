@@ -4,9 +4,10 @@ jpoApp.directive("playlistExplorer", [
 	'$timeout',
 	'playlistBusiness',
 	'mediaBusiness',
+	'mediaQueueBusiness',
 	'playlistBuilder',
 	'viewModelBuilder',
-	function ($timeout, playlistBusiness, mediaBusiness, playlistBuilder, viewModelBuilder) {
+	function ($timeout, playlistBusiness, mediaBusiness, mediaQueueBusiness, playlistBuilder, viewModelBuilder) {
 		return {
 			restrict: 'E',
 			templateUrl: '/templates/controls/playlistExplorer.html',
@@ -20,6 +21,7 @@ jpoApp.directive("playlistExplorer", [
 				$scope.isPlaylistFinderVisible = false;
 				$scope.selectedPlaylistFiles = [];
 				$scope.canShowMediaInPlaylist = true;
+				$scope.hasMediaQueueAny = false;
 
 // BEGIN Add physical playlist
 
@@ -39,7 +41,7 @@ jpoApp.directive("playlistExplorer", [
 
 // END Add physical playlist
 
-				$scope.cancel = function(playlistVm) {
+				$scope.cancelAddPlaylist = function(playlistVm) {
 					if (angular.isDefined(playlistVm)) {
 						playlistVm.isEditing = false;
 					} else {
@@ -156,9 +158,17 @@ jpoApp.directive("playlistExplorer", [
 					})
 					.silentSubscribe();
 
-				playlistBusiness.loadPlaylistsAsync();
+				playlistBusiness.loadPlaylists();
 
 	// END Bootstrap section
+
+				mediaQueueBusiness
+					.observeMediaQueue()
+					.select(function(x) {return _.any(x)})
+					.do(function(hasMediaQueueAny) {
+						$scope.hasMediaQueueAny = hasMediaQueueAny;
+					})
+					.silentSubscribe();
 			}
 		}
 }]);

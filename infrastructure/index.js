@@ -1,11 +1,16 @@
 'use strict';
 
+// Modules
 var os = require('os'),
 	dependable = require('dependable'),
+	container = dependable.container(),
 	config = require('config'),
 	from = require('fromjs'),
-	container = dependable.container(),
-	routes = require('./routes'),
+	passport = require('passport'),
+	LocalStategy = require('passport-local').Strategy;
+
+// Infrastructure modules
+var routes = require('./routes'),
 	Business = require('./business'),
 	Invokers = require('./invokers'),
 	Services = require('./services'),
@@ -15,25 +20,34 @@ var os = require('os'),
 	Utils = require('./utils');
 
 // Composite root principle
-var registerControllers = function (app, io) {
+function registerControllers(app, io) {
 	container.register('homeController', function(routes) {
 		return new Controllers.HomeController(app, routes);
 	});
-	container.register('playMediaController', function (mediaStreamer, routes) {
-		return new Controllers.PlayMediaController(app, routes.media, routes.file, mediaStreamer);
+	container.register('playMediaController', function (mediaStreamer, routes, authDirector) {
+		return new Controllers.PlayMediaController(app, routes.media, routes.file, mediaStreamer, authDirector);
 	});
-	container.register('playlistController', function (routes, playlistDirector, playlistsDirector) {
-		return new Controllers.PlaylistController(app, routes.playlists, routes.media, playlistDirector, playlistsDirector);
+	container.register('playlistController', function (routes, playlistDirector, playlistsDirector, authDirector) {
+		return new Controllers.PlaylistController(app, routes.playlists, routes.media, playlistDirector, playlistsDirector, authDirector);
 	});
-	container.register('fileExplorerController', function (mediaStreamer, fileExplorerDirector) {
-		return new Controllers.FileExplorerController(app, mediaStreamer, fileExplorerDirector);
+	container.register('fileExplorerController', function (mediaStreamer, fileExplorerDirector, authDirector) {
+		return new Controllers.FileExplorerController(app, mediaStreamer, fileExplorerDirector, authDirector);
 	});
-	container.register('favoriteController', function (routes, favoriteDirector) {
-		return new Controllers.FavoriteController (app, routes, favoriteDirector)
+	container.register('favoriteController', function (routes, favoriteDirector, authDirector) {
+		return new Controllers.FavoriteController (app, routes, favoriteDirector, authDirector)
 	});
-};
+	container.register('stateController', function (routes, authDirector) {
+		return new Controllers.StateController (app, routes, authDirector)
+	});
+	container.register('authController', function (routes, authDirector) {
+		return new Controllers.AuthController (app, routes, passport, authDirector)
+	});
+	container.register('userController', function (routes, authDirector, userDirector) {
+		return new Controllers.UserController (app, routes, authDirector, userDirector)
+	});
+}
 
-var registerBusinesses = function () {
+function registerBusinesses() {
 	container.register('mediaDirector', function (mediaService, mediaSaveService) {
 		return new Business.MediaDirector(mediaService, mediaSaveService);
 	});
@@ -49,26 +63,33 @@ var registerBusinesses = function () {
 	container.register('favoriteDirector', function (favoriteSaveService) {
 		return new Business.FavoriteDirector (favoriteSaveService);
 	});
-};
+	container.register('authDirector', function (userSaveService) {
+		return new Business.AuthDirector (userSaveService);
+	});
+	container.register('userDirector', function (userSaveService) {
+		return new Business.UserDirector (userSaveService);
+	});
+}
 
-var registerConfigAndPaths = function() {
+function registerConfigAndPaths() {
 	container.register('config', config);
 	container.register('routes', routes);
-};
+}
 
-var registerModels = function() {
+function registerModels() {
 	container.register('Models', function(routes) {
 		return {
 			Favorite: Models.Favorite(routes.favorites),
 			Bookmark: Models.Bookmark,
 			Media: Models.Media(routes.media),
 			MediaType: Models.MediaType,
-			Playlist: Models.Playlist(routes.playlists, routes.media)
+			Playlist: Models.Playlist(routes.playlists, routes.media),
+			User: Models.User(routes.users)
 		}
 	});
-};
+}
 
-var registerServices = function () {
+function registerServices() {
 	container.register('mediaService', Services.mediaService);
 	container.register('saveService', function(config) {
 		return new Services.Saves.SaveService(config);
@@ -85,6 +106,9 @@ var registerServices = function () {
 	});
 	container.register('favoriteSaveService', function (saveService, Models) {
 		return new Services.Saves.FavoriteSaveService(saveService, Models.Favorite);
+	});
+	container.register('userSaveService', function (saveService, Models) {
+		return new Services.Saves.UserSaveService(saveService, Models.User);
 	});
 	container.register('fileExplorerService', function () {// anyDriveLetterRegex
 		var fileExplorerServices = [
@@ -106,9 +130,24 @@ var registerServices = function () {
 		};
 		return findFileExplorerForCurrentOs(fileExplorerServices);
 	});
-};
+}
 
-var registerOther = function() {
+function registerAuthentication(app) {
+	container.resolve(function(authDirector) {
+		passport.use(new LocalStategy(authDirector.verifyUser));
+		passport.serializeUser(function(user, next) {
+			authDirector.serializeUser(user, next);
+		});
+		passport.deserializeUser(function(username, next) {
+			authDirector.deserializeUser(username, next);
+		});
+
+		app.use(passport.initialize());
+		app.use(passport.session());
+	});
+}
+
+function registerOther() {
 	container.register('mediaBuilder', function (metaTagServices, mediaService, Models) {
 		return new Invokers.MediaBuilder(metaTagServices, mediaService, Models.Media);
 	});
@@ -124,31 +163,38 @@ var registerOther = function() {
 	container.register('mediaStreamer', function (mediaDirector, fileExplorerService) {
 		return new Stream.MediaStreamer(mediaDirector, fileExplorerService);
 	});
-};
+}
 
-var bootstrap = function() {
+function bootstrap() {
 	container.resolve(function(
 		homeController,
 		playMediaController,
 		playlistController,
 		fileExplorerController,
-		favoriteController
+		favoriteController,
+		stateController,
+	    authController,
+	    userController
 	) {
 		homeController.init();
 		playMediaController.init();
 		playlistController.init();
 		fileExplorerController.init();
 		favoriteController.init();
+		stateController.init();
+		authController.init();
+		userController.init();
 	});
-};
+}
 
 module.exports.init = function (app, io) {
-	registerControllers(app, io);
-	registerBusinesses();
-	registerServices();
-	registerModels();
 	registerConfigAndPaths();
 	registerOther();
+	registerModels();
+	registerServices();
+	registerBusinesses();
+	registerControllers(app, io);
+	registerAuthentication(app);
 	// Must be the last one to initialise
 	bootstrap();
 };

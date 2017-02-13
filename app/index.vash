@@ -2,34 +2,42 @@
 
 <html ng-app="jpoApp" ng-controller="mainCtrl">
 	<head>
-		<!-- meta content -->
 		<meta charset="utf-8">
 		<meta name="description" content="">
 		<meta name="keywords" content="">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title ng-bind="pageTitle"></title>
-		<!-- build:css ../build/css/app.min.css -->
 		<link rel="stylesheet" href="lib/normalize-css/normalize.css">
+		<link rel="stylesheet" href="css/lato.css">
 		<link rel="stylesheet" href="css/fonts.css">
 		<link rel="stylesheet" href="css/app.css">
-		<!-- endbuild -->
 	</head>
 	<body>
 		<!--[if lt IE 7]>
-			<p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+		<p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
 		<![endif]-->
 
+		<div id="menu">
+			<button class="icon-users btn-rounded-new btn-menu" title="Manage users" ng-click="toggleUserManager()"></button>
+		</div>
+		<manage-users ng-show="manageUserVisible"></manage-users>
+
 		<div id="main-container">
-			<div id="command-bar">
-				<audio-player></audio-player>
+
+			<div>
+				<div id="command-bar">
+					<audio-player></audio-player>
+				</div>
+				<div id="user">
+					<span ng-bind="currentUser.fullName"></span>
+					<button id="logout" class="icon-sign-out btn-rounded-new" title="Disconnect" ng-click="logout()"></button>
+				</div>
 			</div>
+
 			<div id="middle-container">
 				<playlist-explorer id="playlist-explorer"></playlist-explorer>
 				<control-bar></control-bar>
 				<div id="right-section">
-					<div id="breadcrumb-container">
-						<bread-crumb id="breadcrumb"></bread-crumb>
-					</div>
 					<div id="file-explorer">
 						<file-explorer id="explorer" is-visible="true" bind-to-favorites="true" explore-when-visible="false">
 						</file-explorer>
@@ -44,11 +52,7 @@
 			</div>
 		</div>
 
-		<!-- In production use:-->
-		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular.js"></script>
-		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular-animate.js"></script>
-		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular-resource.js"></script>
-		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.26/angular-route.js"></script>
+		<welcome id="welcome-screen" ng-controller="WelcomeController"></welcome>
 
 		<script src="lib/underscore/underscore.js"></script>
 		<script src="lib/datejs/build/production/date.min.js"></script>
@@ -61,19 +65,23 @@
 		<script src="js/helpers/linkHelpers.js"></script>
 		<script src="js/playerState.js"></script>
 
-        <!--"//code.angularjs.org/X.Y.Z/angular-animate.js"-->
-
-		<!--<script src="lib/angular/angular.js"></script>-->
-		<!--<script src="lib/angular-animate/angular-animate.js"></script>-->
-		<!--<script src="lib/angular-resource/angular-resource.js"></script>-->
-		<!--<script src="lib/angular-route/angular-route.js"></script>-->
+		<script src="lib/angular/angular.js"></script>
+		<script src="lib/angular-animate/angular-animate.js"></script>
+		<script src="lib/angular-resource/angular-resource.js"></script>
+		<script src="lib/angular-route/angular-route.js"></script>
 
 		<!-- build:js ../build/js/app.min.js -->
 		<script src="js/controllers.js"></script>
 
 		<script src="js/app.js"></script>
 
-		<script src="js/models/favoriteModel.js"></script>
+		<script src="js/models/model.js"></script>
+		<script src="js/models/jpo-model-builder.js"></script>
+		<script src="js/models/favorite-model.js"></script>
+		<script src="js/models/file-explorer-model.js"></script>
+		<script src="js/models/playlist-media-model.js"></script>
+		<script src="js/models/playlist-model.js"></script>
+		<script src="js/models/user-model.js"></script>
 
 		<script src="js/services.js"></script>
 		<script src="js/services/fileExplorerService.js"></script>
@@ -90,6 +98,9 @@
 		<script src="js/business/playlistBusiness.js"></script>
 		<script src="js/business/mediaBusiness.js"></script>
 		<script src="js/business/mediaQueueBusiness.js"></script>
+		<script src="js/business/loadBusiness.js"></script>
+		<script src="js/business/authBusiness.js"></script>
+		<script src="js/business/userBusiness.js"></script>
 
 		<script src="js/controls/selectorBase.js"></script>
 
@@ -109,9 +120,10 @@
 		<script src="js/filters/time.js"></script>
 		<script src="js/directives.js"></script>
 		<script src="js/builders/index.js"></script>
+
+		<script src="js/controls/welcome.js"></script>
+		<script src="js/controls/manageUsers.js"></script>
 		<!--<script src="js/builders/playlistBuilder.js"></script>-->
 		<!--<script src="js/builders/folderContentBuilder.js"></script>-->
-
-		<!-- endbuild -->
 	</body>
 </html>

@@ -6,6 +6,7 @@ var mongoose = require('mongoose'),
 var _favRoutes;
 
 var favoriteSchema = new Schema({
+	ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
 	name: String,
 	createdOn: { type: Date, default: Date.now },
 	updatedOn: { type: Date },
@@ -13,11 +14,15 @@ var favoriteSchema = new Schema({
 	index: Number
 });
 favoriteSchema.set('toJSON', { virtuals: true });
-favoriteSchema.set('toObject', { virtuals: true });
+// virtuals: false to avoid inserting links to database
+favoriteSchema.set('toObject', { virtuals: false });
 favoriteSchema.methods.toJSON = function() {
 	var obj = this.toObject();
+	obj.id = obj._id;
+	obj.links = this.links;
 	delete obj._id;
 	delete obj.__v;
+	delete obj.ownerId;
 	delete obj.createdOn;
 	delete obj.updatedOn;
 	return obj;

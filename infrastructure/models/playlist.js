@@ -9,6 +9,7 @@ var Playlist,
 	_plListMediaRoute;
 
 var playlistSchema = new Schema({
+	ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
 	name: String,
 	index: Number,
 	filePath: String,
@@ -29,12 +30,16 @@ playlistSchema.statics.whereInOrGetAll = function (path, whereIn) {
 	return whereIn ? this.where(path).in(whereIn) : this;
 };
 playlistSchema.set('toJSON', { virtuals: true });
-playlistSchema.set('toObject', { virtuals: true });
+// virtuals: false to avoid inserting links to database
+playlistSchema.set('toObject', { virtuals: false });
 playlistSchema.methods.toJSON = function() {
 	var obj = this.toObject();
+	obj.links = this.links;
+	obj.id = obj._id;
 	delete obj._id;
 	delete obj.__v;
 	delete obj.isVirtual;
+	delete obj.ownerId;
 	delete obj.filePath;
 	delete obj.createdOn;
 	delete obj.updatedOn;

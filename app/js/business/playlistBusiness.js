@@ -7,7 +7,8 @@ jpoApp.factory('playlistBusiness', [
 	'PlaylistsModel',
 	'PlaylistMediaModel',
 	'viewModelBuilder',
-	function($q, mediaQueueBusiness, audioPlayerBusiness, PlaylistsModel, PlaylistMediaModel, viewModelBuilder) {
+	'authBusiness',
+	function($q, mediaQueueBusiness, audioPlayerBusiness, PlaylistsModel, PlaylistMediaModel, viewModelBuilder, authBusiness) {
 		var playlistViewModelsSubject = new Rx.BehaviorSubject();
 		var playingPlaylistSubject = new Rx.BehaviorSubject();
 		var playingMediumSubject = new Rx.BehaviorSubject();
@@ -100,23 +101,32 @@ jpoApp.factory('playlistBusiness', [
 			return currentPlaylistSubject.whereIsDefined();
 		};
 
-		var loadPlaylistsAsync = function () {
-			return PlaylistsModel
-				.getAllAsync()
-				.then(function(playlists) {
-					return playlists.map(viewModelBuilder.buildEditableViewModel)
+		var loadPlaylists = function () {
+			authBusiness
+				.observeAuthenticatedUser()
+				.asAsyncValue()
+				.do(function(__) {
+
+					PlaylistsModel
+						.getAllAsync()
+						.then(function(playlists) {
+							return playlists.map(viewModelBuilder.buildEditableViewModel)
+						})
+						.then(function (playlistViewModels) {
+							playlistViewModelsSubject.onNext(playlistViewModels);
+						});
+
 				})
-				.then(function (playlistViewModels) {
-					playlistViewModelsSubject.onNext(playlistViewModels);
-				});
+				.silentSubscribe();
+
 		};
 
 		var playlistSelected = function(playlistViewModel) {
 			if (playlistViewModel.media) {
 				currentPlaylistSubject.onNext(playlistViewModel);
-				var defered = $q.defer();
-				defered.resolve(playlistViewModel.media);
-				return defered;
+				var deferred = $q.defer();
+				deferred.resolve(playlistViewModel.media);
+				return deferred.promise;
 			}
 			return loadMediaAsync(playlistViewModel.model)
 				.then(function(media) {
@@ -150,7 +160,7 @@ jpoApp.factory('playlistBusiness', [
 			Rx.Observable
 				.fromArray(playlistFiles) // playlistsFilePaths
 				.select(function(playlistFile) {
-					return Rx.Observable.fromPromise(PlaylistsModel.addByFilePathAsync(playlistFile));
+					return Rx.Observable.fromPromise(PlaylistsModel.addByFilePathAsync(playlistFile.model));
 				})
 				.selectMany(function(rx) { return rx })
 				.toArray()
@@ -268,7 +278,7 @@ jpoApp.factory('playlistBusiness', [
 
 		return {
 			observePlayingMedium: observePlayingMedium,
-			loadPlaylistsAsync: loadPlaylistsAsync,
+			loadPlaylists: loadPlaylists,
 			observePlaylistViewModels: observePlaylistViewModels,
 			playlistSelected: playlistSelected,
 			updatePlaylistAsync: updatePlaylistAsync,

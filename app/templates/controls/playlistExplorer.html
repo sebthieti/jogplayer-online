@@ -7,13 +7,13 @@
                 ng-click="innerPlaylistSelected(playlistVm)">
                 <div ng-show="playlistVm.isEditing">
                     <!-- Editing mode -->
-                    <input type="text" ng-model="playlistVm.model.name" ng-enter="endEditPlaylist(playlistVm)">
+                    <input type="text" ng-model="playlistVm.model.name" focus-when="playlistVm.isEditing" ng-enter="endEditPlaylist(playlistVm)">
                     <span class="icon-checkmark rename" stop-event ng-click="endEditPlaylist(playlistVm)"></span>
-                    <span class="icon-close cancel" stop-event ng-click="cancel(playlistVm)"></span>
+                    <span class="icon-close cancel" stop-event ng-click="cancelAddPlaylist(playlistVm)"></span>
                 </div>
                 <span ng-show="!playlistVm.isEditing"
                       class="title">
-                    {{ playlistVm.model.name || 'Empty' }}
+                    {{ ::playlistVm.model.name || 'Empty' }}
                 </span>
                 <div class="tab-tools" ng-show="!playlistVm.isEditing">
                     <!-- Non editing mode -->
@@ -25,7 +25,7 @@
                 <div ng-switch-when="true">
                     <input type="text" ng-model="newPlaylist.name" ng-enter="endAddVirtualPlaylist()">
                     <span class="icon-checkmark rename" stop-event ng-click="endAddVirtualPlaylist()"></span>
-                    <span class="icon-close cancel" stop-event ng-click="cancel()"></span>
+                    <span class="icon-close cancel" stop-event ng-click="cancelAddPlaylist()"></span>
                 </div>
 
                 <div ng-switch-default>
@@ -37,8 +37,6 @@
     </div>
     <div id="media-container">
         <ul ng-show="canShowMediaInPlaylist">
-            <!-- TODO Add this to model| orderBy: 'index'-->
-            <!--ng-repeat="mediumVm in mediaViewModels"-->
             <li ng-repeat="mediumVm in selectedPlaylist.media"
                 ng-click="mediaSelected(mediumVm)"
                 ng-dblclick="innerPlayMedium(mediumVm)"
@@ -46,10 +44,10 @@
                 class="btn-enabled">
 
                 <span class="icon-close remove btn-enabled" stop-event ng-click="innerRemoveMedium(mediumVm)"></span>
-                <span class="icon-play btn-enabled" ng-click="innerPlayMedium(mediumVm)" stop-event></span>
+                <span class="icon-play btn-enabled" ng-click="innerPlayMedium(mediumVm)" stop-event>{{ hasMediaQueueAny ? '+' : '' }}</span>
 
-                <span class="title">{{ mediumVm.model.title || 'Empty' }}</span>
-                <div class="duration">{{ mediumVm.model.duration | time}}</div>
+                <span class="title">{{ ::mediumVm.model.title || 'Empty' }}</span>
+                <div class="duration">{{ ::mediumVm.model.duration | time}}</div>
             </li>
         </ul>
 

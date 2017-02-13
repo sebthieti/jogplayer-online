@@ -1,11 +1,15 @@
 <div>
-    <div id="file-explorer-overlay"
-         class="btn-enabled"
-         ng-click="exploreFileSystem()"
-         ng-show="!isActive">
-        <span id="start-browse-icon" class="icon-drive"></span>
-        <span id="start-browse-caption">Click to browse your files</span>
-    </div>
+	<div id="file-explorer-overlay"
+	     class="btn-enabled"
+	     ng-click="exploreFileSystem()"
+	     ng-show="!isActive">
+		<span id="start-browse-icon" class="icon-drive"></span>
+		<span id="start-browse-caption">Click to browse your files</span>
+	</div>
+	<div class="breadcrumb-container">
+		<bread-crumb class="breadcrumb" group-name="{{ bindToFavorites ? 'file-explorer' : 'playlist-finder' }}"></bread-crumb>
+	</div>
+
     <div id="folder-up" ng-show="folderViewModel.canExecuteFolderUp" class="icon-folder btn-enabled" ng-click="goUp(folderViewModel.model)"> ...</div>
     <ul id="file-explorer-list">
         <li ng-click="fileSelected(fileVm)"
@@ -13,9 +17,9 @@
             ng-class="fileVm.selected ? 'selected' : ''"
             class="btn-enabled">
             <span class="icon-folder-open folder" ng-show="fileVm.model.isDirectory()" stop-event></span>
-            <span class="icon-play play-file" ng-show="fileVm.model.isFile()" ng-click="innerPlayMedia(fileVm)" stop-event>{{ hasMediaQueueAny ? '' : '+' }}</span>
+            <span class="icon-play btn-enabled" ng-show="fileVm.model.isFile()" ng-click="innerPlayMedium(fileVm)" stop-event>{{ hasMediaQueueAny ? '+' : '' }}</span>
 
-            <span class="name">{{ fileVm.model.name }}</span>
+            <span class="name">{{ ::fileVm.model.name }}</span>
         </li>
     </ul>
 </div>

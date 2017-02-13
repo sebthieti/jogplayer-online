@@ -2,13 +2,9 @@
 
 jpoApp.factory('playlistExplorerBusiness', ['explorerBusinessFactory', function(explorerBusinessFactory) {
 	return explorerBusinessFactory.buildPlaylistExplorerBusiness();
-}]);
-
-jpoApp.factory('fileExplorerBusiness', ['explorerBusinessFactory', function(explorerBusinessFactory) {
+}]).factory('fileExplorerBusiness', ['explorerBusinessFactory', function(explorerBusinessFactory) {
 	return explorerBusinessFactory.buildFileExplorerBusiness();
-}]);
-
-jpoApp.factory('explorerBusinessFactory', [
+}]).factory('explorerBusinessFactory', [
 	'favoriteBusiness',
 	'mediaQueueBusiness',
 	'fileExplorerService',
@@ -24,10 +20,10 @@ jpoApp.factory('explorerBusinessFactory', [
 				favoriteBusiness
 					.observeSelectedFavorite()
 					.select(function (favoriteModel) {
-						return favoriteModel.selectTargetLinkFromLinks();
+						return favoriteModel.selectTargetLinkUrlFromLinks();
 					})
-					.do(function(favoriteLink) {
-						changeFolderByApiUrlAndResetSelection(favoriteLink.href);
+					.do(function(favoriteLinkUrl) {
+						changeFolderByApiUrlAndResetSelection(favoriteLinkUrl);
 					})
 					.silentSubscribe();
 			}

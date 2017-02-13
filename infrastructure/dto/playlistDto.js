@@ -7,6 +7,16 @@ var assertDefinedObj = function(obj) {
 	if (obj === undefined) {
 		throw 'Invalid Playlist';
 	}
+	if (obj.id === undefined &&
+		obj.name === undefined &&
+		obj.index === undefined &&
+		obj.filePath === undefined &&
+		obj.createdOn === undefined &&
+		obj.updatedOn === undefined &&
+		obj.isAvailable === undefined &&
+		obj.media === undefined) {
+		throw 'No playlist object sent';
+	}
 };
 
 var PlaylistDto = function(id, name, index, filePath, createdOn, updatedOn, isAvailable, media) {
@@ -36,7 +46,7 @@ PlaylistDto.prototype.getDefinedFields = function() {
 
 PlaylistDto.toDto = function (obj, playlistId) {
 	assertDefinedObj(obj); // TODO Should check for types
-
+// TODO Should throw an error if no any property set
 	return new PlaylistDto(
 		playlistId || obj.id,
 		obj.name,

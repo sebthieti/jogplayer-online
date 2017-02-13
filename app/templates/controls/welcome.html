@@ -1,0 +1,19 @@
+<div ng-show="showWelcome" class="animate-show">
+
+	<form id="loginForm" role="form" shake-on-invalid-credentials="logonStatus" ng-show="showLoginForm" ng-submit="submitCredentials()">
+		<div class="form-content">
+			<p>
+				<input id="username" autofocus type="text" name="username" placeholder="User Name" ng-model="username" ng-required>
+			</p>
+			<p>
+				<input id="password" type="password" name="password" placeholder="Password" ng-model="password">
+			</p>
+			<button type="submit" title="Let me in" ng-disabled="!canSubmit">
+				<img src="img/logo.png">
+				<span>Let me in</span>
+			</button>
+		</div>
+
+	</form>
+
+</div>

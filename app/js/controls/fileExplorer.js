@@ -44,7 +44,7 @@ jpoApp.directive("fileExplorer", [
 					}
 				});
 
-				$scope.innerPlayMedia = function (file) {
+				$scope.innerPlayMedium = function (file) {
 					explorerBusiness.playMedium(file);
 				};
 

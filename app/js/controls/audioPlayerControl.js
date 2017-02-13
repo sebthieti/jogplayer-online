@@ -4,7 +4,6 @@ jpoApp.factory("AudioPlayerControl", function () {
 	function AudioPlayerControl(controlElements) {
 		var ButtonMap = Jpo.ButtonMap;
 		var PlayerState = Jpo.PlayerState;
-		var linkHelpers = Helpers.linkHelpers;
 
 		var _currentStateSubject = new Rx.BehaviorSubject(PlayerState.Unknown);
 		var _isDraggingCursor = false;

@@ -20,12 +20,20 @@ Rx.Observable.prototype.whereIsNotNull = function() {
 	return this.where(function(obj) { return obj !== null });
 };
 
+Rx.Observable.prototype.whereHasValue = function() {
+	return this.where(function(obj) { return angular.isDefined(obj) && obj !== null });
+};
+
 Rx.Observable.prototype.whereIsFalse = function() {
 	return this.where(function(boolean) { return boolean === false });
 };
 
 Rx.Observable.prototype.whereIsTrue = function() {
 	return this.where(function(boolean) { return boolean === true });
+};
+
+Rx.Observable.prototype.selectUnit = function() {
+	return this.select(function(__) {return {}});
 };
 
 Rx.Observable.prototype.selectWithPreviousValue = function(selector) {

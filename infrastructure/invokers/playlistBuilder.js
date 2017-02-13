@@ -13,13 +13,14 @@ var PlaylistBuilder = function (playlistModel, fileExplorerService) {
 };
 
 PlaylistBuilder.prototype = {
-
-	buildEmptyVirtualPlaylist: function (name, index) {
-		return this.buildVirtualPlaylist(name, index);
+	// TODO Use builder pattern (add each property by a method)
+	buildEmptyVirtualPlaylist: function (name, index, owner) {
+		return this.buildVirtualPlaylist(name, index, owner);
 	},
 
-	buildVirtualPlaylist: function (name, index) {
+	buildVirtualPlaylist: function (name, index, owner) {
 		return new Playlist({
+			ownerId: owner.id,
 			name: name,
 			index: index,
 			filePath: '',
@@ -29,7 +30,7 @@ PlaylistBuilder.prototype = {
 		});
 	},
 
-	buildEmptyPhysicalPlaylistAsync: function (playlistFilePath, name, index) {
+	buildEmptyPhysicalPlaylistAsync: function (playlistFilePath, name, index, owner) {
 		var normalizedPlaylistFilePath = _fileExplorerService.normalizePathForCurrentOs(playlistFilePath);
 		var playlistName = '';
 		if (name) {
@@ -43,6 +44,7 @@ PlaylistBuilder.prototype = {
 			.nfcall(fs.stat, normalizedPlaylistFilePath)
 			.then(function(stat) {
 				return new Playlist({
+					ownerId: owner.id,
 					name: playlistName,
 					index: index,
 					filePath: normalizedPlaylistFilePath,

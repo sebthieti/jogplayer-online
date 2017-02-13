@@ -8,62 +8,62 @@ function MediaStreamer (mediaDirector, fileService) {
     _fileService = fileService;
 }
 
-MediaStreamer.prototype.streamByMediaIdAndExt = function(mediaIdWithExt, request, response) {
+MediaStreamer.prototype.streamByMediaIdAndExt = function(mediaIdWithExt, req, res) {
 	var mediaExtIndex = mediaIdWithExt.indexOf('.');
 	var mediaExt = mediaIdWithExt.substring(mediaExtIndex);
 	var mediaId = mediaIdWithExt.substring(0, mediaExtIndex);
 	if (!mediaId) {
-		response.send(400, "A valid media id must be provided.");
+		res.send(400, "A valid media id must be provided.");
 		return;
 	}
 	if (!mediaExt) {
-		response.send(400, "Media doesn't seem to have an extension.");
+		res.send(400, "Media doesn't seem to have an extension.");
 		return;
 	}
 
-	var canUseChunkedStratagy = typeof request.headers.range !== 'undefined';
+	var canUseChunkedStratagy = typeof req.headers.range !== 'undefined';
 
 	var chunckParams;
 	if (canUseChunkedStratagy) {
-		chunckParams = parseChunkRequest(request);
+		chunckParams = parseChunkRequest(req);
 	} else {
 		chunckParams = { startOffset: 0, endOffset: '' }
 	}
 
 	return _mediaDirector
-		.getBinaryChunkAndFileSizeByIdAsync(mediaId, chunckParams.startOffset, chunckParams.endOffset)
+		.getBinaryChunkAndFileSizeByIdAsync(mediaId, chunckParams.startOffset, chunckParams.endOffset, req.user)
 		.then(function(dataSet) {
-			prepareAndSendResponseWithData(response, canUseChunkedStratagy, chunckParams, dataSet);
+			prepareAndSendResponseWithData(res, canUseChunkedStratagy, chunckParams, dataSet);
 		})
 		.catch(function(err) {
-			response.send(400, err) }
+			res.send(400, err) }
 		)
 		.done();
 };
 
-MediaStreamer.prototype.streamByMediaPath = function(rawPath, request, response) {
+MediaStreamer.prototype.streamByMediaPath = function(rawPath, req, res) {
 	var completePath = rawPath;
-    var realPath = _fileService.normalizePathForCurrentOs(completePath);//adaptPathToSystem(completePath);
+    var realPath = _fileService.normalizePathForCurrentOs(completePath);
 
-	var canUseChunkedStratagy = typeof request.headers.range !== 'undefined';
+	var canUseChunkedStratagy = typeof req.headers.range !== 'undefined';
 
 	var chunckParams;
 	if (canUseChunkedStratagy) {
-		chunckParams = parseChunkRequest(request);
+		chunckParams = parseChunkRequest(req);
 	} else {
 		chunckParams = { startOffset: 0, endOffset: '' }
 	}
 
 	return _mediaDirector
-		.ensureReadableMediaAsync(realPath, request.headers.accept)
+		.ensureReadableMediaAsync(realPath, req.headers.accept)
 		.then(function(mediaPath) {
 			return _mediaDirector.getBinaryChunkAndFileSizeByPathAsync(mediaPath, chunckParams.startOffset, chunckParams.endOffset)
 		})
 		.then(function(dataSet) {
-			prepareAndSendResponseWithData(response, canUseChunkedStratagy, chunckParams, dataSet);
+			prepareAndSendResponseWithData(res, canUseChunkedStratagy, chunckParams, dataSet);
 		})
 		.catch(function(err) {
-			response.send(400, err)
+			res.send(400, err)
 		})
 		.done();
 };

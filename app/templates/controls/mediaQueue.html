@@ -11,7 +11,7 @@
                 ng-class="mVm.isPlaying ? 'active btn-enabled' : 'btn-enabled'">
                 <span ng-click="innerRemove(mVm)" class="remove" stop-event>[x]</span>
                 <span class="error" ng-show="mVm.hasError" stop-event>[!]</span>
-                <span>{{ mVm.model.name || mVm.model.title }}</span>
+                <span>{{ ::(mVm.model.name || mVm.model.title) }}</span>
             </li>
         </ul>
     </div>

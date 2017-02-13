@@ -14,7 +14,6 @@ function exitHandler(options, err) {
 		if (_dbConnection) {
 			_dbConnection.disconnect();
 		}
-		console.log('before Gracefull exit');
 	}
 	if (err) console.log(err.stack);
 	if (options.exit) process.exit();

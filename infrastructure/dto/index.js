@@ -6,4 +6,5 @@ module.exports.LinkDto = require('./linkDto');
 module.exports.ResourceLinksDto = require('./resourceLinksDto');
 module.exports.Media = require('./media');
 module.exports.FavoriteDto = require('./favoriteDto');
+module.exports.UserDto = require('./userDto');
 module.exports.Id31Metadata = require('./id3v1Metadata');

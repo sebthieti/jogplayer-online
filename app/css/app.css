@@ -1,4 +1,3 @@
-@import url(http://fonts.googleapis.com/css?family=Lato);
 *{-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}
 *{font-family:'Lato',sans-serif;}
 html,body{background-color:#f1f1f1}
@@ -10,7 +9,17 @@ ul{padding:0;margin:0;list-style:none}
 .disabled{opacity:.1}
 .btn-enabled{cursor:pointer}
 .btn-rounded{border:2px solid #000;border-radius:50%}
-.btn-small{font-size:.75em}
+
+#user{position: absolute;top:0;right: 0;margin: 25px}
+#user>span{font-size: 1.1em;margin-right: 10px}
+#menu{position: absolute; left: 15px;top: 40px}/*margin: 11px 25px 25px 25px*/
+#logout{width: 40px;border: 0;padding: 0;margin: 0;height: 40px;}
+.btn-menu{height: 56px;width: 56px;background-color: #D5D5D5}
+.btn-rounded-new{font-size: 1.1em;outline: 0;padding: 0;border:0;border-radius:50%;box-shadow: 0 0 4px rgba(0,0,0,.14),0 4px 8px rgba(0,0,0,.28);box-sizing:content-box;pointer-events:auto;cursor:pointer}
+.btn-rounded-new:hover{box-shadow:0 0 6px rgba(0,0,0,.16),0 6px 12px rgba(0,0,0,.32);transition:box-shadow 150ms cubic-bezier(0,0,.2,1)}
+.btn-middle{height: 42px;width: 42px}
+
+.btn-small{/*font-size:.75em*/height: 30px;width: 30px}
 .btn-large{font-size:1.5em}
 .btn-larger{font-size:2em}
 .selected{background-color:#959595 !important}
@@ -89,11 +98,11 @@ file-explorer>div{position:relative}
 .tab-tools{display:none;position:absolute;top:-18px;left:0;min-width:35px;background-color:#dbdbdb;border-radius:3px;padding:2px 0 0 1px}
 
 /* TODO Usefull ? */
-#breadcrumb{width:280px}
+.breadcrumb{width:280px}
 /* TODO Width: Try with 100% */
-#breadcrumb-container{overflow-x:auto;width:100%;height:26px;font-size:.8em}
-#breadcrumb-container li{padding:3px 9px;display:inline-block;background-color:#b0b0b0;margin-right:5px;height:20px}
-#breadcrumb-container li:hover{background-color:#8e8e8e}
+.breadcrumb-container{overflow-x:auto;width:100%;height:26px;font-size:.8em}
+.breadcrumb-container li{padding:3px 9px;display:inline-block;background-color:#b0b0b0;margin-right:5px;height:20px}
+.breadcrumb-container li:hover{background-color:#8e8e8e}
 #folder-up{background-color:#c5c5c5}
 #explorer>div{border:2px solid #b0b0b0}
 #playlistFinderValidation{background-color:white;padding:11px;display:inline-block;position:absolute;right:0;top:0}
@@ -130,3 +139,48 @@ file-explorer>div{position:relative}
 #queue li:nth-child(even){background-color:#e3e3e3}
 #queue li.active{background-color:#959595}
 #file-explorer li:hover,#media-container li:hover,#favorites li:hover{background-color: #858585}
+
+welcome>div{background-color: #d3d3d3;height:100%;width:100%;position:absolute;top:0}
+#loginForm{ background:#e6e6e6;width:30%;height:270px;top: 50%;position: relative;transform: translateY(-50%);margin:0 auto;border-radius:10px;border:3px solid #e6e6e6}
+#loginForm p{border-radius: 5px;margin-left: 10px;height: 75px;background-color: aliceblue;margin-right: 10px}
+#loginForm input{position: relative;display: block;top: 50%;transform: translateY(-50%);margin: 0 auto;background-color: aliceblue;border: 0;color: #5c5c5c;font-size: 2.1em;width: 96%;line-height: 40px;height: 50px}
+#loginForm button{margin: 0 auto;display: block}
+#loginForm button:disabled{opacity: .5}
+
+welcome>div.animate-show.ng-hide-add.ng-hide-add-active,
+welcome>div.animate-show.ng-hide-remove.ng-hide-remove-active {
+    -webkit-transition: opacity linear .25s;
+    transition: opacity linear .25s;
+}
+.animate-show.ng-hide {opacity:0}
+
+.shake.shake-add.shake-add-active{
+    transform: translateY(-50%);
+    -webkit-animation: do_shake .1s 2;
+    -moz-animation: do_shake .1s 2;
+    -o-animation: do_shake .1s 2;
+    animation: do_shake .1s 2;
+}
+@-webkit-keyframes do_shake {
+    0%  {transform: translateY(-50%) translateX(0px)}
+    33%  {transform: translateY(-50%) translateX(-30px)}
+    66%  {transform: translateY(-50%) translateX(30px)}
+    100%  {transform: translateY(-50%) translateX(0px)}
+}
+
+#manage-users-outer{position:absolute;top: 0;left:90px;margin-top: 20px;z-index: 1;overflow-y: scroll;max-height: 660px}
+#manage-users-inner{background-color: #F4F4F4;padding: 20px;border-radius: 5px;padding: 1px 20px 20px 20px}
+#user-list{list-style: none;padding: 0;margin: 0}
+#user-list li{margin: 10px 0}
+#user-list li>div{}
+#user-list li>div:hover{background-color: #808080}
+#user-list .full-name{font-size: 1.2em}
+#user-list .user-info{background-color: #DFDFDF;}
+#user-list .user-info:hover{background-color: #bbbbbb}
+.user-info > div{display: inline-block;margin: 10px 0}
+#user-list ol{display: inline-block}
+
+#add-user{background-color: #DFDFDF}
+/*#add-user{width: 400px;overflow-x: auto;}
+#add-user-button-area {display: inline-block;width: 300px;background-color: aliceblue;}
+#add-user-form-area{display: inline-block;width: 300px;background-color: antiquewhite;}*/

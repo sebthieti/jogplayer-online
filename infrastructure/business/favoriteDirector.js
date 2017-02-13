@@ -6,22 +6,20 @@ function FavoriteDirector (favoriteSaveService) {
 	_favoriteSaveService = favoriteSaveService;
 }
 
-FavoriteDirector.prototype = {
-	getFavoritesAsync: function() {
-		return _favoriteSaveService.getSortedFavoritesAsync();
-	},
+FavoriteDirector.prototype.getFavoritesAsync = function(owner) {
+	return _favoriteSaveService.getSortedFavoritesAsync(owner);
+};
 
-	addFavoriteAsync: function(favorite) {
-		return _favoriteSaveService.addFavoriteAsync(favorite);
-	},
+FavoriteDirector.prototype.addFavoriteAsync = function(favorite, owner) {
+	return _favoriteSaveService.addFavoriteAsync(favorite, owner);
+};
 
-	updateFromFavoriteDtoAsync: function(favoriteId, favoriteDto) {
-		return _favoriteSaveService.updateFromFavoriteDtoAsync(favoriteId, favoriteDto);
-	},
+FavoriteDirector.prototype.updateFromFavoriteDtoAsync = function(favoriteId, favoriteDto, owner) {
+	return _favoriteSaveService.updateFromFavoriteDtoAsync(favoriteId, favoriteDto, owner);
+};
 
-	removeFavoriteByIdAsync: function(favorite) {
-		return _favoriteSaveService.removeFavoriteByIdAsync(favorite);
-	}
+FavoriteDirector.prototype.removeFavoriteByIdAsync = function(favorite, owner) {
+	return _favoriteSaveService.removeFavoriteByIdAsync(favorite, owner);
 };
 
 module.exports = FavoriteDirector;

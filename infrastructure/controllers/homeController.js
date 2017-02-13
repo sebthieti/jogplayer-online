@@ -10,7 +10,7 @@ function HomeController (app, routes) {
 
 HomeController.prototype.init = function() {
 	_app.get("/", function(req, res) {
-		res.render("index");
+		res.render("index", { user: req.user });
 	});
 
 	_app.get(_routes.api, function(req, res) {

@@ -20,22 +20,22 @@ var MediaBuilder = function (metaTagServices, mediaService, mediaModel) {
 
 MediaBuilder.prototype = {
 
-	toMediaAsync: function(mediaSummaries, playlistId) {
+	toMediaAsync: function(mediaSummaries, playlistId, owner) {
 		var mediaPromises = mediaSummaries.map(
-			function(mediumSummary) { return this.toMediumAsync(mediumSummary, playlistId) },
+			function(mediumSummary) { return this.toMediumAsync(mediumSummary, playlistId, owner) },
 			this
 		);
 		return Q.all(mediaPromises);
 	},
 
-	toMediumAsync: function (mediaSummary, playlistId) {
+	toMediumAsync: function (mediaSummary, playlistId, owner) {
 		if (!mediaSummary) {
 			throw "MediaBuilder.toMedia error: mediaSummary must be set";
 		}
-		return this.buildMediumAsync(playlistId, mediaSummary.filePath, mediaSummary.index);
+		return this.buildMediumAsync(playlistId, mediaSummary.filePath, mediaSummary.index, owner);
 	},
 
-	buildMediumAsync: function (playlistId, filePath, index) {
+	buildMediumAsync: function (playlistId, filePath, index, owner) {
 		if (!filePath) {
 			throw "MediaBuilder.buildMedia: filePath not set";
 		}
@@ -46,6 +46,7 @@ MediaBuilder.prototype = {
 			.then(function (mediumInfo) {
 				var mediumFormat = mediumInfo.detailedInfo.format;
 				return new Media({
+					ownerId: owner.id,
 					_playlistId: playlistId,
 					duration: Math.round(mediumFormat.duration),
 					ext: mediumInfo.fileext,
@@ -63,6 +64,7 @@ MediaBuilder.prototype = {
 				var fileext = path.extname(filePath);
 				var name = path.basename(filePath, fileext);
 				return new Media({
+					ownerId: owner.id,
 					_playlistId: playlistId,
 					duration: 0,
 					ext: fileext,

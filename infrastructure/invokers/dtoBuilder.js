@@ -26,7 +26,7 @@
 	//		throw 'Invalid Favorite';
 	//	}
 	//
-	//	return new Dto.FavoriteDto(
+	//	return new Dto.UserDto(
 	//		favId || obj.id,
 	//		obj.name,
 	//		obj.index,

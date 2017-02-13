@@ -5,3 +5,6 @@ module.exports.PlaylistController = require("./playlistController");
 module.exports.PlayMediaController = require("./playMediaController");
 module.exports.FileExplorerController = require("./fileExplorerController");
 module.exports.FavoriteController = require("./favoriteController");
+module.exports.StateController = require('./stateController');
+module.exports.AuthController = require('./authController');
+module.exports.UserController = require('./userController');

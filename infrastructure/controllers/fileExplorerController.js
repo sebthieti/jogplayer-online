@@ -2,25 +2,27 @@
 
 var _app,
 	_mediaStreamer,
-	_fileExplorerDirector;
+	_fileExplorerDirector,
+	_authDirector;
 
 function extractUrlFromParams(params) {
 	return ('/' + (params[0] || '')) || '';
 }
 
-var FileExplorerController = function (app, mediaStreamer, fileExplorerDirector) {
+function FileExplorerController(app, mediaStreamer, fileExplorerDirector, authDirector) {
 	_app = app;
 	_mediaStreamer = mediaStreamer;
 	_fileExplorerDirector = fileExplorerDirector;
-};
+	_authDirector = authDirector;
+}
 
 FileExplorerController.prototype.init = function() {
-	_app.get("/", function(req, res) {
+	_app.get("/", _authDirector.ensureApiAuthenticated, function(req, res) {
 		res.render("index");
 	});
 
 	// Explore path
-	_app.get(/^\/api\/explore\/(.*[\/])*$/, function (req, res) {
+	_app.get(/^\/api\/explore\/(.*[\/])*$/, _authDirector.ensureApiAuthenticated, function (req, res) {
 		_fileExplorerDirector
 			.getFolderContentAsync(extractUrlFromParams(req.params))
 			.then(function(fileDetails) { res.send(fileDetails) })

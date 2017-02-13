@@ -13,7 +13,7 @@ module.exports.checkFileExistsAsync = function(filePath) {
 	});
 	return defer.promise;
 };
-
+// TODO Should be part of Model instead of separate ?
 module.exports.saveModelAsync = function(model) {
 	var defer = Q.defer();
 	model.save(function(err, savedModel) {

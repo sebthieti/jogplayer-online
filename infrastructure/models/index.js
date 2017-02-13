@@ -8,3 +8,4 @@ module.exports.MediaType = require("./mediatype");
 module.exports.Playlist = require("./playlist");
 module.exports.FileInfo = require("./fileInfo");
 module.exports.MediumInfo = require("./mediumInfo");
+module.exports.User = require('./user');

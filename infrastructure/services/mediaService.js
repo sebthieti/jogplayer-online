@@ -108,6 +108,26 @@ var getFileStream = function(filePath, fromOffset, toOffset) {
 	return fs.createReadStream(filePath, { start: fromOffset, end: toOffset });
 };
 
+//function exitHandler(options, err) {
+//	if (options.cleanup) {
+//		if (_dbConnection) {
+//			_dbConnection.disconnect();
+//		}
+//		console.log('before Gracefull exit');
+//	}
+//	if (err) console.log(err.stack);
+//	if (options.exit) process.exit();
+//}
+//
+//// Do something when app is closing
+//process.on('exit', exitHandler.bind(null, { cleanup: true }));
+//
+//// Catches ctrl+c event
+//process.on('SIGINT', exitHandler.bind(null, { exit: true }));
+//
+//// Catches uncaught exceptions
+//process.on('uncaughtException', exitHandler.bind(null, { exit: true }));
+
 module.exports = {
 	getMediumInfosAsync: getMediumInfosAsync,
 	convertMediumToAsync: convertMediumToAsync,

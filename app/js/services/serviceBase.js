@@ -1,78 +1,90 @@
 'use strict';
 
-//jpoApp.factory("favoriteService", ['ServiceBase', function (ServiceBase) {
-//	function FavoriteService() {
-//		ServiceBase.call(this, 'favorites');
-//	}
-//	FavoriteService.prototype = Object.create(ServiceBase.prototype);
-//	FavoriteService.prototype.constructor = ServiceBase;
-//
-//	return new FavoriteService();
-//}]);
-
 jpoApp.factory("serviceProxy", function ($http, $q, jpoProxy) {
+	var errorSubject = new Rx.Subject();
+
 	function ServiceBase(serviceName) {
 		this._serviceName = serviceName;
 	}
+
 	ServiceBase.prototype.getAsync = function () {
-		return jpoProxy.getApiLinkAsync(this._serviceName)
+		var deferred = $q.defer();
+
+		jpoProxy.getApiLinkAsync(this._serviceName)
 			.then(function(link) {
 				return $http.get(link)
 			})
 			.then(function (result) {
-				return result.data;
+				deferred.resolve(result.data);
+			}, function(err) {
+				deferred.reject(err);
+				errorSubject.onNext(err);
 			});
+
+		return deferred.promise;
 	};
 
 	ServiceBase.prototype.getByLinkAsync = function (link) {
-		return $http.get(link)
+		var deferred = $q.defer();
+
+		$http.get(link)
 			.then(function (result) {
-				return result.data;
+				deferred.resolve(result.data);
+			}, function(err) {
+				deferred.reject(err);
+				errorSubject.onNext(err);
 			});
+
+		return deferred.promise;
 	};
 
 	ServiceBase.prototype.addAsync = function(model) {
-		return jpoProxy.getApiLinkAsync(this._serviceName)
+		var deferred = $q.defer();
+
+		jpoProxy.getApiLinkAsync(this._serviceName)
 			.then(function(link) {
 				return $http.post(link, model)
 			})
 			.then(function (result) {
-				return result.data;
+				deferred.resolve(result.data);
+			}, function(err) {
+				deferred.reject(err);
+				errorSubject.onNext(err);
 			});
+
+		return deferred.promise;
 	};
 
 	ServiceBase.prototype.addByLinkAsync = function(link, model) {
-		return $http.post(link, model)
+		var deferred = $q.defer();
+
+		$http.post(link, model)
 			.then(function (result) {
-				return result.data;
+				deferred.resolve(result.data);
+			}, function(err) {
+				deferred.reject(err);
+				errorSubject.onNext(err);
 			});
+
+		return deferred.promise;
 	};
-	//insertMediumByFilePathToPlaylist: function (playlist, mediaFilePath, index) {
-	//	return addOrInsertMediumByFilePathToPlaylist(playlist, mediaFilePath, index);
-	//},
-	//addMediumByFilePathToPlaylist: function (playlist, mediaFilePath) {
-	//	return addOrInsertMediumByFilePathToPlaylist(playlist, mediaFilePath, 'end');
-	//},
-	//var addOrInsertMediumByFilePathToPlaylist = function (playlist, mediaFilePath, index) {
-	//	return $http
-	//		.post(
-	//			linkHelper.selectActionFromLinks('media.insert', playlist.links),
-	//			{ index: index, mediaFilePath: mediaFilePath }
-	//		)
-	//		.then(function (result) {
-	//			return { playlist: playlist, newMedia: result.data};
-	//		});
-	//};
 
 	ServiceBase.prototype.updateAsync = function(model, updateLink) {
-		return $http({
+		var deferred = $q.defer();
+
+		$http({
 			method: 'PATCH',
 			url: updateLink,
 			data: model
 		})
 		.then(function (result) {
-			return result.data;
+			deferred.resolve(result.data);
+		}, function(err) {
+			deferred.reject(err);
+			errorSubject.onNext(err);
 		});
+
+		return deferred.promise;
 	};
 
 	ServiceBase.prototype.removeAsync = function(removeLink) {
@@ -85,6 +97,7 @@ jpoApp.factory("serviceProxy", function ($http, $q, jpoProxy) {
 				else { deferred.reject("Favorite hasn't be deleted" ) }
 			}, function (err) {
 				deferred.reject(err);
+				errorSubject.onNext(err);
 			});
 
 		return deferred.promise;
@@ -98,6 +111,10 @@ jpoApp.factory("serviceProxy", function ($http, $q, jpoProxy) {
 				serviceByNameStore[endpointName] = new ServiceBase(endpointName);
 			}
 			return serviceByNameStore[endpointName];
+		},
+
+		observeError: function() {
+			return errorSubject;
 		}
 	}
 });

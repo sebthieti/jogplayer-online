@@ -1,7 +1,7 @@
 <ul id="favorites">
     <li ng-repeat="favoriteVm in favoritesVm" ng-switch="favoriteVm.isEditing" class="btn-enabled">
         <span class="icon-heart favorite"></span>
-        <input ng-switch-when="true" ng-enter="done(favoriteVm)" type="text" ng-model="favoriteVm.model.name">
+        <input ng-switch-when="true" ng-enter="done(favoriteVm)" focus-when="favoriteVm.isEditing" type="text" ng-model="favoriteVm.model.name">
         <span ng-switch-when="true" class="icon-checkmark rename" stop-event ng-click="done(favoriteVm)"></span>
         <span ng-switch-when="true" class="icon-close cancel" stop-event ng-click="cancel(favoriteVm)"></span>
 

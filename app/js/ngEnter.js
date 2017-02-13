@@ -10,4 +10,15 @@ jpoApp.directive('ngEnter', function () {
 			}
 		});
 	};
+}).directive('focusWhen', function ($timeout, $parse) {
+	return function (scope, element, attrs) {
+		var model = $parse(attrs.focusWhen);
+		scope.$watch(model, function(value) {
+			if(value === true) {
+				$timeout(function() {
+					element[0].focus();
+				});
+			}
+		});
+	};
 });

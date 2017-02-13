@@ -13,6 +13,9 @@ module.exports = function () {
 			},{
 				rel: 'config',
 				href: '/api/config/'
+			},{
+				rel: 'users',
+				href: '/api/users/'
 			}/*,{
 				sendConfig: '/api/config/playableType'
 			}*/
@@ -23,6 +26,15 @@ module.exports = function () {
 			insertPath: '/api/favorites/',
 			updatePath: "/api/favorites/:favId",
 			deletePath: "/api/favorites/:favId"
+		},
+		login: {
+			postPath: '/api/login'
+		},
+		logout: {
+			postPath: '/api/logout'
+		},
+		isAuthenticated: {
+			getPath: '/api/is-authenticated'
 		},
 		playlists: {
 			selfPath: '/api/playlists/:playlistId',
@@ -49,7 +61,15 @@ module.exports = function () {
 		},
 		file: {
 			selfPlayPattern: /^\/api\/media\/play\/path\/(.*[^\/])$/
-		}/*,
+		},
+		users: {
+			selfPath: '/api/users/:userId',
+			getPath: '/api/users/',
+			updatePath: '/api/users/:userId',
+			insertPath: '/api/users/',
+			deletePath: '/api/users/:userId'
+		}
+		/*,
 		config: {
 			sendConfig: '/api/config/playableTypes'
 		}*/

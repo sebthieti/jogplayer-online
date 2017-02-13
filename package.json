@@ -20,6 +20,8 @@
     "mongoose": "^3.8.15",
     "node-ffprobe": "^1.2.2",
     "node-linq": "0.0.3",
+    "passport": "^0.2.1",
+    "passport-local": "^1.0.0",
     "playlist-parser": "0.0.8",
     "q": "^1.0.1",
     "rx": "^2.3.14",

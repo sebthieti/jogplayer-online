@@ -47,6 +47,8 @@ jpoApp.directive("favoritesExplorer", ['viewModelBuilder', 'favoriteBusiness', f
 					$scope.favoritesVm = favoritesVm;
 				})
 				.silentSubscribe(); // TODO Handle a disposeWith method
+
+			favoriteBusiness.loadFavorites();
 		}
 	}
 }]);
