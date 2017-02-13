@@ -1,8 +1,6 @@
 .idea
 _converted
 node_modules
-app/lib
-db/log
-db/db
 build
 aws-config.json
+ffmpeg
