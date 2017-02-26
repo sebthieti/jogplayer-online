@@ -35,7 +35,7 @@ playlistSchema.virtual('isVirtual').get(() => {
 // TODO Think about remove this and only compute it elsewhere (maybe only put it to DTO ?)
 playlistSchema.virtual('isAvailable').get(() => {
   return this._isAvailable || false;
-}).set(value=> {
+}).set(value => {
   this._isAvailable = value;
 });
 playlistSchema.statics.whereInOrGetAll = function (path, whereIn) {
