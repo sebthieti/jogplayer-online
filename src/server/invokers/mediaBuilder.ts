@@ -8,7 +8,12 @@ export interface IMediaBuilder {
   toMediaAsync(mediaSummaries, playlistId, issuer);
   toMediumAsync(mediaSummary, playlistId, issuer);
   buildMediumAsync(playlistId, filePath, index, issuer);
-  buildMediumSummary(filePath, title, index, duration);
+  buildMediumSummary(
+    filePath: string,
+    title: string,
+    index: number,
+    duration: number
+  ): IMediumSummary;
 }
 
 export default class MediaBuilder implements IMediaBuilder {
@@ -78,7 +83,12 @@ export default class MediaBuilder implements IMediaBuilder {
       });
   }
 
-  buildMediumSummary(filePath, title, index, duration) {
+  buildMediumSummary(
+    filePath: string,
+    title: string,
+    index: number,
+    duration: number
+  ): IMediumSummary {
     if (!filePath) {
       throw new Error('MediaBuilder.buildMediaSummary: filePath not set');
     }

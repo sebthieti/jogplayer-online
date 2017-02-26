@@ -1,39 +1,38 @@
 import * as child_process from 'child_process';
 import * as path from 'path';
-import * as _ from 'lodash';
 
-import BaseFileExplorerService from './fileExplorer.service';
-import FileInfo from '../../entities/fileInfo';
+import FileExplorerService from './fileExplorer.service';
+import FileInfo, {IFileInfo} from '../../entities/fileInfo';
 
-export default class LinuxFileExplorerService extends BaseFileExplorerService {
+export default class LinuxFileExplorerService extends FileExplorerService {
   constructor() {
     super();
   }
 
-  canHandleOs(osName) {
+  canHandleOs(osName): boolean {
     return osName === 'linux';
   }
 
-  normalizePathForCurrentOs(completePath) {
+  normalizePathForCurrentOs(completePath): string {
     return (completePath.startsWith('/'))
       ? completePath
       : `/${completePath}`;
   }
 
-  getNewLineConstant() {
+  getNewLineConstant(): string {
     return '\n';
   }
 
-  getNetworkRoot() {
+  getNetworkRoot(): string {
     return `${path.sep}${path.sep}`;
   }
 
-  getLevelUpPath() {
+  getLevelUpPath(): string {
     return `..${path.sep}`;
   }
 
-  getAvailableDrivesPathsAsync() {
-    var cmd = 'df -P | grep /dev/sd | awk \'{print $6}\'';
+  getAvailableDrivesPathsAsync(): Promise<IFileInfo[]> {
+    const cmd = 'df -P | grep /dev/sd | awk \'{print $6}\'';
     return this.getDrivesFromCmd(cmd)
       .then(rawDrivesOutput => {
         let driveArray = this.normalizeOutput(rawDrivesOutput);
@@ -42,7 +41,7 @@ export default class LinuxFileExplorerService extends BaseFileExplorerService {
       });
   }
 
-  private getDrivesFromCmd(cmd) {
+  private getDrivesFromCmd(cmd: string): Promise<string> {
     return new Promise((resolve, reject) => {
       child_process.exec(cmd, (err, stdOut, stdErr) => {
         if (err) {
@@ -54,23 +53,24 @@ export default class LinuxFileExplorerService extends BaseFileExplorerService {
     });
   }
 
-  private normalizeOutput(rawDrivesOutput) {
+  private normalizeOutput(rawDrivesOutput: string): string[] {
     // TODO Turn to regex /^(.*)$/gm
-    return _(rawDrivesOutput.split('\n'))
-      .filter(rawDrive => rawDrive !== '')
-      .value();
+    return rawDrivesOutput
+      .split('\n')
+      .filter(rawDrive => rawDrive !== '');
   }
 
-  private prependHomeDir(driveArray) {
+  private prependHomeDir(driveArray: string[]): string[] {
     return ['~/'].concat(driveArray);
   }
 
-  private castDrivesToFileInfoList(drives) {
+  private castDrivesToFileInfoList(drives: string[]): IFileInfo[] {
     return drives.map(drive => {
       let safeDriveName = drive;
       if (safeDriveName !== '/' && safeDriveName[safeDriveName.length - 1] !== '/') {
         safeDriveName = drive + '/';
       }
+
       return new FileInfo({
         name: safeDriveName,
         filePath: safeDriveName,

@@ -1,5 +1,4 @@
 import * as os from 'os';
-import * as _ from 'lodash';
 
 import DarwinFileExplorerService from './darwinFileExplorer.service';
 import LinuxFileExplorerService from './linuxFileExplorer.service';
@@ -13,13 +12,12 @@ export default class FileExplorerStrategyService {
     new LinuxFileExplorerService()
   ];
 
-  buildFileExplorerService() {
+  buildFileExplorerService(): IFileExplorerService {
     return this.findAndBuildFileExplorerForCurrentOs();
   }
 
   private findAndBuildFileExplorerForCurrentOs(): IFileExplorerService {
     const currentOs = os.platform();
-    return _(this.fileExplorerServices)
-      .find(svc => svc.canHandleOs(currentOs));
+    return this.fileExplorerServices.find(svc => svc.canHandleOs(currentOs));
   }
 }

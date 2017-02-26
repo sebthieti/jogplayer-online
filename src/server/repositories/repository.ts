@@ -19,7 +19,7 @@ export interface IRepository {
   getMongodConfigRelativePath();
   getMongodCwdRelativePath();
   listenToConfigReadyAndInit();
-  initDbClientAsync(config);
+  initDbClient(config);
 }
 
 export default class Repository implements IRepository {
@@ -104,7 +104,7 @@ export default class Repository implements IRepository {
     });
 
     this.dbProcess.on('close', code => {
-      console.log('child process exited with code ' + code);
+      console.log('dbProcess process exited with code ' + code);
     });
   }
 
@@ -113,9 +113,10 @@ export default class Repository implements IRepository {
       case 'win32':
         return '.\\bin\\mongod.exe';
       case 'linux':
+      case 'darwin':
         return 'mongod';
       default:
-        return './bin/mongod';
+        throw new Error(`The '${os.platform()}' system is not supported`);
     }
   }
 
@@ -131,14 +132,14 @@ export default class Repository implements IRepository {
     this.events.onConfigReady(config => {
       const timeout = os.platform() === 'win32' ? 0 : 5000;
       setTimeout(() => { // TODO In linux we need time before launch. Check for that
-        this.initDbClientAsync(config);
+        this.initDbClient(config);
 
         this.events.emitDbConnectionReady();
       }, timeout);
     });
   }
 
-  initDbClientAsync(config) {
+  initDbClient(config) {
     const db = config.DbConnection;
     const dbConnectionString = util.format(
       'mongodb://%s:%d/%s',

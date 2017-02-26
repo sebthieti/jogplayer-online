@@ -1,29 +1,28 @@
 import * as fs from 'fs';
 import {Stats} from 'fs';
 import * as path from 'path';
-import * as _ from 'lodash';
 import FileInfo, {IFileInfo} from '../../entities/fileInfo';
 import {nfcall} from '../../utils/promiseHelpers';
 
 export interface IFileExplorerService {
-  readFileInfoAsync(urlPath);
-  readFolderContentAsync(urlPath);
-  normalizePathForCurrentOs(urlPath): string;
+  readFileInfoAsync(urlPath: string): Promise<IFileInfo>;
+  readFolderContentAsync(urlPath: string): Promise<IFileInfo[]>;
+  normalizePathForCurrentOs(urlPath: string): string;
   canHandleOs(osName: string): boolean;
-  getAvailableDrivesPathsAsync();
+  getAvailableDrivesPathsAsync(): Promise<IFileInfo[]>;
   getNewLineConstant(): string;
   getNetworkRoot(): string;
   getLevelUpPath(): string;
 }
 
-export default class BaseFileExplorerService implements IFileExplorerService {
-  readFileInfoAsync(urlPath) {
+export default class FileExplorerService implements IFileExplorerService {
+  readFileInfoAsync(urlPath: string): Promise<IFileInfo> {
     const realPath = this.mapUrlToServerPath.call(this, urlPath);
     const fileName = path.basename(realPath);
     return this.queryFileStatAsync(realPath, fileName);
   }
 
-  readFolderContentAsync(urlPath) {
+  readFolderContentAsync(urlPath: string): Promise<IFileInfo[]> {
     const isRoot = urlPath === '/';
 
     // If root, then show all drives. Procedure may depend on os
@@ -35,7 +34,7 @@ export default class BaseFileExplorerService implements IFileExplorerService {
     }
   }
 
-  normalizePathForCurrentOs(urlPath): string {
+  normalizePathForCurrentOs(urlPath: string): string {
     throw new Error('abstract member');
   }
 
@@ -43,7 +42,7 @@ export default class BaseFileExplorerService implements IFileExplorerService {
     throw new Error('abstract member');
   }
 
-  getAvailableDrivesPathsAsync() {
+  getAvailableDrivesPathsAsync(): Promise<IFileInfo[]> {
     throw new Error('abstract member');
   }
 
@@ -59,39 +58,31 @@ export default class BaseFileExplorerService implements IFileExplorerService {
     throw new Error('abstract member');
   }
 
-  private performFolderReadDirAsync(basePath, urlPath) {
-    return nfcall(fs.readdir, basePath)
-      .then(fileNames => {
-        return this.spreadFileStatsQueriesInDirAsync(basePath, fileNames);
-      })
-      .then(this.filterByValidFiles)
-      .then(this.filterByOnlyVisibleFiles);
+  private async performFolderReadDirAsync(basePath: string, urlPath: string): Promise<IFileInfo[]> {
+    const fileNames = await nfcall<string[]>(fs.readdir, basePath);
+    let fileInfos = await this.spreadFileStatsQueriesInDirAsync(basePath, fileNames);
+    fileInfos = await this.filterByValidFiles(fileInfos);
+    return await this.filterByOnlyVisibleFiles(fileInfos);
   }
 
-  private filterByValidFiles(fileInfos) {
-    return _(fileInfos)
-      .filter(fileInfo => {
-        return fileInfo.isValid();
-      })
-      .value();
+  private filterByValidFiles(fileInfos: IFileInfo[]): IFileInfo[] {
+    return fileInfos.filter(fileInfo => fileInfo.isValid);
   }
 
-  private filterByOnlyVisibleFiles(fileInfos) {
-    return _(fileInfos)
-      .filter(fileInfo => {
-        return fileInfo.name[0] !== '.' &&
-          fileInfo.name.toLowerCase() !== '$recycle.bin' &&
-          fileInfo.name.toLowerCase() !== 'system volume information' &&
-          fileInfo.name.toLowerCase().substring(0, 6) !== 'found.';
-      })
-      .value();
+  private filterByOnlyVisibleFiles(fileInfos: IFileInfo[]): IFileInfo[] {
+    return fileInfos.filter(fileInfo =>
+      fileInfo.name[0] !== '.' &&
+      fileInfo.name.toLowerCase() !== '$recycle.bin' &&
+      fileInfo.name.toLowerCase() !== 'system volume information' &&
+      fileInfo.name.toLowerCase().substring(0, 6) !== 'found.'
+    );
   }
 
-  private mapUrlToServerPath(urlPath) {
+  private mapUrlToServerPath(urlPath: string): string {
     return this.normalizePathForCurrentOs(urlPath);
   }
 
-  private spreadFileStatsQueriesInDirAsync(basePath, fileNames) {
+  private async spreadFileStatsQueriesInDirAsync(basePath: string, fileNames: string[]): Promise<IFileInfo[]> {
     const fileStatPromises = fileNames.map(fileName => {
       const fullFilePath = basePath + fileName;
       return this.queryFileStatAsync(fullFilePath, fileName);
@@ -99,23 +90,21 @@ export default class BaseFileExplorerService implements IFileExplorerService {
     return Promise.all(fileStatPromises);
   }
 
-  private queryFileStatAsync (fullFilePath, fileName) {
-    return nfcall(fs.stat, fullFilePath)
-      .then((fileStat: Stats) => { // onSuccess
-        if (!fileStat) {
-          return FileInfo.Invalid;
-        }
-        return new FileInfo({
-          filePath: fullFilePath + (fileStat.isDirectory() ? '/' : ''),
-          name: fileName,
-          type: fileStat.isDirectory() ? FileInfo.Directory : FileInfo.File,
-          isRoot: false
-        } as IFileInfo);
-      }, err => { // onError
-        // errno:34 code:ENOENT when no drive
-        // TODO What error for drive empty CD drive?
-        throw new Error(`An error occured while accessing the path ${fullFilePath} :${err.message}`);
-      })
-      .catch(() => new FileInfo({} as IFileInfo));
+  private async queryFileStatAsync(fullFilePath: string, fileName: string): Promise<IFileInfo> {
+    try {
+      const fileStat = await nfcall<Stats>(fs.stat, fullFilePath);
+      if (!fileStat) {
+        return FileInfo.Invalid;
+      }
+
+      return new FileInfo({
+        filePath: fullFilePath + (fileStat.isDirectory() ? '/' : ''),
+        name: fileName,
+        type: fileStat.isDirectory() ? FileInfo.Directory : FileInfo.File,
+        isRoot: false
+      } as IFileInfo);
+    } catch (err) { // Can happen if errno:34 code:ENOENT when no drive
+      return new FileInfo({} as IFileInfo);
+    }
   }
 }
