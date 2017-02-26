@@ -3,36 +3,37 @@ import ResourceLinksDto from '../dto/resourceLinks.dto';
 import LinkDto from '../dto/link.dto';
 import FileInfoDto from '../dto/fileInfo.dto';
 import FolderContentDto from '../dto/folderContent.dto';
+import {IFileInfo} from '../entities/fileInfo';
+import {ILinkDto} from '../dto/link.dto';
+import {IResourceLinksDto} from '../dto/resourceLinks.dto';
 
 class LinkBuilder {
-  toFolderContentDto(urlPath, files) {
+  toFolderContentDto(urlPath: string, files: IFileInfo[]): FolderContentDto {
     return this.buildFolderContentDto(urlPath, files);
   }
 
-  toFileInfoDto(urlPath, file) {
+  toFileInfoDto(urlPath: string, file: IFileInfo): FileInfoDto {
     return this.buildFileInfoDto(urlPath, file);
   }
 
-  private buildFolderContentDto(urlPath, files) {
+  private buildFolderContentDto(urlPath: string, files: IFileInfo[]): FolderContentDto {
     return new FolderContentDto()
       .setLinks(this.buildFolderLinks(urlPath))
-      .setFiles(this.buildFilesLinks(files, urlPath));
+      .setFiles(this.buildFilesLinks(urlPath, files));
   }
 
-  private buildFolderLinks(urlPath) {
+  private buildFolderLinks(urlPath: string): ResourceLinksDto {
     return new ResourceLinksDto()
       .addLink(this.makeSelfLinkToRes(urlPath))
       .addLink(this.tryMakeFolderSelfPhysLink(urlPath))
       .addLink(this.tryMakeParentLink(urlPath));
   }
 
-  private buildFilesLinks(files, urlPath) {
-    return files.map(file => {
-      return this.buildFileInfoDto(urlPath, file);
-    });
+  private buildFilesLinks(urlPath: string, files: IFileInfo[]): FileInfoDto[] {
+    return files.map(file => this.buildFileInfoDto(urlPath, file));
   }
 
-  private buildFileInfoDto(urlPath, file) {
+  private buildFileInfoDto(urlPath: string, file: IFileInfo): FileInfoDto {
     return new FileInfoDto({
       name: file.name,
       type: file.type,
@@ -40,21 +41,21 @@ class LinkBuilder {
     });
   }
 
-  private buildFileLinks(file, parentFolderPath) {
+  private buildFileLinks(file: IFileInfo, parentFolderPath: string): IResourceLinksDto {
     return new ResourceLinksDto()
       .addLink(this.makeSelfLinkToRes(parentFolderPath, file))
       .addLink(this.tryMakeFileSelfPhysLink(parentFolderPath, file))
       .addLink(this.tryMakeSelfPlayLink(parentFolderPath, file));
   }
 
-  private tryMakeFolderSelfPhysLink(folderPath) {
+  private tryMakeFolderSelfPhysLink(folderPath: string): ILinkDto {
     if (!folderPath || folderPath === '/') {
       return;
     }
     return new LinkDto({rel: 'self.phys', href: folderPath});
   }
 
-  private tryMakeFileSelfPhysLink(parentFolderPath, file) {
+  private tryMakeFileSelfPhysLink(parentFolderPath: string, file: IFileInfo): ILinkDto {
     let fullFilePath = null;
     if (os.platform() === 'linux') { // TODO Stop here: cannot diff when first time show and clicking to / to show inside
       parentFolderPath = (parentFolderPath === '/' ? '' : parentFolderPath);
@@ -79,10 +80,10 @@ class LinkBuilder {
     return new LinkDto({rel: 'self.phys', href: fullFilePath});
   }
 
-  private makeSelfLinkToRes(parentFolderPath: string, file?: any) {
+  private makeSelfLinkToRes(parentFolderPath: string, file?: IFileInfo): ILinkDto {
     // encode url, no '/' if just file
     // ^\/api\/explore\/(.*[\/])*$/
-    var fullFilePath;
+    let fullFilePath;
     if (file) {
       if (os.platform() === 'linux') {
         parentFolderPath = (parentFolderPath === '/' ? '' : parentFolderPath);
@@ -100,7 +101,7 @@ class LinkBuilder {
       } else {
         fullFilePath = parentFolderPath + file.name;
 
-        const pathTail = this.isBrowsableFile(file) ? '/' : '';
+        const pathTail = this.canBrowseFile(file) ? '/' : '';
         fullFilePath = fullFilePath + pathTail;
       }
     } else {
@@ -109,7 +110,7 @@ class LinkBuilder {
     return new LinkDto({rel: 'self', href: '/api/explore' + fullFilePath});
   }
 
-  private tryMakeParentLink(urlPath) {
+  private tryMakeParentLink(urlPath: string): ILinkDto {
     const upPath = this.tryMakeUpPath(urlPath);
     if (!upPath) {
       return;
@@ -117,26 +118,25 @@ class LinkBuilder {
     return new LinkDto({rel: 'parent', href: '/api/explore' + upPath});
   }
 
-  private tryMakeUpPath(urlPath) {
+  private tryMakeUpPath(urlPath: string): string {
     let noTrailingSlash;
     if (urlPath.endsWith('/')) {
       noTrailingSlash = urlPath.substring(0, urlPath.length - 1);
     } else {
       noTrailingSlash = urlPath;
     }
-    const upPath = noTrailingSlash.substring(0, noTrailingSlash.lastIndexOf('/') + 1);
-    return upPath;
+    return noTrailingSlash.substring(0, noTrailingSlash.lastIndexOf('/') + 1);
   }
 
-  private tryMakeSelfPlayLink(parentFolderPath, file) {
+  private tryMakeSelfPlayLink(parentFolderPath: string, file: IFileInfo): ILinkDto {
     if (file.type && file.type === 'F') {
-      var fullFilePath = parentFolderPath + file.name;
+      const fullFilePath = parentFolderPath + file.name;
       // TODO only when playable
       return new LinkDto({rel: 'self.play', href: '/api/media/play/path' + fullFilePath});
     }
   }
 
-  private isBrowsableFile(file) {
+  private canBrowseFile(file: IFileInfo): boolean {
     return !file.type || file.type === 'D';
   }
 }

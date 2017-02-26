@@ -1,16 +1,17 @@
 import * as path from 'path';
 import {IFileExplorerService} from '../services/fileExplorers/fileExplorer.service';
+import * as stringHelpers from './stringHelpers';
 
 export interface IPathBuilder {
-  toAbsolutePath(playlistFilePath, mediaFileRelativePath);
-  toRelativePath(playlistFilePath, mediaFileFullPath);
+  toAbsolutePath(playlistFilePath: string, mediaFileRelativePath: string): string;
+  toRelativePath(playlistFilePath: string, mediaFileFullPath: string): string;
 }
 
 export default class PathBuilder implements IPathBuilder {
   constructor(private fileExplorer: IFileExplorerService) {
   }
 
-  toAbsolutePath(playlistFilePath, mediaFileRelativePath) {
+  toAbsolutePath(playlistFilePath: string, mediaFileRelativePath: string): string {
     if (!playlistFilePath) {
       throw new Error('playlistFilePath is not defined');
     }
@@ -22,7 +23,7 @@ export default class PathBuilder implements IPathBuilder {
 
     if (this.isRelativePathWithDots(mediaFileRelativePath)) {
       const levelUpPattern = this.fileExplorer.getLevelUpPath();
-      const levelsUp = mediaFileRelativePath.count(levelUpPattern);
+      const levelsUp = stringHelpers.count(mediaFileRelativePath, levelUpPattern);
 
       const mediaFileRelativePathWithoutDots = mediaFileRelativePath.substring(levelsUp * levelUpPattern.length);
 
@@ -43,16 +44,16 @@ export default class PathBuilder implements IPathBuilder {
     return resultPath;
   }
 
-  toRelativePath(playlistFilePath, mediaFileFullPath) {
+  toRelativePath(playlistFilePath: string, mediaFileFullPath: string): string {
     return path.relative(playlistFilePath, mediaFileFullPath);
   }
 
-  private isRelativePathWithDots(relativeFilePath) {
+  private isRelativePathWithDots(relativeFilePath: string): boolean {
     return relativeFilePath.startsWith('..' + path.sep);
   }
 
-  private getDirectoryUpPath(fullFilePath, levelsUp) {
-    var dir = path.dirname(fullFilePath);
+  private getDirectoryUpPath(fullFilePath: string, levelsUp: number): string {
+    let dir = path.dirname(fullFilePath);
 
     while (levelsUp > 0 && dir != null) {
       dir = path.resolve(dir, '..');
@@ -62,11 +63,11 @@ export default class PathBuilder implements IPathBuilder {
     return dir;
   }
 
-  private isUNCPath(filePath) {
+  private isUNCPath(filePath: string): boolean {
     return filePath.startsWith(this.fileExplorer.getNetworkRoot());
   }
 
-  private isAbsolutePath(mediaFileRelativePath) {
+  private isAbsolutePath(mediaFileRelativePath: string): boolean {
     return path.resolve(mediaFileRelativePath) === mediaFileRelativePath;
   }
 }

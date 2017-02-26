@@ -1,6 +1,6 @@
 import * as crypto from 'crypto';
 
-export function createSalt() {
+export function createSalt(): string {
   const len = 16;
   return crypto
     .randomBytes(Math.ceil(len / 2))
@@ -8,7 +8,7 @@ export function createSalt() {
     .substring(0, len);
 }
 
-export function computeHash(source, salt) {
+export function computeHash(source: string, salt: string): string {
   const hmac = crypto.createHmac('sha1', salt);
   const hash = hmac.update(source);
   return hash.digest('hex');
