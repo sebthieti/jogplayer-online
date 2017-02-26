@@ -3,6 +3,9 @@ export interface IFileInfo {
   type: string;
   isRoot: boolean;
   filePath: string;
+  isDirectory?: boolean;
+  isFile?: boolean;
+  isValid?: boolean;
   // resourceLinksDto
 }
 
@@ -32,7 +35,7 @@ export default class FileInfo implements IFileInfo {
     return this.type === FileInfo.File;
   }
 
-  isValid(): boolean {
+  get isValid(): boolean {
     return 'name' in this &&
       'type' in this &&
       'isRoot' in this;
