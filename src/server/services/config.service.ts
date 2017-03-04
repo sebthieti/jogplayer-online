@@ -4,7 +4,7 @@ import * as path from 'path';
 import {nfcall} from '../utils/promiseHelpers';
 import {IEvents} from '../events/index';
 
-interface IDbConfig {
+export interface IDbConfig {
   host: string;
   port: string;
   dbName: string;
