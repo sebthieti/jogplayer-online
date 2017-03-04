@@ -1,6 +1,7 @@
 import Dto from './dto';
+import {IDto} from './dto';
 
-export interface IUserPermissionsDto {
+export interface IUserPermissionsDto extends IDto {
   isAdmin: boolean;
   canWrite: boolean;
   allowPaths: string[];

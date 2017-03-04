@@ -1,6 +1,7 @@
 import Dto from './dto';
+import {IDto} from './dto';
 
-export interface IPlaylistDto {
+export interface IPlaylistDto extends IDto {
   id: string;
   name: string;
   createdOn: string;

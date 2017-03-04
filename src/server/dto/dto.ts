@@ -1,4 +1,8 @@
-export default class Dto {
+export interface IDto {
+  getDefinedFields();
+}
+
+export default class Dto implements IDto {
   // TODO Rename this because a class like folder content shouldn't inherit this
   getDefinedFields() {
     let data = {};
