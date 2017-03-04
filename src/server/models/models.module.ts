@@ -1,11 +1,11 @@
 import favoriteModel from './favorite.model';
-import mediaModel from  './media.model';
+import mediaModel from  './medium.model';
 import playlistModel from './playlist.model';
 import userModel from './user.model';
 import userStateModel from './userState.model';
 import userPermissionsModel from './userPermissions.model';
 import {IFavoriteModel} from './favorite.model';
-import {IMediaModel} from './media.model';
+import {IMediumModel} from './medium.model';
 import {IPlaylistModel} from './playlist.model';
 import {IUserModel} from './user.model';
 import {IUserStateModel} from './userState.model';
@@ -18,7 +18,7 @@ import {IUserPermissionsModel} from './userPermissions.model';
  */
 export default function bootstrap(container: any) {
   container.register('favoriteModel', (): IFavoriteModel => favoriteModel);
-  container.register('mediaModel', (): IMediaModel => mediaModel);
+  container.register('mediaModel', (): IMediumModel => mediaModel);
   container.register('playlistModel', (): IPlaylistModel => playlistModel);
   container.register('userModel', (): IUserModel => userModel);
   container.register('userStateModel', (): IUserStateModel => userStateModel);

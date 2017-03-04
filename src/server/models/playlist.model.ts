@@ -45,7 +45,7 @@ playlistSchema.set('toJSON', { virtuals: true });
 // virtuals: false to avoid inserting links to database
 playlistSchema.set('toObject', { virtuals: false });
 playlistSchema.methods.toJSON = function() {
-  var obj = this.toObject();
+  let obj = this.toObject();
   obj.links = this.links;
   obj.id = obj._id;
   delete obj._id;

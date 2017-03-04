@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose';
 import Schema = mongoose.Schema;
+
 import * as mongooseTypes from 'mongoose-types-ext';
 mongooseTypes(mongoose);
 import routes from '../routes';
@@ -17,8 +18,8 @@ export interface Favorite extends mongoose.Document {
 export interface IFavoriteModel extends mongoose.Model<Favorite> {
 }
 
-const favoriteSchema = new Schema({
-  ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
+const favoriteSchema: mongoose.Schema = new mongoose.Schema({
+  ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   name: { type: String, maxLength: 128 },
   createdOn: { type: Date, default: Date.now },
   updatedOn: { type: Date },
@@ -29,7 +30,7 @@ favoriteSchema.set('toJSON', { virtuals: true });
 // virtuals: false to avoid inserting links to database
 favoriteSchema.set('toObject', { virtuals: false });
 favoriteSchema.methods.toJSON = function() {
-  var obj = this.toObject();
+  let obj = this.toObject();
   obj.id = obj._id;
   obj.links = this.links;
   delete obj._id;

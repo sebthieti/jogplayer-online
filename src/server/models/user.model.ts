@@ -3,6 +3,7 @@ import Schema = mongoose.Schema;
 import * as mongooseTypes from 'mongoose-types-ext';
 mongooseTypes(mongoose);
 import routes from '../routes';
+import {UserPermissions} from './userPermissions.model';
 
 export interface User extends mongoose.Document {
   isActive: boolean;
@@ -11,7 +12,7 @@ export interface User extends mongoose.Document {
   passwordSalt: string;
   fullName: string;
   email: string;
-  permissions: string[];
+  permissions: UserPermissions;
   links: string[];
 }
 
@@ -32,7 +33,7 @@ userSchema.set('toJSON', { virtuals: true });
 // virtuals: false to avoid inserting links to database
 userSchema.set('toObject', { virtuals: false });
 userSchema.methods.toJSON = function() {
-  var obj = this.toObject();
+  let obj = this.toObject();
   //var f = this.permissions.toJSON();
 
   obj.links = this.links;
