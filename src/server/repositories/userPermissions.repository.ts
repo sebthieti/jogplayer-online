@@ -1,11 +1,14 @@
-import {IUserPermissionsModel} from '../models/userPermissions.model';
+import {IUserPermissionsModel, UserPermissions} from '../models/userPermissions.model';
+import {User} from '../models/user.model';
+import {IUserDto} from '../dto/user.dto';
+import {IUserPermissionsDto} from '../dto/userPermissions.dto';
 
 export interface IUserPermissionsRepository {
-  getAllUserPermissionsAsync();
-  getUserPermissionsAsync(userId);
-  addUserPermissionsAsync(userPermissions);
-  updateFromUserDtoAsync(userId, userDto, issuer);
-  removeUserByIdAsync(userId, issuer);
+  getAllUserPermissionsAsync(): Promise<UserPermissions[]>;
+  getUserPermissionsAsync(userId: string): Promise<UserPermissions>;
+  addUserPermissionsAsync(userPermissions: IUserPermissionsDto): Promise<UserPermissions>;
+  updateFromUserDtoAsync(userId: string, userDto: IUserDto, issuer: User): Promise<UserPermissions>;
+  removeUserByIdAsync(userId: string, issuer: User): Promise<void>;
 }
 
 export default class UserPermissionsRepository implements IUserPermissionsRepository {
@@ -15,94 +18,48 @@ export default class UserPermissionsRepository implements IUserPermissionsReposi
     this.UserPermissions = userPermissionsModel;
   }
 
-  getAllUserPermissionsAsync() {
-    return new Promise((resolve, reject) => {
-      this.UserPermissions
-        .find({})
-        .exec((err, userPermissions) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(userPermissions);
-          }
-        });
-    });
+  async getAllUserPermissionsAsync(): Promise<UserPermissions[]> {
+    return await this.UserPermissions
+      .find({})
+      .exec();
   }
 
-  getUserPermissionsAsync(userId) { // TODO getUsersWithPermissionsAsync
-    return new Promise((resolve, reject) => {
-      this.UserPermissions
-        .find({ userId: userId })
-        .exec((err, userPermissions) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(userPermissions);
-          }
-        });
-    });
+  async getUserPermissionsAsync(userId: string): Promise<UserPermissions> { // TODO getUsersWithPermissionsAsync
+    return await this.UserPermissions
+      .find({ userId: userId })
+      .exec();
   }
 
-  addUserPermissionsAsync(userPermissions) {
-    return new Promise((resolve, reject) => {
-      if (!userPermissions) {
-        reject('UserPermissionsSaveService.addUserPermissionsAsync: userPermissions must be set');
-      }
+  async addUserPermissionsAsync(userPermissions: IUserPermissionsDto): Promise<UserPermissions> {
+    if (!userPermissions) {
+      throw new Error('UserPermissionsSaveService.addUserPermissionsAsync: userPermissions must be set');
+    }
 
-      const userPermissionsFields = userPermissions.getDefinedFields();
+    const userPermissionsFields = userPermissions.getDefinedFields();
 
-      this.UserPermissions.create(
-        userPermissionsFields,
-        (err, newUserPermissions) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(newUserPermissions);
-          }
-        });
-    });
+    return await this.UserPermissions.create(userPermissionsFields);
   }
 
-  updateFromUserDtoAsync(userId, userDto, issuer) {
-    return new Promise((resolve, reject) => {
-      if (!userDto) {
-        reject('SetupSaveService.updateFromUserDtoAsync: user must be set');
-      }
-      if (!userId) {
-        reject('SetupSaveService.updateFromUserDtoAsync: user.Id should be set');
-      }
+  async updateFromUserDtoAsync(userId: string, userDto: IUserDto, issuer: User): Promise<UserPermissions> {
+    if (!userDto) {
+      throw new Error('SetupSaveService.updateFromUserDtoAsync: user must be set');
+    }
+    if (!userId) {
+      throw new Error('SetupSaveService.updateFromUserDtoAsync: user.Id should be set');
+    }
 
-      this.UserPermissions.findOneAndUpdate(
-        { _id: userId }, // , ownerId: issuer.id
-        userDto.getDefinedFields(),
-        { 'new': true }, // Return modified doc.
-        (err, user) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(user);
-          }
-        }
-      );
-    });
+    return await this.UserPermissions.findOneAndUpdate(
+      { _id: userId }, // , ownerId: issuer.id
+      userDto.getDefinedFields(),
+      { 'new': true }
+    ); // Return modified doc.
   };
 
-  removeUserByIdAsync(userId, issuer) {
-    return new Promise((resolve, reject) => {
-      if (!userId) {
-        reject('SetupSaveService.removeUserByIdAsync: userId must be set');
-      }
+  async removeUserByIdAsync(userId: string, issuer: User): Promise<void> {
+    if (!userId) {
+      throw new Error('SetupSaveService.removeUserByIdAsync: userId must be set');
+    }
 
-      this.UserPermissions.findOneAndRemove(
-        { _id: userId },
-        err => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        }
-      );
-    });
+    await this.UserPermissions.findOneAndRemove({_id: userId});
   }
 }

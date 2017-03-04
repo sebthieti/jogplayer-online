@@ -8,18 +8,10 @@ import * as fs from 'fs';
 import {IEvents} from '../events';
 import {checkFileExistsAsync} from '../utils/fsHelpers';
 import {nfcall} from '../utils/promiseHelpers';
+import {IDbConfig} from '../services/config.service';
 
 export interface IRepository {
-  exitHandler(options, err);
-  disconnectFromDb();
-  ensureDbFolderExists();
-  ensureLogFolderExists();
   startDbService();
-  getMongodExecRelativePath();
-  getMongodConfigRelativePath();
-  getMongodCwdRelativePath();
-  listenToConfigReadyAndInit();
-  initDbClient(config);
 }
 
 export default class Repository implements IRepository {
@@ -43,43 +35,6 @@ export default class Repository implements IRepository {
       .then(() => {
         this.startDbService();
         this.listenToConfigReadyAndInit();
-      });
-  }
-
-  exitHandler(options, err) {
-    if (options.cleanup) {
-      if (this.dbConnection) {
-        this.dbConnection.disconnect();
-      }
-      if (this.dbProcess) {
-        this.dbProcess.kill();
-      }
-    }
-    if (err) console.log(err.stack);
-    if (options.exit) process.exit();
-  }
-
-  disconnectFromDb() {
-    this.exitHandler(null, { cleanup: true });
-  }
-
-  ensureDbFolderExists() {
-    const dbPath = path.join(process.cwd(), './db/db/');
-    return checkFileExistsAsync(dbPath)
-      .then(folderExists => {
-        if (!folderExists) {
-          return nfcall(fs.mkdir, dbPath);
-        }
-      });
-  }
-
-  ensureLogFolderExists() {
-    const dbPath = path.join(process.cwd(), './db/log/');
-    return checkFileExistsAsync(dbPath)
-      .then(folderExists => {
-        if (!folderExists) {
-          return nfcall(fs.mkdir, dbPath);
-        }
       });
   }
 
@@ -108,7 +63,44 @@ export default class Repository implements IRepository {
     });
   }
 
-  getMongodExecRelativePath() {
+  private exitHandler(options: { cleanup?: boolean, exit?: boolean }, err: Error) {
+    if (options.cleanup) {
+      if (this.dbConnection) {
+        this.dbConnection.disconnect();
+      }
+      if (this.dbProcess) {
+        this.dbProcess.kill();
+      }
+    }
+    if (err) console.log(err.stack);
+    if (options.exit) process.exit();
+  }
+
+  private disconnectFromDb() {
+    this.exitHandler({ cleanup: true }, null);
+  }
+
+  private ensureDbFolderExists(): Promise<void> {
+    const dbPath = path.join(process.cwd(), './db/db/');
+    return checkFileExistsAsync(dbPath)
+      .then(folderExists => {
+        if (!folderExists) {
+          return nfcall(fs.mkdir, dbPath);
+        }
+      });
+  }
+
+  private ensureLogFolderExists(): Promise<void> {
+    const dbPath = path.join(process.cwd(), './db/log/');
+    return checkFileExistsAsync(dbPath)
+      .then(folderExists => {
+        if (!folderExists) {
+          return nfcall(fs.mkdir, dbPath);
+        }
+      });
+  }
+
+  private getMongodExecRelativePath(): string {
     switch (os.platform()) {
       case 'win32':
         return '.\\bin\\mongod.exe';
@@ -120,15 +112,15 @@ export default class Repository implements IRepository {
     }
   }
 
-  getMongodConfigRelativePath() {
+  private getMongodConfigRelativePath(): string {
     return os.platform() === 'win32' ? 'mongod.conf' : './mongod-unix.conf';
   }
 
-  getMongodCwdRelativePath() {
+  private getMongodCwdRelativePath(): string {
     return os.platform() === 'win32' ? '.\\db' : './db/';
   }
 
-  listenToConfigReadyAndInit() {
+  private listenToConfigReadyAndInit() {
     this.events.onConfigReady(config => {
       const timeout = os.platform() === 'win32' ? 0 : 5000;
       setTimeout(() => { // TODO In linux we need time before launch. Check for that
@@ -139,7 +131,7 @@ export default class Repository implements IRepository {
     });
   }
 
-  initDbClient(config) {
+  private initDbClient(config: {DbConnection: IDbConfig}) {
     const db = config.DbConnection;
     const dbConnectionString = util.format(
       'mongodb://%s:%d/%s',

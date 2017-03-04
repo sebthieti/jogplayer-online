@@ -1,7 +1,8 @@
-import {IUserModel} from '../models/user.model';
+import {IUserModel, User} from '../models/user.model';
+import {IUserDto} from '../dto/user.dto';
 
 export interface IConfigRepository {
-  addRootUserAsync(user);
+  addRootUserAsync(user: IUserDto): Promise<User>;
 }
 
 export default class ConfigRepository implements IConfigRepository {
@@ -11,29 +12,17 @@ export default class ConfigRepository implements IConfigRepository {
     this.User = userModel;
   }
 
-  addRootUserAsync(user) {
-    return new Promise((resolve, reject) => {
-      this.User.create({
-        isActive: true,
-        username: '',
-        password: '',
-        passwordSalt: '',
-        fullName: '',
-        email: ''
-      }, (err, newUser) => {
-        if (err) {
-          reject(err);
-        } else {
-          // newUser.permissions = userPermissionsModel;
-          newUser.save(writeError => {
-            if (writeError) {
-              reject(writeError);
-            } else {
-              resolve(newUser);
-            }
-          });
-        }
-      });
+  async addRootUserAsync(user: IUserDto): Promise<User> {
+    const newUser = await this.User.create({
+      isActive: true,
+      username: '',
+      password: '',
+      passwordSalt: '',
+      fullName: '',
+      email: ''
     });
+    // TODO Probably incomment this once repo finalized
+    // newUser.permissions = userPermissionsModel;
+    return await newUser.save();
   }
 }

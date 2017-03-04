@@ -79,7 +79,7 @@ export default class UserStateRepository implements IUserStateRepository {
     });
   }
 
-  removeUserStateByIdAsync(userId) {
+  async removeUserStateByIdAsync(userId: string) {
     return new Promise((resolve, reject) => {
       if (!userId) {
         reject('SetupSaveService.removeUserStateByIdAsync: userId must be set');
