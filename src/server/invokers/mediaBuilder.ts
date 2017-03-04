@@ -2,7 +2,7 @@ import * as path from 'path';
 import MediaHelper from '../utils/mediaHelper';
 import MediumSummary, {IMediumSummary} from '../entities/mediumSummary';
 import {IMediaService} from '../services/media.service';
-import {IMediaModel} from '../models/media.model';
+import {IMediumModel} from '../models/medium.model';
 
 export interface IMediaBuilder {
   toMediaAsync(mediaSummaries, playlistId, issuer);
@@ -17,11 +17,11 @@ export interface IMediaBuilder {
 }
 
 export default class MediaBuilder implements IMediaBuilder {
-  private Media: IMediaModel;
+  private Media: IMediumModel;
 
   constructor(
     private mediaService: IMediaService,
-    mediaModel: IMediaModel
+    mediaModel: IMediumModel
   ) {
     this.Media = mediaModel;
   }
