@@ -2,14 +2,27 @@ import * as process from 'process';
 import Timer = NodeJS.Timer;
 
 export interface ICache {
-  createOrUpdateItem(group, key, value);
-  getItemFromCache(group, key);
-  removeItem(group, key);
-  removeItemsInGroup(group);
+  createOrUpdateItem(group: string, key: string, value: any): ICacheData;
+  getItemFromCache<T>(group: string, key: string): T;
+  removeItem(group: string, key: string);
+  removeItemsInGroup(group: string);
+}
+
+export interface ICacheGroups {
+  [key: string]: ICacheSubGroups;
+}
+
+export interface ICacheSubGroups {
+  [key: string]: ICacheData;
+}
+
+export interface ICacheData {
+  timestamp: Date;
+  value: any;
 }
 
 export default class Cache implements ICache {
-  private playlistCache = {};
+  private playlistCache: ICacheGroups = {};
 
   constructor(cacheExpire = 10 * 60 * 1000) {
     const interval = this.setupSlidingExpiration(cacheExpire);
@@ -21,7 +34,7 @@ export default class Cache implements ICache {
     process.on('SIGINT', () => this.exitHandler(interval));
   }
 
-  createOrUpdateItem(group, key, value) {
+  createOrUpdateItem(group: string, key: string, value: any): ICacheData {
     if (this.playlistCache[group] == null) {
       this.playlistCache[group] = Object.create(null, {});
     }
@@ -34,19 +47,15 @@ export default class Cache implements ICache {
     return this.playlistCache[group][key];
   }
 
-  getItemFromCache(group, key) {
+  getItemFromCache<T>(group: string, key: string): T {
     const playlistCacheGroup = this.playlistCache[group];
     if (playlistCacheGroup != null) {
       const cacheItem = playlistCacheGroup[key];
-      if (cacheItem != null) {
-        return cacheItem.value;
-      } else {
-        return null;
-      }
+      return (cacheItem && cacheItem.value) || null;
     }
   }
 
-  removeItem(group, key) {
+  removeItem(group: string, key: string) {
     if (this.playlistCache[group] == null) {
       return;
     }
@@ -56,7 +65,7 @@ export default class Cache implements ICache {
     this.playlistCache[group][key] = null;
   }
 
-  removeItemsInGroup(group) {
+  removeItemsInGroup(group: string) {
     if (this.playlistCache[group] == null) {
       return;
     }

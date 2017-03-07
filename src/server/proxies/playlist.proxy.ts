@@ -1,21 +1,34 @@
 import {ICache} from './cache';
 import {IEvents} from '../events/index';
 import {IPlaylistRepository} from '../repositories/playlist.repository';
+import {IPlaylistDto} from '../dto/playlist.dto';
+import {User} from '../models/user.model';
+import {Playlist} from '../models/playlist.model';
+import {MediumDocument} from '../models/medium.model';
 
 export interface IPlaylistProxy {
-  updatePlaylistDtoAsync(playlistId, playlistDto, issuer);
-  getPlaylistWithMediaAsync(playlistId, issuer);
-  removeAllMediaFromPlaylistAsync(playlist, issuer);
-  getMediaCountForPlaylistByIdAsync(playlistId, issuer);
-  insertMediumToPlaylistAsync(playlistId, unlinkedMedium, issuer);
-  updatePlaylistIdsPositionAsync(plIdIndexesToOffset, issuer);
-  getPlaylistsCountAsync(issuer);
-  removeMediaFromPlaylistAsync(playlistId, mediaId, issuer);
-  getMediaIdsLowerThanAsync(playlistId, mediaIndex, includeSelf, issuer);
-  insertMediaToPlaylistReturnSelfAsync(emptyPlaylistId, media, issuer);
-  playlistRemovedById(playlistId);
-  playlistInserted(playlist);
-  invalidatePlaylistById(playlistId);
+  updatePlaylistDtoAsync(playlistId: string, playlistDto: IPlaylistDto, issuer: User): Promise<Playlist>;
+  getPlaylistWithMediaAsync(playlistId: string, issuer: User): Promise<Playlist>;
+  removeAllMediaFromPlaylistAsync(playlist: Playlist, issuer: User): Promise<Playlist>;
+  getMediaCountForPlaylistByIdAsync(playlistId: string, issuer: User): Promise<number>;
+  insertMediumToPlaylistAsync(playlistId: string, unlinkedMedium: MediumDocument, issuer: User): Promise<MediumDocument>;
+  updatePlaylistIdsPositionAsync(
+    plIdIndexesToOffset: { _id: string, index: number }[],
+    issuer: User
+  ): Promise<Playlist[]>;
+  getPlaylistsCountAsync(issuer: User): Promise<number>;
+  removeMediaFromPlaylistAsync(playlistId: string, mediaId: string, issuer: User): Promise<Playlist>;
+  getMediaIdsLowerThanAsync(
+    playlistId: string,
+    mediaIndex: number,
+    includeSelf: boolean,
+    issuer: User
+  ): { _id: string, index: number }[];
+  insertMediaToPlaylistReturnSelfAsync(
+    emptyPlaylistId: string,
+    media: MediumDocument[],
+    issuer: User
+  ): Promise<Playlist>;
 }
 
 export default class PlaylistProxy implements IPlaylistProxy {
@@ -30,106 +43,111 @@ export default class PlaylistProxy implements IPlaylistProxy {
     private playlistSaveService: IPlaylistRepository
   ) {
     events.onPlaylistsInsert(playlistInfos =>
-      this.playlistInserted(playlistInfos)
+      this.playlistInserted(playlistInfos.playlist)
     );
     events.onPlaylistsRemove(playlistId =>
       this.playlistRemovedById(playlistId)
     );
   }
 
-  updatePlaylistDtoAsync(playlistId, playlistDto, issuer) {
-    return this.playlistSaveService
-      .updatePlaylistDtoAsync(playlistId, playlistDto, issuer)
-      .then(playlist => {
-        this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlist.id, playlist);
-        return playlist;
-      });
+  async updatePlaylistDtoAsync(playlistId: string, playlistDto: IPlaylistDto, issuer: User): Promise<Playlist> {
+    const playlist = await this.playlistSaveService.updatePlaylistDtoAsync(
+      playlistId,
+      playlistDto,
+      issuer
+    );
+    this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlist.id, playlist);
+    return playlist;
   }
 
-  getPlaylistWithMediaAsync(playlistId, issuer) {
-    const playlist = this.cache.getItemFromCache(this.PLAYLIST_GROUP, playlistId);
+  async getPlaylistWithMediaAsync(playlistId: string, issuer: User): Promise<Playlist> {
+    const playlist = this.cache.getItemFromCache<Playlist>(this.PLAYLIST_GROUP, playlistId);
     if (playlist != null) {
-      return Promise.resolve(playlist);
+      return playlist;
     } else {
-      return this.playlistSaveService
-        .getPlaylistWithMediaAsync(playlistId, issuer)
-        .then(playlist => {
-          this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlistId, playlist);
-          return playlist;
-        });
+      const playlist = await this.playlistSaveService
+        .getPlaylistWithMediaAsync(playlistId, issuer);
+      this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlistId, playlist);
+      return playlist;
     }
   }
 
-  removeAllMediaFromPlaylistAsync(playlist, issuer) {
-    return this.playlistSaveService
-      .removeAllMediaFromPlaylistAsync(playlist.id, issuer)
-      .then(playlist => {
-        this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlist.id, playlist);
-        this.cache.createOrUpdateItem(this.PLAYLIST_MEDIA_COUNT_GROUP, playlist.id, 0);
-        return playlist;
-      });
+  async removeAllMediaFromPlaylistAsync(playlist: Playlist, issuer: User): Promise<Playlist> {
+    const updatedPlaylist = await this.playlistSaveService.removeAllMediaFromPlaylistAsync(
+      playlist.id,
+      issuer
+    );
+    this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, updatedPlaylist.id, updatedPlaylist);
+    this.cache.createOrUpdateItem(this.PLAYLIST_MEDIA_COUNT_GROUP, updatedPlaylist.id, 0);
+    return updatedPlaylist;
   }
 
-  getMediaCountForPlaylistByIdAsync(playlistId, issuer) {
-    const playlistMediaCountFromCache = this.cache.getItemFromCache(this.PLAYLIST_MEDIA_COUNT_GROUP, playlistId);
+  async getMediaCountForPlaylistByIdAsync(playlistId: string, issuer: User): Promise<number> {
+    const playlistMediaCountFromCache = this.cache.getItemFromCache<number>(
+      this.PLAYLIST_MEDIA_COUNT_GROUP,
+      playlistId
+    );
     if (playlistMediaCountFromCache != null) {
-      return Promise.resolve(playlistMediaCountFromCache);
+      return playlistMediaCountFromCache;
     } else {
-      return this.playlistSaveService
-        .getMediaCountForPlaylistByIdAsync(playlistId, issuer)
-        .then(cnt => {
-          this.cache.createOrUpdateItem(this.PLAYLIST_MEDIA_COUNT_GROUP, playlistId, cnt);
-          return cnt;
-        });
+      const cnt = await this.playlistSaveService
+        .getMediaCountForPlaylistByIdAsync(playlistId, issuer);
+      this.cache.createOrUpdateItem(this.PLAYLIST_MEDIA_COUNT_GROUP, playlistId, cnt);
+      return cnt;
     }
   }
 
-  insertMediumToPlaylistAsync(playlistId, unlinkedMedium, issuer) {
-    return this.playlistSaveService
-      .insertMediumToPlaylistAsync(playlistId, unlinkedMedium, issuer)
-      .then(media => {
-        this.cache.removeItem(this.PLAYLIST_GROUP, playlistId);
-        return media;
-      });
+  async insertMediumToPlaylistAsync(
+    playlistId: string,
+    unlinkedMedium: MediumDocument,
+    issuer: User
+  ): Promise<MediumDocument> {
+    const media = await this.playlistSaveService
+      .insertMediumToPlaylistAsync(playlistId, unlinkedMedium, issuer);
+    this.cache.removeItem(this.PLAYLIST_GROUP, playlistId);
+    return media;
   }
 
-  updatePlaylistIdsPositionAsync(plIdIndexesToOffset, issuer) {
-    return this.playlistSaveService
-      .updatePlaylistIdsPositionAsync(plIdIndexesToOffset, issuer)
-      .then(updatedPlaylists => {
-        updatedPlaylists.forEach(playlist => {
-          this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlist.id, playlist);
-        });
-        this.events.emitPlaylistUpdate(issuer.id);
-        return updatedPlaylists;
-      });
+  async updatePlaylistIdsPositionAsync(
+    plIdIndexesToOffset: { _id: string, index: number }[],
+    issuer: User
+  ): Promise<Playlist[]> {
+    const updatedPlaylists = await this.playlistSaveService
+      .updatePlaylistIdsPositionAsync(plIdIndexesToOffset, issuer);
+    updatedPlaylists.forEach(playlist => {
+      this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlist.id, playlist);
+    });
+    this.events.emitPlaylistUpdate(issuer.id);
+    return updatedPlaylists;
   }
 
-  getPlaylistsCountAsync(issuer) {
-    const playlistCount = this.cache.getItemFromCache(this.PLAYLIST_COUNT_GROUP, issuer.id);
+  async getPlaylistsCountAsync(issuer: User): Promise<number> {
+    const playlistCount = this.cache.getItemFromCache<number>(this.PLAYLIST_COUNT_GROUP, issuer.id);
     if (playlistCount != null) {
-      return Promise.resolve(playlistCount);
+      return playlistCount;
     } else {
-      return this.playlistSaveService
-        .getPlaylistsCountAsync(issuer)
-        .then(count => {
-          this.cache.createOrUpdateItem(this.PLAYLIST_COUNT_GROUP, issuer.id, count);
-          return playlistCount;
-        });
+      const count = await this.playlistSaveService
+        .getPlaylistsCountAsync(issuer);
+      this.cache.createOrUpdateItem(this.PLAYLIST_COUNT_GROUP, issuer.id, count);
+      return playlistCount;
     }
   }
 
-  removeMediaFromPlaylistAsync(playlistId, mediaId, issuer) {
-    return this.playlistSaveService
-      .removeMediaFromPlaylistAsync(playlistId, mediaId, issuer)
-      .then(playlist => {
-        this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlistId, playlist);
-        this.cache.createOrUpdateItem(this.PLAYLIST_MEDIA_COUNT_GROUP, playlist.id, playlist.media.length);
-        return playlist;
-      });
+  async removeMediaFromPlaylistAsync(playlistId: string, mediaId: string, issuer: User): Promise<Playlist> {
+    const playlist = await this.playlistSaveService
+      .removeMediaFromPlaylistAsync(playlistId, mediaId, issuer);
+
+    this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlistId, playlist);
+    this.cache.createOrUpdateItem(this.PLAYLIST_MEDIA_COUNT_GROUP, playlist.id, playlist.media.length);
+    return playlist;
   }
 
-  getMediaIdsLowerThanAsync(playlistId, mediaIndex, includeSelf, issuer) {
+  async getMediaIdsLowerThanAsync(
+    playlistId: string,
+    mediaIndex: number,
+    includeSelf: boolean,
+    issuer: User
+  ): { _id: string, index: number }[] {
     const compositeKey = {
       playlistId: playlistId,
       mediaIndex: mediaIndex,
@@ -137,7 +155,10 @@ export default class PlaylistProxy implements IPlaylistProxy {
       issuerId: issuer.id
     };
 
-    let mediaIdsLowerThanArray = this.cache.getItemFromCache(this.MEDIA_IDS_LOWER_THAN, 'entities') || [];
+    const mediaIdsLowerThanArray = this.cache.getItemFromCache<any[]>(
+      this.MEDIA_IDS_LOWER_THAN,
+        'entities'
+      ) || [];
     const playlistCountFromCache = mediaIdsLowerThanArray
       .find(pl => {
         return pl.key.playlistId === compositeKey.playlistId &&
@@ -147,44 +168,46 @@ export default class PlaylistProxy implements IPlaylistProxy {
       }) || null;
 
     if (playlistCountFromCache != null) {
-      return Promise.resolve(playlistCountFromCache.value);
+      return playlistCountFromCache.value;
     } else {
-      return this.playlistSaveService
-        .getMediaIdsLowerThanAsync(playlistId, mediaIndex, includeSelf, issuer)
-        .then(mediaIdIndexesToOffset => {
-          mediaIdsLowerThanArray = this.cache.createOrUpdateItem(this.MEDIA_IDS_LOWER_THAN, 'entities', []);
-          mediaIdsLowerThanArray.value.push({
-            key: compositeKey,
-            value: mediaIdIndexesToOffset
-          });
+      const mediaIdIndexesToOffset = await this.playlistSaveService
+        .getMediaIdsLowerThanAsync(playlistId, mediaIndex, includeSelf, issuer);
 
-          return mediaIdIndexesToOffset;
-        });
+      let mediaIdsLowerThanArrayCache = this.cache.createOrUpdateItem(this.MEDIA_IDS_LOWER_THAN, 'entities', []);
+      mediaIdsLowerThanArrayCache.value.push({
+        key: compositeKey,
+        value: mediaIdIndexesToOffset
+      });
+
+      return mediaIdIndexesToOffset;
     }
   }
 
-  insertMediaToPlaylistReturnSelfAsync(emptyPlaylistId, media, issuer) {
-    return this.playlistSaveService
+  async insertMediaToPlaylistReturnSelfAsync(
+    emptyPlaylistId: string,
+    media: MediumDocument[],
+    issuer: User
+  ): Promise<Playlist> {
+    const playlist = await this.playlistSaveService
       .insertMediaToPlaylistReturnSelfAsync(
         emptyPlaylistId,
         media,
         issuer
-      ).then(playlist => {
-        this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlist.id, playlist);
-        this.cache.createOrUpdateItem(this.PLAYLIST_MEDIA_COUNT_GROUP, playlist.id, playlist.media.length);
-        return playlist;
-      });
+      );
+    this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlist.id, playlist);
+    this.cache.createOrUpdateItem(this.PLAYLIST_MEDIA_COUNT_GROUP, playlist.id, playlist.media.length);
+    return playlist;
   };
 
-  playlistRemovedById(playlistId) {
+  private playlistRemovedById(playlistId: string) {
     this.invalidatePlaylistById(playlistId);
   }
 
-  playlistInserted(playlist) {
+  private playlistInserted(playlist: Playlist) {
     this.cache.createOrUpdateItem(this.PLAYLIST_GROUP, playlist.id, playlist);
   }
 
-  invalidatePlaylistById(playlistId) {
+  private invalidatePlaylistById(playlistId: string) {
     this.cache.removeItem(this.PLAYLIST_GROUP, playlistId); // .createOrUpdateItem(PLAYLIST_GROUP, playlistId, null);
     this.cache.removeItem(this.PLAYLIST_MEDIA_COUNT_GROUP, playlistId);
   }

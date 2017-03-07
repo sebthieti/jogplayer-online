@@ -1,8 +1,10 @@
 import * as EventEmitter from 'events';
+import {Playlist} from '../models/playlist.model';
+import {User} from '../models/user.model';
 
 export interface IPlaylistInsertEvent {
-  playlist: any;
-  user: any;
+  playlist: Playlist;
+  user: User;
 }
 
 export interface IEvents {
@@ -36,7 +38,7 @@ export default class Events implements IEvents {
   }
 
   onPlaylistsInsert(fn: (playlistInfos: IPlaylistInsertEvent) => void) {
-    this.emitter.on('playlist.update', fn);
+    this.emitter.on('playlists.insert', fn);
   }
 
   emitPlaylistsRemove(playlistId: string) {
@@ -44,7 +46,7 @@ export default class Events implements IEvents {
   }
 
   onPlaylistsRemove(fn: (playlistId: string) => void) {
-    this.emitter.on('playlist.update', fn);
+    this.emitter.on('playlists.remove', fn);
   }
 
   emitConfigReady(config: any) {
