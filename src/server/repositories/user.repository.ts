@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import {IUserModel, User} from '../models/user.model';
 import {IRepository} from './repository';
 import UserDto, {IUserDto} from '../dto/user.dto';
-import {UserPermissions, IUserPermissionsModel} from '../models/userPermissions.model';
+import {UserPermissions} from '../models/userPermissions.model';
 
 export interface IUserRepository {
   isRootUserSetAsync(): Promise<boolean>;
@@ -11,11 +11,11 @@ export interface IUserRepository {
   getUserByUsernameWithPermissionsAsync(username: string): Promise<User>;
   addRootUserAsync(
     userDto: IUserDto,
-    userPermissionsModel: IUserPermissionsModel
+    userPermissionsModel: UserPermissions[]
   ): Promise<User>;
   addUserAsync(
     userDto: IUserDto,
-    userPermissionsModel: IUserPermissionsModel,
+    userPermissionsModel: UserPermissions[],
     issuer: User
   ): Promise<User>;
   addUserPermissionsAsync(
@@ -69,7 +69,7 @@ export default class UserRepository implements IUserRepository {
 
   async addRootUserAsync(
     userDto: IUserDto,
-    userPermissionsModel: UserPermissions
+    userPermissionsModel: UserPermissions[]
   ): Promise<User> {
     if (!userDto) {
       throw new Error('SetupSaveService.addUserAsync: favorite must be set');
@@ -89,7 +89,7 @@ export default class UserRepository implements IUserRepository {
 
   async addUserAsync(
     userDto: IUserDto,
-    userPermissions: UserPermissions,
+    userPermissions: UserPermissions[],
     issuer: User
   ): Promise<User> {
     if (!userDto) {

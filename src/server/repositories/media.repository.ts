@@ -1,24 +1,24 @@
 import * as ReadWriteLock from 'rwlock';
-import {IMediumModel, Medium} from '../models/medium.model';
+import {IMediumModel, MediumDocument} from '../models/medium.model';
 import {User} from '../models/user.model';
 const lock = new ReadWriteLock();
 
 export interface IMediaRepository {
-  getMediaByIdAsync(mediaId: string, issuer: User): Promise<Medium>;
+  getMediaByIdAsync(mediaId: string, issuer: User): Promise<MediumDocument>;
   getMediumByIdAndPlaylistIdAsync(
     playlistId: string,
     mediumId: string,
     issuer: User
-  ): Promise<Medium>;
+  ): Promise<MediumDocument>;
   findIndexFromMediaIdsAsync(mediaId: string, issuer: User): Promise<number>;
   updateMediaIndexByIdsAsync(
     mediaIdIndexesToOffset: {_id: string, index: number}[],
     issuer: User
   ): Promise<void>;
-  updateMediaIndexByIdAsync(mediaId: string, newIndex: number, issuer: User): Promise<Medium>;
-  removeMediaAsync(medium: Medium[], issuer: User): Promise<Medium[]>;
-  removeMediumAsync(medium: Medium, issuer: User): Promise<Medium>;
-  removeMediumByIdAsync(mediumId: string): Promise<Medium>;
+  updateMediaIndexByIdAsync(mediaId: string, newIndex: number, issuer: User): Promise<MediumDocument>;
+  removeMediaAsync(medium: MediumDocument[], issuer: User): Promise<MediumDocument[]>;
+  removeMediumAsync(medium: MediumDocument, issuer: User): Promise<MediumDocument>;
+  removeMediumByIdAsync(mediumId: string): Promise<MediumDocument>;
 }
 
 export default class MediaRepository implements IMediaRepository {
@@ -28,7 +28,7 @@ export default class MediaRepository implements IMediaRepository {
     this.Media = mediaModel;
   }
 
-  async getMediaByIdAsync(mediaId: string, issuer: User): Promise<Medium> {
+  async getMediaByIdAsync(mediaId: string, issuer: User): Promise<MediumDocument> {
     return await this.Media.findOne({ _id: mediaId, ownerId: issuer.id });
   }
 
@@ -36,7 +36,7 @@ export default class MediaRepository implements IMediaRepository {
     playlistId: string,
     mediumId: string,
     issuer: User
-  ): Promise<Medium> {
+  ): Promise<MediumDocument> {
     return await this.Media.findOne({
       _id: mediumId,
       _playlistId: playlistId,
@@ -69,7 +69,7 @@ export default class MediaRepository implements IMediaRepository {
     }
   }
 
-  async updateMediaIndexByIdAsync(mediaId: string, newIndex: number, issuer: User): Promise<Medium> {
+  async updateMediaIndexByIdAsync(mediaId: string, newIndex: number, issuer: User): Promise<MediumDocument> {
     const medium = await this.Media
       .findOne({_id: mediaId, ownerId: issuer.id})
       .select('index');
@@ -78,18 +78,18 @@ export default class MediaRepository implements IMediaRepository {
     return await medium.save();
   }
 
-  removeMediaAsync(medium: Medium[], issuer: User): Promise<Medium[]> {
+  removeMediaAsync(medium: MediumDocument[], issuer: User): Promise<MediumDocument[]> {
     const removeMediumPromises = medium.map(medium =>
       this.removeMediumAsync(medium, issuer)
     );
     return Promise.all(removeMediumPromises);
   }
 
-  async removeMediumAsync(medium: Medium, issuer: User): Promise<Medium> {
+  async removeMediumAsync(medium: MediumDocument, issuer: User): Promise<MediumDocument> {
     return await medium.remove();
   };
 
-   async removeMediumByIdAsync(mediumId: string): Promise<Medium> { // TODO All remove method shall not return updated entity
+   async removeMediumByIdAsync(mediumId: string): Promise<MediumDocument> { // TODO All remove method shall not return updated entity
     return await this.Media.findOneAndRemove({ _id: mediumId });
   }
 }

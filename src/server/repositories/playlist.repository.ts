@@ -4,7 +4,7 @@ import {IMediaRepository} from './media.repository';
 import {IPlaylistModel, Playlist} from '../models/playlist.model';
 import {User} from '../models/user.model';
 import {IPlaylistDto} from '../dto/playlist.dto';
-import {Medium} from '../models/medium.model';
+import {MediumDocument} from '../models/medium.model';
 
 export interface IPlaylistRepository {
   getPlaylistsAsync(issuer: User): Promise<Playlist[]>;
@@ -20,21 +20,21 @@ export interface IPlaylistRepository {
     mediaIndex: number,
     includeSelf: boolean,
     issuer: User
-  ): Promise<number[]>;
+  ): Promise<string[]>;
   getMediaCountForPlaylistByIdAsync(playlistId: string, issuer: User): Promise<number>;
   findIndexFromPlaylistIdAsync(
     playlistId: string,
     issuer: User
   ): Promise<{_id: string, index: number}>;
-  getPlaylistIdIndexesAsync (issuer: User): Promise<number[]>;
+  getPlaylistIdIndexesAsync (issuer: User): Promise<{ _id: string, index: number }[]>;
   findIndexesFromPlaylistIdsAsync(
     playlistIds: number[],
     issuer: User
   ): Promise<{_id: string, index: number}[]>;
-  insertMediumToPlaylistAsync(playlistId: string, medium: Medium, issuer: User): Promise<Medium>;
+  insertMediumToPlaylistAsync(playlistId: string, medium: MediumDocument, issuer: User): Promise<MediumDocument>;
   insertMediaToPlaylistReturnSelfAsync(
     playlistId: string,
-    media: Medium[],
+    media: MediumDocument[],
     issuer: User
   ): Promise<Playlist>;
   updatePlaylistIdsPositionAsync(
@@ -95,15 +95,15 @@ export default class PlaylistRepository implements IPlaylistRepository {
     mediaIndex: number,
     includeSelf: boolean,
     issuer: User
-  ): Promise<number[]> {
+  ): Promise<string[]> {
     const queryIndex = includeSelf ? mediaIndex : mediaIndex + 1;
     const playlist = await this.Playlist
       .findOne({_id: playlistId, ownerId: issuer.id})
       .populate({
         path: 'media',
-        select: '_id',
-        sort: 'index',
-        match: {index: {$gte: queryIndex}}
+        // select: '_id',
+        // sort: 'index',
+        // match: {index: {$gte: queryIndex}}
       })
       .select('media')
       .exec();
@@ -136,7 +136,7 @@ export default class PlaylistRepository implements IPlaylistRepository {
       .exec();
   }
 
-  getPlaylistIdIndexesAsync (issuer: User): Promise<number[]> {
+  getPlaylistIdIndexesAsync (issuer: User): Promise<{ _id: string, index: number }[]> {
     return this.findIndexesFromPlaylistIdsAsync(issuer);
   }
 
@@ -152,8 +152,8 @@ export default class PlaylistRepository implements IPlaylistRepository {
       .exec();
   }
 
-  insertMediumToPlaylistAsync(playlistId: string, medium: Medium, issuer: User): Promise<Medium> {
-    return new Promise<Medium>((resolve, reject) => {
+  insertMediumToPlaylistAsync(playlistId: string, medium: MediumDocument, issuer: User): Promise<MediumDocument> {
+    return new Promise<MediumDocument>((resolve, reject) => {
       if (lock.writeLock((release) => {
         this.Playlist
           .findOne({_id: playlistId, ownerId: issuer.id})
@@ -181,7 +181,7 @@ export default class PlaylistRepository implements IPlaylistRepository {
 
   async insertMediaToPlaylistReturnSelfAsync(
     playlistId: string,
-    media: Medium[],
+    media: MediumDocument[],
     issuer: User
   ): Promise<Playlist> {
     const playlist = await this.Playlist

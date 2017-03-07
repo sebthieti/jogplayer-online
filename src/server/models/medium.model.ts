@@ -5,7 +5,7 @@ import * as mongooseTypes from 'mongoose-types-ext';
 mongooseTypes(mongoose);
 import routes from '../routes';
 
-export interface Medium extends mongoose.Document {
+export interface MediumDocument extends mongoose.Document {
   ownerId: string;
   _playlistId: string;
   title: string;
@@ -13,6 +13,7 @@ export interface Medium extends mongoose.Document {
   updatedOn: Date;
   filePath: string;
   isChecked: boolean;
+  isAvailable: boolean;
   mediaType: string;
   index: number;
   duration: number;
@@ -22,7 +23,7 @@ export interface Medium extends mongoose.Document {
   setIsAvailable(isAvailable: boolean): IMediumModel;
 }
 
-export interface IMediumModel extends mongoose.Model<Medium> {
+export interface IMediumModel extends mongoose.Model<MediumDocument> {
 }
 
 const mediumSchema = new Schema({
@@ -89,4 +90,4 @@ mediumSchema.methods.setIsAvailable = function (isAvailable) {
   return this;
 };
 
-export default mongoose.model<Medium>('Medium', mediumSchema);
+export default mongoose.model<MediumDocument>('Media', mediumSchema);
