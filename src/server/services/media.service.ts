@@ -5,76 +5,70 @@ import * as ffmpeg from 'fluent-ffmpeg';
 import * as fsHelpers from '../utils/fsHelpers';
 import {nfcall} from '../utils/promiseHelpers';
 import MediumInfo, {IMediumInfo} from '../entities/mediumInfo';
+import {ReadStream} from 'fs';
 const ffprobe = ffmpeg.ffprobe;
 
 export interface IMediaService {
-  getFileSizeAsync(filePath);
-  convertMediumToAsync(mediaFilePath, outputFormat);
-  getFileStream(filePath, fromOffset, toOffset);
+  getFileSizeAsync(filePath: string): Promise<number>;
+  convertMediumToAsync(mediaFilePath: string, outputFormat: string): Promise<string>;
+  getFileStream(filePath: string, fromOffset: number, toOffset: number): ReadStream;
   getMediumInfosAsync(mediaFilePath): Promise<IMediumInfo>;
 }
 
 export default class MediaService implements IMediaService {
-  getFileSizeAsync(filePath) {
-    return nfcall(fs.stat, filePath)
-      .then(
-        (stat: Stats) => stat.size,
-        err => console.log(err) // TODO File might not exists at that time
-      );
+  async getFileSizeAsync(filePath: string): Promise<number> {
+    const stat = await nfcall<Stats>(fs.stat, filePath);
+    return stat.size; // TODO File might not exists at that time
   }
 
-  convertMediumToAsync(mediaFilePath, outputFormat) {
+  async convertMediumToAsync(mediaFilePath: string, outputFormat: string): Promise<string> {
     const outputFilePath = this.generateConvertedMediaFilePath(mediaFilePath, outputFormat);
-
-    return fsHelpers
-      .checkFileExistsAsync(outputFilePath)
-      .then(fileAlreadyConverted => {
-        if (fileAlreadyConverted) {
-          return outputFilePath;
-        }
-        return this.ensureConvertionOutputFolderExistsAsync()
-          .then(() => {
-            return this.execMediumConvertionAsync (
-              mediaFilePath,
-              outputFormat,
-              outputFilePath
-            );
-          });
-      });
+    const fileAlreadyConverted = fsHelpers.checkFileExistsAsync(outputFilePath);
+    if (fileAlreadyConverted) {
+      return outputFilePath;
+    }
+    await this.ensureConvertionOutputFolderExistsAsync();
+    return this.execMediumConvertionAsync (
+      mediaFilePath,
+      outputFormat,
+      outputFilePath
+    );
   }
 
-  getFileStream(filePath, fromOffset, toOffset) {
+  getFileStream(filePath: string, fromOffset: number, toOffset: number): ReadStream {
     return fs.createReadStream(filePath, { start: fromOffset, end: toOffset });
   }
 
-  getMediumInfosAsync(mediaFilePath): Promise<IMediumInfo> {
-    return Promise
-      .resolve(this.getBasicMediumInfo(mediaFilePath))
-      .then(basicInfo => {
-        return nfcall(ffprobe, mediaFilePath)
-          .then(detailedMediumInfo => {
-            return new MediumInfo({
-                name: basicInfo.name,
-                fileext: basicInfo.fileext,
-                detailedInfo: detailedMediumInfo
-            } as IMediumInfo);
-          });
-      });
+  async getMediumInfosAsync(mediaFilePath: string): Promise<IMediumInfo> {
+    const basicInfo = this.getBasicMediumInfo(mediaFilePath);
+    const detailedMediumInfo = await nfcall(ffprobe, mediaFilePath);
+    return new MediumInfo({
+      name: basicInfo.name,
+      fileext: basicInfo.fileext,
+      detailedInfo: detailedMediumInfo
+    } as IMediumInfo);
   }
 
-  private getBasicMediumInfo(filePath) {
+  private getBasicMediumInfo(filePath: string): { name: string, fileext: string } {
     const fileext = path.extname(filePath);
     const name = path.basename(filePath, fileext);
     return { name: name, fileext: fileext };
   }
 
-  private ensureConvertionOutputFolderExistsAsync() {
-    return fsHelpers
-      .checkFileExistsAsync(this.getConvertionOutputFolderPath())
-      .then(this.ifNotExistsCreateConvertionOutputFolderAsync);
+  private async ensureConvertionOutputFolderExistsAsync(): Promise<string> {
+    const folderExists = await fsHelpers.checkFileExistsAsync(
+      this.getConvertionOutputFolderPath()
+    );
+    return await this.ifNotExistsCreateConvertionOutputFolderAsync(folderExists);
   }
 
-  private getConvertionOutputFolderPath() {
+  private ifNotExistsCreateConvertionOutputFolderAsync(folderExists: boolean): Promise<string> {
+    if (!folderExists) {
+      return nfcall(fs.mkdir, this.getConvertionOutputFolderPath());
+    }
+  }
+
+  private getConvertionOutputFolderPath(): string {
     const convertionOutputFolderRelativePath = './_converted/';
 
     return path.join(
@@ -83,13 +77,11 @@ export default class MediaService implements IMediaService {
     ); // or resolve ?
   }
 
-  private ifNotExistsCreateConvertionOutputFolderAsync(folderExists) {
-    if (!folderExists) {
-      return nfcall(fs.mkdir, this.getConvertionOutputFolderPath());
-    }
-  }
-
-  private execMediumConvertionAsync(mediaFilePath, outputFormat, outputFilePath) {
+  private execMediumConvertionAsync(
+    mediaFilePath: string,
+    outputFormat: string,
+    outputFilePath: string
+  ): Promise<string> {
     // TODO try -map option (http://www.ffmpeg.org/ffmpeg.html)
     // TODO try -codec copy (http://www.ffmpeg.org/ffmpeg-all.html)
     // TODO try -t duration (output), -to position (output) (Xclusive Or), check interesting other next options
@@ -105,7 +97,7 @@ export default class MediaService implements IMediaService {
     });
   }
 
-  private generateConvertedMediaFilePath(mediaFilePath, outputFormat) {
+  private generateConvertedMediaFilePath(mediaFilePath: string, outputFormat: string): string {
     const ext = path.extname(mediaFilePath);
 
     const convertionFolderPath = this.getConvertionOutputFolderPath();

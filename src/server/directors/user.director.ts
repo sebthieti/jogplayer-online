@@ -1,33 +1,36 @@
 import * as hasher from '../utils/hasher';
 import {IUserProxy} from '../proxies/user.proxy';
 import {IUserPermissionsDirector} from './userPermissions.director';
+import {User} from '../models/user.model';
+import {IUserDto} from '../dto/user.dto';
+import {UserPermissions} from '../models/userPermissions.model';
+import {IUserPermissionsDto} from '../dto/userPermissions.dto';
 
 export interface IUserDirector {
-  isRootUserSetAsync();
-  getUsersAsync(issuer);
-  addRootUserAsync(rootUserDto);
-  addUserAsync(userDto, issuer);
-  addUserPermissionsAsync(userId, allowedPaths, issuer);
-  getUserPermissionsByUserId(userId, issuer);
-  getAllUserPermissionsAsync(userId, allowedPaths, issuer);
-  updateUserPermissionsByUserIdAsync(userId, userPermissionsDto, issuer);
-  updateFromUserDtoAsync(userId, userDto, issuer);
-  removeUserByIdAsync(userId, currentUser);
+  isRootUserSetAsync(): Promise<boolean>;
+  getUsersAsync(issuer: User): Promise<User[]>;
+  addRootUserAsync(rootUserDto: IUserDto): Promise<User>;
+  addUserAsync(userDto: IUserDto, issuer: User): Promise<User>;
+  addUserPermissionsAsync(userId: string, allowedPaths: string[], issuer: User): Promise<UserPermissions[]>;
+  getUserPermissionsByUserId(userId: string, issuer: User): Promise<UserPermissions>;
+  getAllUserPermissionsAsync(userId: string, allowedPaths: string[], issuer: User): Promise<User>;
+  updateUserPermissionsByUserIdAsync(userId: string, userPermissionsDto: IUserPermissionsDto, issuer: User): Promise<UserPermissions>;
+  updateFromUserDtoAsync(userId: string, userDto: IUserDto, issuer: User): Promise<User>;
+  removeUserByIdAsync(userId: string, currentUser: User): Promise<void>;
 }
 
 export default class UserDirector implements IUserDirector {
   constructor(
     private userProxy: IUserProxy,
-    private userPermissionsDirector: IUserPermissionsDirector
-  ) {
+    private userPermissionsDirector: IUserPermissionsDirector) {
   }
 
-  isRootUserSetAsync() {
+  isRootUserSetAsync(): Promise<boolean> {
     return this.userProxy.isRootUserSetAsync();
   }
 
 // TODO Check for rights before doing (directory should do not service layer)
-  getUsersAsync(issuer) {
+  getUsersAsync(issuer: User): Promise<User[]> {
     if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) {
       throw new Error('Not authorized to manage users.');
     }
@@ -35,7 +38,7 @@ export default class UserDirector implements IUserDirector {
   }
 
   // TODO Refactor needed (use code from addUserAsync)
-  addRootUserAsync(rootUserDto) {
+  async addRootUserAsync(rootUserDto: IUserDto): Promise<User> {
     // Generate password salt
     const passwordSalt = hasher.createSalt();
     const hashedPassword = hasher.computeHash(rootUserDto.password, passwordSalt);
@@ -44,14 +47,13 @@ export default class UserDirector implements IUserDirector {
     rootUserDto.passwordSalt = passwordSalt;
     rootUserDto.password = hashedPassword; // TODO Rename in model to hashedPassword
 
-    return this.userPermissionsDirector //_userPermissionsProxy
-      .addRootUserPermissionsAsync()
-      .then(userPermissionsModel => {
-        return this.userProxy.addRootUserAsync(rootUserDto, userPermissionsModel);
-      });
+    const userPermissionsModel = await this.userPermissionsDirector //_userPermissionsProxy
+      .addRootUserPermissionsAsync();
+
+    return this.userProxy.addRootUserAsync(rootUserDto, userPermissionsModel);
   }
 
-  addUserAsync(userDto, issuer) {
+  async addUserAsync(userDto: IUserDto, issuer: User): Promise<User> {
     if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
       throw new Error('Not authorized to manage users.');
     }
@@ -63,38 +65,34 @@ export default class UserDirector implements IUserDirector {
     userDto.passwordSalt = passwordSalt;
     userDto.password = hashedPassword; // TODO Rename in model to hashedPassword
 
-    return this.userPermissionsDirector //_userPermissionsProxy
-      .addUserPermissionsAsync(userDto.permissions, issuer)
-      .then(userPermissionsModel => {
-        return this.userProxy.addUserAsync(userDto, userPermissionsModel, issuer);
-      });
+    const userPermissionsModel = await this.userPermissionsDirector //_userPermissionsProxy
+      .addUserPermissionsAsync(userDto.permissions, issuer);
+    return this.userProxy.addUserAsync(userDto, userPermissionsModel, issuer);
   }
 
-  addUserPermissionsAsync(userId, allowedPaths, issuer) {
+  async addUserPermissionsAsync(userId: string, allowedPaths: string[], issuer: User): Promise<UserPermissions[]> {
     if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
       throw new Error('Not authorized to manage users.');
     }
 
-    return this.userProxy //_userPermissionsProxy
-      .addUserPermissionsAsync(userId, allowedPaths)
-      .then(userPermissionsModel => {
-        return this.userProxy.addUserPermissionsAsync(userId, userPermissionsModel, issuer);
-      });
+    const userPermissionsModel = await this.userProxy //_userPermissionsProxy
+      .addUserPermissionsAsync(userId, allowedPaths);
+
+    return this.userProxy.addUserPermissionsAsync(userId, userPermissionsModel, issuer);
   }
 
-  getUserPermissionsByUserId(userId, issuer) {
+  async getUserPermissionsByUserId(userId: string, issuer: User): Promise<UserPermissions> {
     if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
       throw new Error('Not authorized to manage users.');
     }
 
-    return this.userProxy
-      .getUserByIdWithPermissionsAsync(userId)
-      .then(userPermissionsModel => {
-        return userPermissionsModel.permissions;
-      });
+    const userPermissionsModel = await this.userProxy
+      .getUserByIdWithPermissionsAsync(userId);
+
+    return userPermissionsModel.permissions;
   }
 
-  getAllUserPermissionsAsync(userId, allowedPaths, issuer) {
+  getAllUserPermissionsAsync(userId: string, allowedPaths: string[], issuer: User): Promise<User> {
     if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) { // TODO Use role or isAdmin ? There is redundancy
       throw new Error('Not authorized to manage users.');
     }
@@ -103,35 +101,34 @@ export default class UserDirector implements IUserDirector {
     //_userPermissionsProxy.getAllUserPermissionsAsync();
   }
 
-  updateUserPermissionsByUserIdAsync(userId, userPermissionsDto, issuer) {
+  async updateUserPermissionsByUserIdAsync(userId: string, userPermissionsDto: IUserPermissionsDto, issuer: User): Promise<UserPermissions> {
     //if (issuer.role !== 'admin') {
     //	throw 'Not authorized to manage users.';
     //}
-    return this.userProxy
-      .getUserByIdWithPermissionsAsync(userId)
-      .then(userPermissionsModel => {
-        for (var key in userPermissionsDto) { // TODO Is there already some method to update instance model ?
-          if (!userPermissionsDto.hasOwnProperty(key)) {
-            continue;
-          }
-          userPermissionsModel.permissions[key] = userPermissionsDto[key];
-        }
-        return userPermissionsModel.permissions.save();
-      });
+    const userPermissionsModel = await this.userProxy
+      .getUserByIdWithPermissionsAsync(userId);
+
+    for (let key in userPermissionsDto) { // TODO Is there already some method to update instance model ?
+      if (!userPermissionsDto.hasOwnProperty(key)) {
+        continue;
+      }
+      userPermissionsModel.permissions[key] = userPermissionsDto[key];
+    }
+    return userPermissionsModel.permissions.save();
   }
 
-  updateFromUserDtoAsync(userId, userDto, issuer) {
+  async updateFromUserDtoAsync(userId: string, userDto: IUserDto, issuer: User): Promise<User> {
     if (!issuer.permissions.isRoot && !issuer.permissions.isAdmin) {
       throw new Error('Not authorized to manage users.');
     }
-    return this.updateUserPermissionsByUserIdAsync(userId, userDto.permissions, issuer)
-      .then(() => {
-        delete userDto.permissions;
-        return this.userProxy.updateFromUserDtoAsync(userId, userDto, issuer);
-      });
+
+    await this.updateUserPermissionsByUserIdAsync(userId, userDto.permissions, issuer);
+
+    delete userDto.permissions;
+    return this.userProxy.updateFromUserDtoAsync(userId, userDto, issuer);
   }
 
-  removeUserByIdAsync(userId, currentUser) {
+  async removeUserByIdAsync(userId: string, currentUser: User): Promise<void> {
     if (!currentUser.permissions.isRoot && !currentUser.permissions.isAdmin) {
       throw new Error('Not authorized to manage users.');
     }
@@ -139,16 +136,15 @@ export default class UserDirector implements IUserDirector {
       throw new Error('Cannot remove yourself.');
     }
 
-    return this.userProxy
-      .getUserByIdWithPermissionsAsync(userId)
-      .then(user => {
-        if (!user) {
-          return;
-        }
-        if (user.isRoot === true) {
-          throw new Error('Root user cannot be removed.');
-        }
-        return this.userProxy.removeUserByIdAsync(user, currentUser);
-      });
+    const user = await this.userProxy
+      .getUserByIdWithPermissionsAsync(userId);
+
+    if (!user) {
+      return;
+    }
+    if (user.isRoot === true) {
+      throw new Error('Root user cannot be removed.');
+    }
+    return this.userProxy.removeUserByIdAsync(user.id, currentUser);
   }
 }

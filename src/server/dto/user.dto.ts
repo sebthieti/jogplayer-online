@@ -1,7 +1,8 @@
 import Dto from './dto';
 import UserPermissionsDto, {IUserPermissionsDto} from './userPermissions.dto';
+import {IDto} from './dto';
 
-export interface IUserDto {
+export interface IUserDto extends IDto {
   id: string;
   isActive: string;
   username: string;

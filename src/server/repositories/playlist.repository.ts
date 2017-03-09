@@ -1,27 +1,51 @@
-import * as mongoose from 'mongoose';
 import * as ReadWriteLock from 'rwlock';
 const lock = new ReadWriteLock();
 import {IMediaRepository} from './media.repository';
-import {IPlaylistModel} from '../models/playlist.model';
+import {IPlaylistModel, Playlist} from '../models/playlist.model';
+import {User} from '../models/user.model';
+import {IPlaylistDto} from '../dto/playlist.dto';
+import {MediumDocument} from '../models/medium.model';
 
 export interface IPlaylistRepository {
-  getPlaylistsAsync(issuer): Promise<mongoose.Schema>;
-  getPlaylistWithMediaAsync(playlistId: string, issuer): Promise<mongoose.Schema>;
-  getPlaylistsCountAsync(issuer);
-  getPlaylistIdsLowerThanAsync(index, includeSelf, issuer);
-  getMediaIdsLowerThanAsync (playlistId, mediaIndex, includeSelf, issuer);
-  getMediaCountForPlaylistByIdAsync (playlistId, issuer);
-  findIndexFromPlaylistIdAsync(playlistId, issuer);
-  getPlaylistIdIndexesAsync (issuer);
-  findIndexesFromPlaylistIdsAsync(playlistIds, issuer);
-  insertMediumToPlaylistAsync(playlistId, medium, issuer);
-  insertMediaToPlaylistReturnSelfAsync(playlistId, mediaArray, issuer);
-  updatePlaylistIdsPositionAsync(plIdIndexesToOffset, issuer);
-  updatePlaylistIdPositionAsync(playlistId, newIndex, issuer);
-  updatePlaylistDtoAsync(playlistId, playlistDto, issuer);
-  removePlaylistByIdAsync(playlistId, issuer);
-  removeMediaFromPlaylistAsync(playlistId, mediaId, issuer);
-  removeAllMediaFromPlaylistAsync(playlistId, issuer);
+  getPlaylistsAsync(issuer: User): Promise<Playlist[]>;
+  getPlaylistWithMediaAsync(playlistId: string, issuer: User): Promise<Playlist>;
+  getPlaylistsCountAsync(issuer: User): Promise<number>;
+  getPlaylistIdsLowerThanAsync(
+    index: number,
+    includeSelf: boolean,
+    issuer: User
+  ): Promise<number[]>;
+  getMediaIdsLowerThanAsync(
+    playlistId: string,
+    mediaIndex: number,
+    includeSelf: boolean,
+    issuer: User
+  ): Promise<string[]>;
+  getMediaCountForPlaylistByIdAsync(playlistId: string, issuer: User): Promise<number>;
+  findIndexFromPlaylistIdAsync(
+    playlistId: string,
+    issuer: User
+  ): Promise<{_id: string, index: number}>;
+  getPlaylistIdIndexesAsync (issuer: User): Promise<{ _id: string, index: number }[]>;
+  findIndexesFromPlaylistIdsAsync(
+    playlistIds: number[],
+    issuer: User
+  ): Promise<{_id: string, index: number}[]>;
+  insertMediumToPlaylistAsync(playlistId: string, medium: MediumDocument, issuer: User): Promise<MediumDocument>;
+  insertMediaToPlaylistReturnSelfAsync(
+    playlistId: string,
+    media: MediumDocument[],
+    issuer: User
+  ): Promise<Playlist>;
+  updatePlaylistIdsPositionAsync(
+    plIdIndexesToOffset: { _id: string, index: number }[],
+    issuer: User
+  ): Promise<Playlist[]>;
+  updatePlaylistIdPositionAsync(playlistId: string, newIndex: number, issuer: User): Promise<Playlist>;
+  updatePlaylistDtoAsync(playlistId: string, playlistDto: IPlaylistDto, issuer: User): Promise<Playlist>;
+  removePlaylistByIdAsync(playlistId: string, issuer: User): Promise<Playlist>;
+  removeMediaFromPlaylistAsync(playlistId: string, mediaId: string, issuer: User): Promise<Playlist>;
+  removeAllMediaFromPlaylistAsync(playlistId: string, issuer: User): Promise<Playlist>;
 }
 
 export default class PlaylistRepository implements IPlaylistRepository {
@@ -31,153 +55,105 @@ export default class PlaylistRepository implements IPlaylistRepository {
     this.Playlist = playlistModel;
   }
 
-  getPlaylistsAsync(issuer): Promise<mongoose.Schema> {
-    return new Promise((resolve, reject) => {
-      this.Playlist
-        .find({ ownerId: issuer.id })
-        .select('-media')
-        .sort('index')
-        .exec((err, playlists) => {
-          if (!err) {
-            resolve(playlists);
-          } else {
-            reject(err);
-          }
-        });
-    });
+  async getPlaylistsAsync(issuer: User): Promise<Playlist[]> {
+    return await this.Playlist
+      .find({ ownerId: issuer.id })
+      .select('-media')
+      .sort('index')
+      .exec();
   }
 
-  getPlaylistWithMediaAsync(playlistId: string, issuer): Promise<mongoose.Schema> {
-    return new Promise((resolve, reject) => {
-      this.Playlist
-        .findOne({ _id: playlistId, ownerId: issuer.id })
-        .populate('media')
-        .exec((err, playlist) => {
-          if (!err) {
-            resolve(playlist);
-          } else {
-            reject(err);
-          }
-        });
-    });
+  async getPlaylistWithMediaAsync(playlistId: string, issuer: User): Promise<Playlist> {
+    return await this.Playlist
+      .findOne({ _id: playlistId, ownerId: issuer.id })
+      .populate('media')
+      .exec();
   }
 
-  getPlaylistsCountAsync(issuer) {
-    return new Promise((resolve, reject) => {
-      this.Playlist.count(
-        { ownerId: issuer.id },
-        (err, playlistCount) => {
-          if (!err) {
-            resolve(playlistCount);
-          } else {
-            reject(err);
-          }
-        }
-      );
-    });
+  async getPlaylistsCountAsync(issuer: User): Promise<number> {
+    return await this.Playlist.count({ ownerId: issuer.id });
   };
 
-  getPlaylistIdsLowerThanAsync(index, includeSelf, issuer) {
-    return new Promise((resolve, reject) => {
-      const queryIndex = includeSelf ? index : index + 1;
-      this.Playlist
-        .find({ ownerId: issuer.id })
-        .where('index').gte(queryIndex)
-        .sort('index')
-        .select('index')
-        .exec((err, playlistIdIndexesSet) => {
-          if (!err) {
-            resolve(playlistIdIndexesSet);
-          } else {
-            reject(err);
-          }
-        });
-    });
+  async getPlaylistIdsLowerThanAsync(
+    index: number,
+    includeSelf: boolean,
+    issuer: User
+  ): Promise<number[]> {
+    const queryIndex = includeSelf ? index : index + 1;
+    const playlist = await this.Playlist
+      .find({ ownerId: issuer.id })
+      .where('index').gte(queryIndex)
+      .sort('index')
+      .select('index')
+      .exec();
+
+    return await playlist[0].media.map(medium => medium.index);
   }
 
-  getMediaIdsLowerThanAsync(playlistId, mediaIndex, includeSelf, issuer) {
-    return new Promise((resolve, reject) => {
-      const queryIndex = includeSelf ? mediaIndex : mediaIndex + 1;
-      this.Playlist
-        .findOne({ _id: playlistId, ownerId: issuer.id })
-        .populate({
-          path: 'media',
-          select: '_id',
-          sort: 'index',
-          match: { index: { $gte: queryIndex } }
-        })
-        .select('media')
-        .exec((err, playlist) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(playlist
-              .media
-              .map(medium => medium._id)
-            );
-          }
-        });
-    });
+  async getMediaIdsLowerThanAsync(
+    playlistId: string,
+    mediaIndex: number,
+    includeSelf: boolean,
+    issuer: User
+  ): Promise<string[]> {
+    const queryIndex = includeSelf ? mediaIndex : mediaIndex + 1;
+    const playlist = await this.Playlist
+      .findOne({_id: playlistId, ownerId: issuer.id})
+      .populate({
+        path: 'media',
+        // select: '_id',
+        // sort: 'index',
+        // match: {index: {$gte: queryIndex}}
+      })
+      .select('media')
+      .exec();
+
+    return await playlist.media.map(medium => medium._id);
   }
 
-  getMediaCountForPlaylistByIdAsync(playlistId, issuer) {
-    return new Promise((resolve, reject) => {
-      this.Playlist
-        .findOne({ _id: playlistId, ownerId: issuer.id })
-        .populate({
-          path: 'media',
-          select: '_id'
-        })
-        .exec((err, playlist) => {
-          if (!err && playlist) {
-            resolve(playlist.media.length);
-          } else if (!playlist) {
-            reject(`PlaylistId: ${playlistId} doesn't exists`);
-          } else {
-            reject(err);
-          }
-        });
-    });
+  async getMediaCountForPlaylistByIdAsync(playlistId: string, issuer: User): Promise<number> {
+    const playlist = await this.Playlist
+      .findOne({ _id: playlistId, ownerId: issuer.id })
+      .populate({
+        path: 'media',
+        select: '_id'
+      })
+      .exec();
+
+    if (!playlist) {
+      throw new Error(`PlaylistId: ${playlistId} doesn't exists`);
+    }
+    return playlist.media.length;
   }
 
-  findIndexFromPlaylistIdAsync(playlistId, issuer) {
-    return new Promise((resolve, reject) => {
-      this.Playlist
-        .findOne({ _id: playlistId, ownerId: issuer.id })
-        .select('index')
-        .exec((err, playlistIdIndex) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(playlistIdIndex);
-          }
-        });
-    });
+  async findIndexFromPlaylistIdAsync(
+    playlistId: string,
+    issuer: User
+  ): Promise<{_id: string, index: number}> {
+    return await this.Playlist
+      .findOne({ _id: playlistId, ownerId: issuer.id })
+      .select('index')
+      .exec();
   }
 
-  getPlaylistIdIndexesAsync (issuer) {
+  getPlaylistIdIndexesAsync (issuer: User): Promise<{ _id: string, index: number }[]> {
     return this.findIndexesFromPlaylistIdsAsync(issuer);
   }
 
-  findIndexesFromPlaylistIdsAsync(playlistIds, issuer) {
-    return new Promise((resolve, reject) => {
-      this.Playlist
-        .find({ ownerId: issuer.id })
-        .whereInOrGetAll('_id', playlistIds)
-        .sort('index')
-        .select('index')
-        .exec((err, playlistIdIndexes) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(playlistIdIndexes);
-          }
-        });
-    });
+  async findIndexesFromPlaylistIdsAsync(
+    playlistIds: number[],
+    issuer: User
+  ): Promise<{_id: string, index: number}[]> {
+    return await this.Playlist
+      .find({ ownerId: issuer.id })
+      .whereInOrGetAll('_id', playlistIds)
+      .sort('index')
+      .select('index')
+      .exec();
   }
 
-  insertMediumToPlaylistAsync(playlistId, medium, issuer) {
-    return new Promise((resolve, reject) => {
+  insertMediumToPlaylistAsync(playlistId: string, medium: MediumDocument, issuer: User): Promise<MediumDocument> {
+    return new Promise<MediumDocument>((resolve, reject) => {
       if (lock.writeLock((release) => {
         this.Playlist
           .findOne({_id: playlistId, ownerId: issuer.id})
@@ -203,161 +179,94 @@ export default class PlaylistRepository implements IPlaylistRepository {
     });
   }
 
-  insertMediaToPlaylistReturnSelfAsync(playlistId, mediaArray, issuer) {
-    return new Promise((resolve, reject) => {
-      this.Playlist
-        .findOne({ _id: playlistId, ownerId: issuer.id })
-        .populate({ path: 'media', select: '_id' })
-        .exec((readError, playlist) => {
-          if (readError) {
-            reject(readError);
-          } else {
-            playlist.media = playlist.media.concat(mediaArray);
-            playlist.save((writeError, savedPlaylist) => {
-              if (writeError) {
-                reject(writeError);
-              } else {
-                resolve(savedPlaylist);
-              }
-            });
-          }
-        });
-    });
+  async insertMediaToPlaylistReturnSelfAsync(
+    playlistId: string,
+    media: MediumDocument[],
+    issuer: User
+  ): Promise<Playlist> {
+    const playlist = await this.Playlist
+      .findOne({ _id: playlistId, ownerId: issuer.id })
+      .populate({ path: 'media', select: '_id' })
+      .exec();
+
+    playlist.media = playlist.media.concat(media);
+    return await playlist.save();
   }
 
-  updatePlaylistIdsPositionAsync(plIdIndexesToOffset, issuer) {
+  updatePlaylistIdsPositionAsync(
+    plIdIndexesToOffset: { _id: string, index: number }[],
+    issuer: User
+  ): Promise<Playlist[]> {
     const updatePlaylistIdPositionPromises = plIdIndexesToOffset.map(value =>
       this.updatePlaylistIdPositionAsync(value._id, value.index, issuer)
     );
     return Promise.all(updatePlaylistIdPositionPromises);
   }
 
-  updatePlaylistIdPositionAsync(playlistId, newIndex, issuer) {
-    return new Promise((resolve, reject) => {
-      this.Playlist
-        .findOne({ _id: playlistId, ownerId: issuer.id })
-        .select('index')
-        .exec((readError, playlist) => {
-          if (readError) {
-            reject(readError);
-          } else {
-            playlist.index = newIndex;
-            playlist.save((writeError, updatedPlaylist) => {
-              if (writeError) {
-                reject(writeError);
-              } else {
-                resolve(updatedPlaylist);
-              }
-            });
-          }
-        });
-    });
+  async updatePlaylistIdPositionAsync(playlistId: string, newIndex: number, issuer: User): Promise<Playlist> {
+    const playlist = await this.Playlist
+      .findOne({ _id: playlistId, ownerId: issuer.id })
+      .select('index')
+      .exec();
+
+    playlist.index = newIndex;
+    return await playlist.save();
   }
 
-  updatePlaylistDtoAsync(playlistId, playlistDto, issuer) {
-    return new Promise((resolve, reject) => {
-      this.Playlist
-        .findOneAndUpdate(
-          { _id: playlistId, ownerId: issuer.id },
-          playlistDto.getDefinedFields(),
-          { 'new': true } // Return modified doc.
-        )
-        .populate('media')
-        .exec((err, playlist) => {
-            if (!err) {
-              resolve(playlist);
-            } else {
-              reject(err);
-            }
-        });
-    });
+  async updatePlaylistDtoAsync(
+    playlistId: string,
+    playlistDto: IPlaylistDto,
+    issuer: User
+  ): Promise<Playlist> {
+    return await this.Playlist
+      .findOneAndUpdate(
+        { _id: playlistId, ownerId: issuer.id },
+        playlistDto.getDefinedFields(),
+        { 'new': true } // Return modified doc.
+      )
+      .populate('media')
+      .exec();
   }
 
-  removePlaylistByIdAsync(playlistId, issuer) {
-    return new Promise((resolve, reject) => {
-      this.Playlist
-        .findOne({ _id: playlistId, ownerId: issuer.id })
-        .populate({ path: 'media', select: '_id' })
-        .exec((err, playlist) => {
-          if (err) {
-            reject(err);
-          } else {
-            const removePromises = playlist.media.map(medium =>
-              this.mediaSaveService.removeMediumAsync(medium)
-            );
+  async removePlaylistByIdAsync(playlistId: string, issuer: User): Promise<Playlist> {
+    const playlist = await this.Playlist
+      .findOne({ _id: playlistId, ownerId: issuer.id })
+      .populate({ path: 'media', select: '_id' })
+      .exec();
 
-            Promise.all(removePromises)
-              .then(() => {
-                playlist.remove((removeError, removedPlaylist) => {
-                  if (!err) {
-                    resolve(removedPlaylist);
-                  } else {
-                    reject(err);
-                  }
-                });
-              })
-              .catch(removeMediaError => {
-                reject(removeMediaError);
-              });
-          }
-        });
-    });
+    const removePromises = playlist.media.map(medium =>
+      this.mediaSaveService.removeMediumAsync(medium, issuer)
+    );
+
+    await Promise.all(removePromises);
+    return await playlist.remove();
   }
 
-  removeMediaFromPlaylistAsync(playlistId, mediaId, issuer) {
-    return new Promise((resolve, reject) => {
-      this.Playlist
-        .findOne({ _id: playlistId, ownerId: issuer.id })
-        .populate('media')
-        .exec((err, playlist) => {
-          if (err) {
-            reject(err);
-          } else {
-            this.mediaSaveService
-              .removeMediumByIdAsync(mediaId)
-              .then(() => {
-                playlist.media = playlist.media.filter(medium => {
-                  return String(medium._id) !== mediaId;
-                });
-                playlist.save((saveError, savedPlaylist) => {
-                  if (!err) {
-                    resolve(savedPlaylist);
-                  } else {
-                    reject(saveError);
-                  }
-                });
-              });
-          }
-        });
-    });
+  async removeMediaFromPlaylistAsync(playlistId: string, mediaId: string, issuer: User): Promise<Playlist> {
+    const playlist = await this.Playlist
+      .findOne({ _id: playlistId, ownerId: issuer.id })
+      .populate('media')
+      .exec();
+
+    await this.mediaSaveService.removeMediumByIdAsync(mediaId);
+
+    playlist.media = playlist.media.filter(medium => `${medium._id}` !== mediaId);
+
+    return await playlist.save();
   }
 
-  removeAllMediaFromPlaylistAsync(playlistId, issuer) {
-    return new Promise((resolve, reject) => {
-      this.Playlist
-        .findOne({ _id: playlistId, ownerId: issuer.id })
-        .populate({
-          path: 'media',
-          select: '_id'
-        })
-        .exec((err, playlist) => {
-          if (err) {
-            reject(err);
-          } else {
-            this.mediaSaveService
-              .removeMediaAsync(playlist.media)
-              .then(() => {
-                playlist.media = [];
-                playlist.save((saveError, savedPlaylist) => {
-                  if (!err) {
-                    resolve(savedPlaylist);
-                  } else {
-                    reject(saveError);
-                  }
-                });
-              });
-          }
-        });
-    });
+  async removeAllMediaFromPlaylistAsync(playlistId: string, issuer: User): Promise<Playlist> {
+    const playlist = await this.Playlist
+      .findOne({ _id: playlistId, ownerId: issuer.id })
+      .populate({
+        path: 'media',
+        select: '_id'
+      })
+      .exec();
+
+    await this.mediaSaveService.removeMediaAsync(playlist.media, issuer);
+
+    playlist.media = [];
+    return await playlist.save();
   }
 }

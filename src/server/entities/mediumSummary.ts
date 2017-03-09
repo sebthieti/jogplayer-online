@@ -2,14 +2,14 @@ export interface IMediumSummary {
   title: string;
   index: number;
   filePath?: string;
-  duration: string;
+  duration: number;
 }
 
 export default class MediumSummary implements IMediumSummary {
   index: number;
   title: string;
   filePath: string;
-  duration: string;
+  duration: number;
 
   constructor(entity: IMediumSummary) {
     this.title = entity.title;

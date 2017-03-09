@@ -1,44 +1,43 @@
 import * as child_process from 'child_process';
 import * as path from 'path';
-import BaseFileExplorerService from './fileExplorer.service';
-import FileInfo from '../../entities/fileInfo';
+import FileExplorerService from './fileExplorer.service';
+import FileInfo, {IFileInfo} from '../../entities/fileInfo';
 
-export default class WinFileExplorerService extends BaseFileExplorerService {
+export default class WinFileExplorerService extends FileExplorerService {
   private anyDriveLetterPattern = /([a-zA-Z]:)/g;
 
   constructor() {
     super();
   }
 
-  canHandleOs(osName) {
+  canHandleOs(osName: string): boolean {
     return osName === 'win32';
   }
 
-  normalizePathForCurrentOs(completePath) {
+  normalizePathForCurrentOs(completePath: string): string {
     if (completePath.startsWith('/')) {
       return completePath.substring(1).replace(/\//g, path.sep);
     }
     return completePath.replace(/\//g, path.sep);
   }
 
-  getNewLineConstant() {
+  getNewLineConstant(): string {
     return '\r\n';
   }
 
-  getNetworkRoot() {
+  getNetworkRoot(): string {
     return `${path.sep}${path.sep}`;
   }
 
-  getLevelUpPath() {
+  getLevelUpPath(): string {
     return `..${path.sep}`;
   }
 
-  getAvailableDrivesPathsAsync() {
-    return new Promise((resolve, reject) => {
+  async getAvailableDrivesPathsAsync(): Promise<IFileInfo[]> {
+    return new Promise<IFileInfo[]>((resolve, reject) => {
       // For Windows we need a process to get for us drives paths
-      const exec = child_process.exec;
       const cmd = 'wmic logicaldisk get name';
-      exec(cmd, (err, stdOut, stdErr) => {
+      child_process.exec(cmd, (err, stdOut, stdErr) => {
         if (err) {
           reject(`Error running wmic logicaldisk command: ${err}|${stdErr}`);
           return;
@@ -50,7 +49,10 @@ export default class WinFileExplorerService extends BaseFileExplorerService {
               name: drive,
               filePath: `/${drive}/`,
               type: FileInfo.Directory,
-              isRoot: true
+              isRoot: true,
+              isDirectory: false,
+              isFile: false,
+              isValid: false
             })
           )
         );

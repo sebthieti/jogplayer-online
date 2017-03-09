@@ -1,10 +1,16 @@
 import {ICache} from './cache';
 import {IUserStateRepository} from '../repositories/userState.repository';
+import {UserState} from '../models/userState.model';
+import {IUserStateDto} from '../dto/userState.dto';
 
 export interface IUserStateProxy {
-  getUserStateAsync(userId);
+  getUserStateAsync(userId: string): Promise<UserState>;
   addUserStateAsync(issuerId, userStateDto);
-  updateFromUserStateDtoAsync(userStateId, issuerId, userStateDto);
+  updateFromUserStateDtoAsync(
+    userStateId: string,
+    issuerId: string,
+    userStateDto: IUserStateDto
+  ): Promise<UserState>;
   removeUserStateByIdAsync(userId);
 }
 
@@ -17,58 +23,56 @@ export default class UserStateProxy implements IUserStateProxy {
   ) {
   }
 
-  getUserStateAsync(userId) {
-    const userState = this.cache.getItemFromCache(
+  async getUserStateAsync(userId: string): Promise<UserState> {
+    const userState = this.cache.getItemFromCache<UserState>(
       this.USER_STATE,
       userId
     );
     if (userState != null) {
-      return Promise.resolve(userState);
+      return userState;
     } else {
-      return this.userStateSaveService
-        .getUserStateAsync(userId)
-        .then(userState => {
-          this.cache.createOrUpdateItem(
-            this.USER_STATE,
-            userId,
-            userState
-          );
-          return userState;
-        });
+      const userState = await this.userStateSaveService
+        .getUserStateAsync(userId);
+
+      this.cache.createOrUpdateItem(
+        this.USER_STATE,
+        userId,
+        userState
+      );
+      return userState;
     }
   }
 
-  addUserStateAsync(issuerId, userStateDto) {
-    return this.userStateSaveService
-      .addUserStateAsync(issuerId, userStateDto)
-      .then(userState => {
-        this.cache.createOrUpdateItem(
-          this.USER_STATE,
-          issuerId,
-          userState
-        );
-        return userState;
-      });
+  async addUserStateAsync(issuerId: string, userStateDto: IUserStateDto): Promise<UserState> {
+    const userState = await this.userStateSaveService
+      .addUserStateAsync(issuerId, userStateDto);
+
+    this.cache.createOrUpdateItem(
+      this.USER_STATE,
+      issuerId,
+      userState
+    );
+    return userState;
   }
 
-  updateFromUserStateDtoAsync(userStateId, issuerId, userStateDto) {
-    return this.userStateSaveService
-      .updateFromUserStateDtoAsync(userStateId, issuerId, userStateDto)
-      .then(userState => {
-        this.cache.createOrUpdateItem(
-          this.USER_STATE,
-          issuerId,
-          userState
-        );
-        return userState;
-      });
+  async updateFromUserStateDtoAsync(
+    userStateId: string,
+    issuerId: string,
+    userStateDto: IUserStateDto
+  ): Promise<UserState> {
+    const userState = await this.userStateSaveService
+      .updateFromUserStateDtoAsync(userStateId, issuerId, userStateDto);
+
+    this.cache.createOrUpdateItem(
+      this.USER_STATE,
+      issuerId,
+      userState
+    );
+    return userState;
   }
 
-  removeUserStateByIdAsync(userId) {
-    return this.userStateSaveService
-      .removeUserStateByIdAsync(userId)
-      .then(() => {
-        this.cache.removeItem(this.USER_STATE, userId);
-      });
+  async removeUserStateByIdAsync(userId: string): Promise<void> {
+    await this.userStateSaveService.removeUserStateByIdAsync(userId);
+    this.cache.removeItem(this.USER_STATE, userId);
   }
 }

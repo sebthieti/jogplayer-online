@@ -4,58 +4,64 @@ import * as path from 'path';
 import {nfcall} from '../utils/promiseHelpers';
 import {IEvents} from '../events/index';
 
+export interface IDbConfig {
+  host: string;
+  port: string;
+  dbName: string;
+}
+
 export interface IConfigService {
-  checkFileConfigExistsAsync();
-  setDbConfigAsync(config);
-  setDbConfigForTestsAsync(config);
+  checkFileConfigExistsAsync(): Promise<boolean>;
+  setDbConfigAsync(config: IDbConfig): Promise<void>;
+  setDbConfigForTestsAsync(config: IDbConfig): Promise<void>;
 }
 
 export default class ConfigService implements IConfigService {
   constructor(private events: IEvents) {
-    this.checkFileConfigExistsAsyncAndSetSubject();
+    this.checkFileConfigExistsAsyncAndEmitReady(); // TODO Should be called elsewhere
   }
 
-  checkFileConfigExistsAsync() {
-    return nfcall(
-      fs.open,
-      path.join(process.cwd(), 'config/default.json'),
-      'r'
-    )
-    .then(fd => nfcall(fs.close, fd))
-    .then(() => true)
-    .catch(() => false); // Error means file doesn't exists
+  // TODO Check why this method get called twice on startup
+  async checkFileConfigExistsAsync(): Promise<boolean> {
+    try {
+      const fd = await nfcall(
+        fs.open,
+        path.join(process.cwd(), 'config/default.json'),
+        'r'
+      );
+      await nfcall(fs.close, fd);
+      return true;
+    } catch (err) { // Error means file doesn't exists
+      return false;
+    }
   }
 
-  setDbConfigAsync(config) {
+  setDbConfigAsync(config: IDbConfig): Promise<void> {
     return this.setDbConfigWithConfigAsync(config, 'config/default.json');
   }
 
-  setDbConfigForTestsAsync(config) {
+  setDbConfigForTestsAsync(config: IDbConfig): Promise<void> { // TODO Should be mocked, should be used for test
     return this.setDbConfigWithConfigAsync(config, 'config/unit-tests.json');
   }
 
-  private checkFileConfigExistsAsyncAndSetSubject() {
-    return this
-      .checkFileConfigExistsAsync()
-      .then(exists => {
-        if (exists) {
-          this.events.emitConfigReady(require('config')); // TODO can we use something else than require?
-        }
-      });
+  private async checkFileConfigExistsAsyncAndEmitReady(): Promise<void> {
+    const exists = await this.checkFileConfigExistsAsync();
+    if (exists) {
+      this.events.emitConfigReady(require('config')); // TODO can we use something else than require?
+    }
   }
 
-  private setDbConfigWithConfigAsync(config, configPath) {
-    return nfcall(
+  private async setDbConfigWithConfigAsync(config: IDbConfig, configPath: string): Promise<void> {
+    await nfcall(
       fs.writeFile,
       path.join(process.cwd(), configPath),
-      this.buildJsonConfig(config)
-    )
-    .then(() =>
-      this.events.emitConfigReady(require('config')) // TODO can we use something else than require?
+      this.toJsonConfig(config)
     );
+
+    this.events.emitConfigReady(require('config')); // TODO can we use something else than require?
   }
 
-  private buildJsonConfig(config) {
+  private toJsonConfig(config: IDbConfig): string {
     return JSON.stringify({
       DbConnection: {
         host: config.host,

@@ -1,6 +1,7 @@
 import Dto from './dto';
+import {IDto} from './dto';
 
-export interface IFavoriteDto {
+export interface IFavoriteDto extends IDto {
   id: string;
   name: string;
   createdOn: string;

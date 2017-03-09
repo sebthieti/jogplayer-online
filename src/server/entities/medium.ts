@@ -5,6 +5,17 @@ export const MediumType = {
   Video: 'video'
 };
 
+export interface IBookmark {
+  name: string;
+  comment: string;
+  position: number;
+}
+
+export interface IMetadata {
+  title: string;
+  type: 'id3TagV1';
+}
+
 export interface IMedium extends IMediumSummary {
   // TODO Rework this to keep only one
   id?: string;
@@ -12,8 +23,8 @@ export interface IMedium extends IMediumSummary {
   mediumType: string;
   isAvailable: boolean;
   isSelected: boolean;
-  bookmarks: any;
-  metadatas: any;
+  bookmarks: IBookmark[];
+  metadatas: IMetadata[];
 }
 
 export default class Medium extends MediumSummary implements IMedium {
@@ -22,8 +33,8 @@ export default class Medium extends MediumSummary implements IMedium {
   mediumType: string;
   isAvailable: boolean;
   isSelected: boolean;
-  bookmarks: any;
-  metadatas: any;
+  bookmarks: IBookmark[];
+  metadatas: IMetadata[];
 
   static fromMediaSummary(medium: IMedium, mediaType: string) {
     return new Medium({

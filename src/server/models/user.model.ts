@@ -3,15 +3,19 @@ import Schema = mongoose.Schema;
 import * as mongooseTypes from 'mongoose-types-ext';
 mongooseTypes(mongoose);
 import routes from '../routes';
+import {UserPermissions} from './userPermissions.model';
 
 export interface User extends mongoose.Document {
+  id: string;
   isActive: boolean;
+  isRoot: boolean;
   username: string;
   password: string;
   passwordSalt: string;
   fullName: string;
+  role: string;
   email: string;
-  permissions: string[];
+  permissions: UserPermissions;
   links: string[];
 }
 
@@ -23,6 +27,7 @@ const userSchema = new Schema({
   username: { type: String, required: 'Username is mandatory', maxLength: 128 },
   password: { type: String, required: 'Password is mandatory', maxLength: 128 },
   passwordSalt: { type: String, required: 'PasswordSalt is mandatory' },
+  role: String,
   fullName: { type: String, maxLength: 128 },
   email: { type: String, maxLength: 128 },
   //state: { type: Schema.Types.ObjectId, ref: 'UserState' }
@@ -32,7 +37,7 @@ userSchema.set('toJSON', { virtuals: true });
 // virtuals: false to avoid inserting links to database
 userSchema.set('toObject', { virtuals: false });
 userSchema.methods.toJSON = function() {
-  var obj = this.toObject();
+  let obj = this.toObject();
   //var f = this.permissions.toJSON();
 
   obj.links = this.links;

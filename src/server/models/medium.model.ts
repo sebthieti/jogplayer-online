@@ -5,7 +5,7 @@ import * as mongooseTypes from 'mongoose-types-ext';
 mongooseTypes(mongoose);
 import routes from '../routes';
 
-export interface Media extends mongoose.Document {
+export interface MediumDocument extends mongoose.Document {
   ownerId: string;
   _playlistId: string;
   title: string;
@@ -13,19 +13,20 @@ export interface Media extends mongoose.Document {
   updatedOn: Date;
   filePath: string;
   isChecked: boolean;
+  isAvailable: boolean;
   mediaType: string;
   index: number;
   duration: number;
   mimeType: string;
   ext: string;
   links: string[];
-  setIsAvailable(isAvailable: boolean): IMediaModel;
+  setIsAvailable(isAvailable: boolean): IMediumModel;
 }
 
-export interface IMediaModel extends mongoose.Model<Media> {
+export interface IMediumModel extends mongoose.Model<MediumDocument> {
 }
 
-const mediaSchema = new Schema({
+const mediumSchema = new Schema({
   ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
   _playlistId: { type: Schema.Types.ObjectId, ref: 'Playlist' },
   title: { type: String, maxLength: 256 },
@@ -42,16 +43,16 @@ const mediaSchema = new Schema({
   //bookmarks: [{ type: Schema.Types.ObjectId, ref: 'Bookmark' }]
 });
 // TODO Think about remove this and only compute it elsewhere (maybe only put it to DTO ?)
-mediaSchema.virtual('isAvailable').get(() => {
+mediumSchema.virtual('isAvailable').get(() => {
   return this._isAvailable || false;
 }).set(function(value) {
   this._isAvailable = value;
 });
-mediaSchema.set('toJSON', { virtuals: true });
+mediumSchema.set('toJSON', { virtuals: true });
 // virtuals: false to avoid inserting links to database
-mediaSchema.set('toObject', { virtuals: false });
-mediaSchema.methods.toJSON = function() {
-  var obj = this.toObject();
+mediumSchema.set('toObject', { virtuals: false });
+mediumSchema.methods.toJSON = function() {
+  let obj = this.toObject();
   obj.id = obj._id;
   obj.links = this.links;
   delete obj._id;
@@ -63,7 +64,7 @@ mediaSchema.methods.toJSON = function() {
   delete obj.updatedOn;
   return obj;
 };
-mediaSchema.virtual('links').get(function() {
+mediumSchema.virtual('links').get(function() {
   return [{
     rel: 'self',
     href: routes.media.selfPath
@@ -84,9 +85,9 @@ mediaSchema.virtual('links').get(function() {
       .replace(':mediumId', this._id)
   }];
 });
-mediaSchema.methods.setIsAvailable = function (isAvailable) {
+mediumSchema.methods.setIsAvailable = function (isAvailable) {
   this.isAvailable = isAvailable;
   return this;
 };
 
-export default mongoose.model<Media>('Media', mediaSchema);
+export default mongoose.model<MediumDocument>('Media', mediumSchema);

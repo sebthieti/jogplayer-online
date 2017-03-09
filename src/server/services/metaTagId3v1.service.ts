@@ -1,7 +1,7 @@
 import * as id3 from 'id3js';
 
 export default class MetaTagId3v1Service {
-  static isOfTagVersionAsync(mediaFilePath): Promise<boolean> {
+  static isOfTagVersionAsync(mediaFilePath: string): Promise<boolean> {
     return new Promise((resolve, onError) => {
       id3({
         file: mediaFilePath,
@@ -16,7 +16,7 @@ export default class MetaTagId3v1Service {
     });
   }
 
-  static parseTagFromFileAsync(mediaFilePath) {
+  static parseTagFromFileAsync(mediaFilePath: string) {
     return new Promise((resolve, reject) => {
       id3({
         file: mediaFilePath,

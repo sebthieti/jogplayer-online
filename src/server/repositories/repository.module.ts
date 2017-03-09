@@ -15,7 +15,7 @@ import ConfigRepository from './config.repository';
 import {IUserPermissionsRepository} from './userPermissions.repository';
 import {IConfigRepository} from './config.repository';
 import {IEvents} from '../events/index';
-import {IMediaModel} from '../models/media.model';
+import {IMediumModel} from '../models/medium.model';
 import {IPlaylistModel} from '../models/playlist.model';
 import {IFavoriteModel} from '../models/favorite.model';
 import {IUserModel} from '../models/user.model';
@@ -29,7 +29,7 @@ export default function bootstrap(container: any) {
   );
   container.register(
     'mediaRepository',
-    (mediaModel: IMediaModel): IMediaRepository => new MediaRepository(mediaModel)
+    (mediaModel: IMediumModel): IMediaRepository => new MediaRepository(mediaModel)
   );
   container.register(
     'playlistRepository',

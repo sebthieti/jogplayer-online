@@ -1,34 +1,35 @@
 import * as path from 'path';
-import BaseFileExplorerService from './fileExplorer.service';
+import FileExplorerService from './fileExplorer.service';
+import {IFileInfo} from '../../entities/fileInfo';
 
-export default class DarwinFileExplorerService extends BaseFileExplorerService {
+export default class DarwinFileExplorerService extends FileExplorerService {
   private osDirectPath = '/Volumes/';
 
   constructor() {
     super();
   }
 
-  canHandleOs(osName) {
+  canHandleOs(osName): boolean {
     return osName === 'darwin';
   }
 
-  normalizePathForCurrentOs(completePath) {
+  normalizePathForCurrentOs(completePath): string {
     return `/Volumes/${completePath}`;
   }
 
-  getNewLineConstant() {
+  getNewLineConstant(): string {
     return '\n';
   }
 
-  getNetworkRoot() {
+  getNetworkRoot(): string {
     return `${path.sep}${path.sep}`;
   }
 
-  getLevelUpPath() {
+  getLevelUpPath(): string {
     return `..${path.sep}`;
   }
 
-  getAvailableDrivesPathsAsync() {
-    return this.osDirectPath;
+  async getAvailableDrivesPathsAsync(): Promise<IFileInfo[]> {
+    throw new Error('Not implemented exception');
   }
 }

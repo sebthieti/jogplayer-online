@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose';
 import Schema = mongoose.Schema;
+
 import * as mongooseTypes from 'mongoose-types-ext';
 mongooseTypes(mongoose);
 import routes from '../routes';
@@ -17,7 +18,7 @@ export interface UserState extends mongoose.Document {
 export interface IUserStateModel extends mongoose.Model<UserState> {
 }
 
-const userStateSchema = new Schema({
+const userStateSchema: Schema = new Schema({
   ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
   playedPosition: Number,
   mediaQueue: [ String ],
@@ -29,7 +30,7 @@ userStateSchema.set('toJSON', { virtuals: true });
 // virtuals: false to avoid inserting links to database
 userStateSchema.set('toObject', { virtuals: false });
 userStateSchema.methods.toJSON = function() {
-  var obj = this.toObject();
+  let obj = this.toObject();
   // TODO This id is used only for client side's ui. Client should rather only use its own ids
   obj.links = this.links;
   delete obj._id;

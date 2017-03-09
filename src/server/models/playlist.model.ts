@@ -3,16 +3,20 @@ import Schema = mongoose.Schema;
 import * as mongooseTypes from 'mongoose-types-ext';
 mongooseTypes(mongoose);
 import routes from '../routes';
+import {MediumDocument} from './medium.model';
 
 export interface Playlist extends mongoose.Document {
+  id: string;
   ownerId: string;
   name: string;
   index: number;
   filePath: string;
-  media: any[];
+  media: MediumDocument[];
   createdOn: Date;
   updatedOn: Date;
   links: string[];
+  isVirtual: boolean;
+  isAvailable: boolean;
   setMedia(media);
   setUpdatedOn(updatedOn);
 }
@@ -35,7 +39,7 @@ playlistSchema.virtual('isVirtual').get(() => {
 // TODO Think about remove this and only compute it elsewhere (maybe only put it to DTO ?)
 playlistSchema.virtual('isAvailable').get(() => {
   return this._isAvailable || false;
-}).set(value=> {
+}).set(value => {
   this._isAvailable = value;
 });
 playlistSchema.statics.whereInOrGetAll = function (path, whereIn) {
@@ -45,7 +49,7 @@ playlistSchema.set('toJSON', { virtuals: true });
 // virtuals: false to avoid inserting links to database
 playlistSchema.set('toObject', { virtuals: false });
 playlistSchema.methods.toJSON = function() {
-  var obj = this.toObject();
+  let obj = this.toObject();
   obj.links = this.links;
   obj.id = obj._id;
   delete obj._id;

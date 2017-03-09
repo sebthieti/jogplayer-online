@@ -1,11 +1,17 @@
 import {IFavoriteRepository} from '../repositories/favorite.repository';
+import {IFavoriteDto} from '../dto/favorite.dto';
+import {User} from '../models/user.model';
+import {Favorite} from '../models/favorite.model';
 
 export interface IFavoriteProxy {
-  addFavoriteAsync(favorite, user);
-  updateFromFavoriteDtoAsync(favoriteId, favoriteDto, user);
-  removeFavoriteByIdAsync(favoriteId, user);
-  getUserFavoritesAsync(user);
-  invalidateFavoritesForUser(username);
+  addFavoriteAsync(favoriteDto: IFavoriteDto, user: User): Promise<Favorite>;
+  updateFromFavoriteDtoAsync(
+    favoriteId: string,
+    favoriteDto: IFavoriteDto,
+    user: User
+  ): Promise<Favorite>;
+  removeFavoriteByIdAsync(favoriteId: string, user: User): Promise<void>;
+  getUserFavoritesAsync(user: User): Promise<Favorite[]>;
 }
 
 export default class FavoriteProxy implements IFavoriteProxy {
@@ -14,47 +20,43 @@ export default class FavoriteProxy implements IFavoriteProxy {
   constructor(private favoriteSaveService: IFavoriteRepository) {
   }
 
-  addFavoriteAsync(favorite, user) {
-    return this.favoriteSaveService
-      .addFavoriteAsync(favorite, user)
-      .then(addedFavorite => {
-        this.invalidateFavoritesForUser(user.username);
-        return addedFavorite;
-      });
+  async addFavoriteAsync(favoriteDto: IFavoriteDto, user: User): Promise<Favorite> {
+    const addedFavorite = await this.favoriteSaveService.addFavoriteAsync(favoriteDto, user);
+    this.invalidateFavoritesForUser(user.username);
+    return addedFavorite;
   }
 
-  updateFromFavoriteDtoAsync(favoriteId, favoriteDto, user) {
-    return this.favoriteSaveService
-      .updateFromFavoriteDtoAsync(favoriteId, favoriteDto, user)
-      .then(favorite => {
-        this.invalidateFavoritesForUser(user.username);
-        return favorite;
-      });
+  async updateFromFavoriteDtoAsync(
+    favoriteId: string,
+    favoriteDto: IFavoriteDto,
+    user: User
+  ): Promise<Favorite> {
+    const favorite = await this.favoriteSaveService.updateFromFavoriteDtoAsync(
+      favoriteId,
+      favoriteDto,
+      user
+    );
+    this.invalidateFavoritesForUser(user.username);
+    return favorite;
   }
 
-  removeFavoriteByIdAsync(favoriteId, user) {
-    return this.favoriteSaveService
-      .removeFavoriteByIdAsync(favoriteId, user)
-      .then(() =>
-        this.invalidateFavoritesForUser(user.username)
-      );
+  async removeFavoriteByIdAsync(favoriteId: string, user: User): Promise<void> {
+    await this.favoriteSaveService.removeFavoriteByIdAsync(favoriteId, user);
+    this.invalidateFavoritesForUser(user.username);
   }
 
-  getUserFavoritesAsync(user) {
+  async getUserFavoritesAsync(user: User): Promise<Favorite[]> {
     const userFavorites = this.favoriteCache[user.username];
     if (userFavorites != null) {
-      return Promise.resolve(userFavorites);
+      return userFavorites;
     } else {
-      return this.favoriteSaveService
-        .getSortedFavoritesAsync(user)
-        .then(userFavorites => {
-          this.favoriteCache[user.username] = userFavorites;
-          return userFavorites;
-        });
+      const userFavorites = await this.favoriteSaveService.getSortedFavoritesAsync(user);
+      this.favoriteCache[user.username] = userFavorites;
+      return userFavorites;
     }
   }
 
-  invalidateFavoritesForUser(username) {
+  private invalidateFavoritesForUser(username: string) {
     this.favoriteCache[username] = null;
   }
 }

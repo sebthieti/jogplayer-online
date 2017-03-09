@@ -38,6 +38,7 @@
     "playlist-parser": "0.0.12",
     "rwlock": "^5.0.0",
     "serve-static": "^1.11.2",
+    "typescript": "^2.2.1",
     "validator": "^4.9.0",
     "vash": "^0.11.3",
     "wmic": "0.0.7"

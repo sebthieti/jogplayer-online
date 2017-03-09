@@ -2,83 +2,96 @@ import * as path from 'path';
 import MediaHelper from '../utils/mediaHelper';
 import MediumSummary, {IMediumSummary} from '../entities/mediumSummary';
 import {IMediaService} from '../services/media.service';
-import {IMediaModel} from '../models/media.model';
+import {IMediumModel} from '../models/medium.model';
+import {User} from '../models/user.model';
+import Medium from '../entities/medium';
 
 export interface IMediaBuilder {
-  toMediaAsync(mediaSummaries, playlistId, issuer);
-  toMediumAsync(mediaSummary, playlistId, issuer);
-  buildMediumAsync(playlistId, filePath, index, issuer);
-  buildMediumSummary(filePath, title, index, duration);
+  toMediaAsync(mediaSummaries: IMediumSummary[], playlistId: string, issuer: User): Promise<IMediumModel[]>;
+  toMediumAsync(mediaSummary: IMediumSummary, playlistId: string, issuer: User): Promise<IMediumModel>;
+  buildMediumAsync(playlistId: string, filePath: string, index: number, issuer: User): Promise<IMediumModel>;
+  buildMediumSummary(
+    filePath: string,
+    title: string,
+    index: number,
+    duration: number
+  ): IMediumSummary;
 }
 
 export default class MediaBuilder implements IMediaBuilder {
-  private Media: IMediaModel;
+  private Media: IMediumModel;
 
   constructor(
     private mediaService: IMediaService,
-    mediaModel: IMediaModel
+    mediaModel: IMediumModel
   ) {
     this.Media = mediaModel;
   }
 
-  toMediaAsync(mediaSummaries, playlistId, issuer) {
+  toMediaAsync(mediaSummaries: IMediumSummary[], playlistId: string, issuer: User): Promise<IMediumModel[]> {
     const mediaPromises = mediaSummaries.map(mediumSummary =>
       this.toMediumAsync(mediumSummary, playlistId, issuer)
     );
     return Promise.all(mediaPromises);
   }
 
-  toMediumAsync(mediaSummary, playlistId, issuer) {
+  toMediumAsync(mediaSummary: IMediumSummary, playlistId: string, issuer: User): Promise<IMediumModel> {
     if (!mediaSummary) {
       throw new Error('MediaBuilder.toMedia error: mediaSummary must be set');
     }
     return this.buildMediumAsync(playlistId, mediaSummary.filePath, mediaSummary.index, issuer);
   }
 
-  buildMediumAsync(playlistId, filePath, index, issuer) {
+  async buildMediumAsync(playlistId: string, filePath: string, index: number, issuer: User): Promise<IMediumModel> {
     if (!filePath) {
       throw new Error('MediaBuilder.buildMedia: filePath not set');
     }
-    var mimeType = MediaHelper.getMimeTypeFromPath(filePath);
-    return this.mediaService
-      .getMediumInfosAsync(filePath)
-      .then(mediumInfo => {
-        var mediumFormat = mediumInfo.detailedInfo.format;
-        return new this.Media({
-          ownerId: issuer.id,
-          _playlistId: playlistId,
-          duration: Math.round(mediumFormat.duration),
-          ext: mediumInfo.fileext,
-          name: mediumInfo.name,
-          index: index,
-          filePath: mediumFormat.filename,
-          checked: true,
-          mimeType: mimeType,
-          isAvailable: true,
-          title: mediumInfo.name, // TODO Should also look for tag's title
-          metadatas: [],
-          bookmarks: []
-        });
-      }, err => { // Can happen when loading a playlist where media are not found
-        var fileext = path.extname(filePath);
-        var name = path.basename(filePath, fileext);
-        return new this.Media({
-          ownerId: issuer.id,
-          _playlistId: playlistId,
-          duration: 0,
-          ext: fileext,
-          name: name,
-          index: index,
-          filePath: filePath,
-          checked: true,
-          mimeType: mimeType,
-          isAvailable: false,
-          title: name
-        });
+    const mimeType = MediaHelper.getMimeTypeFromPath(filePath);
+    try {
+      const mediumInfo = await this.mediaService.getMediumInfosAsync(filePath);
+      const mediumFormat = mediumInfo.detailedInfo.format;
+
+      return new this.Media({
+        ownerId: issuer.id,
+        _playlistId: playlistId,
+        duration: Math.round(mediumFormat.duration),
+        ext: mediumInfo.fileext,
+        name: mediumInfo.name,
+        index: index,
+        filePath: mediumFormat.filename,
+        checked: true,
+        mimeType: mimeType,
+        isAvailable: true,
+        title: mediumInfo.name, // TODO Should also look for tag's title
+        metadatas: [],
+        bookmarks: []
       });
+    } catch (err) { // Can happen when loading a playlist where media are not found
+      const fileext = path.extname(filePath);
+      const name = path.basename(filePath, fileext);
+
+      return new this.Media({
+        ownerId: issuer.id,
+        _playlistId: playlistId,
+        duration: 0,
+        ext: fileext,
+        name: name,
+        index: index,
+        filePath: filePath,
+        checked: true,
+        mimeType: mimeType,
+        isAvailable: false,
+        title: name
+      });
+    }
   }
 
-  buildMediumSummary(filePath, title, index, duration) {
+  buildMediumSummary(
+    filePath: string,
+    title: string,
+    index: number,
+    duration: number
+  ): IMediumSummary {
     if (!filePath) {
       throw new Error('MediaBuilder.buildMediaSummary: filePath not set');
     }

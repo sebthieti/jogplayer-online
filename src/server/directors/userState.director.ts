@@ -1,29 +1,32 @@
 import {IUserStateProxy} from '../proxies/userState.proxy';
+import {User} from '../models/user.model';
+import {IUserStateDto} from '../dto/userState.dto';
+import {UserState} from '../models/userState.model';
 
 export interface IUserStateDirector {
-  getUserStateAsync(issuer);
-  addUserStateAsync(userStateDto, issuer);
-  updateFromUserStateDtoAsync(userStateId, userStateDto, issuer);
-  removeUserStateByIdAsync(userId, currentUser);
+  getUserStateAsync(issuer: User): Promise<UserState>;
+  addUserStateAsync(userStateDto: IUserStateDto, issuer: User): Promise<UserState>;
+  updateFromUserStateDtoAsync(userStateId: string, userStateDto, issuer: User): Promise<UserState>;
+  removeUserStateByIdAsync(userId: string, currentUser: User);
 }
 
 export default class UserStateDirector implements IUserStateDirector {
   constructor(private userStateProxy: IUserStateProxy) {
   }
 
-  getUserStateAsync(issuer) {
+  getUserStateAsync(issuer: User): Promise<UserState> {
     return this.userStateProxy.getUserStateAsync(issuer._id);
   }
 
-  addUserStateAsync(userStateDto, issuer) {
+  addUserStateAsync(userStateDto: IUserStateDto, issuer: User): Promise<UserState> {
     return this.userStateProxy.addUserStateAsync(issuer._id, userStateDto);
   }
 
-  updateFromUserStateDtoAsync(userStateId, userStateDto, issuer) {
+  updateFromUserStateDtoAsync(userStateId: string, userStateDto, issuer: User): Promise<UserState> {
     return this.userStateProxy.updateFromUserStateDtoAsync(userStateId, issuer._id, userStateDto);
   }
 
-  removeUserStateByIdAsync(userId, currentUser) {
+  removeUserStateByIdAsync(userId: string, currentUser: User) {
     //if (currentUser.role !== 'admin') {
     //	throw 'Not authorized no manage users.';
     //}

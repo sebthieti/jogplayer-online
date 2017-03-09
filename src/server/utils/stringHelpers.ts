@@ -1,9 +1,9 @@
 // TODO Use Lodash with reduce instead
-export default function count(pattern) {
+export function count(source: string, pattern: string): number {
   let occurrences = 0;
   let startIndex = 0;
   do {
-    startIndex = this.indexOf(pattern, startIndex);
+    startIndex = source.indexOf(pattern, startIndex);
     if (startIndex < 0) {
       break;
     }

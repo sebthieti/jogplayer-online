@@ -1,6 +1,7 @@
 import Dto from './dto';
+import {IDto} from './dto';
 
-export interface IPlaylistDto {
+export interface IPlaylistDto extends IDto {
   id: string;
   name: string;
   createdOn: string;
@@ -8,6 +9,7 @@ export interface IPlaylistDto {
   index: string;
   filePath: string;
   isAvailable: string;
+  isVirtual: boolean;
   media: any[];
 }
 
@@ -89,7 +91,7 @@ export default class PlaylistDto extends Dto implements IPlaylistDto {
     if ('media' in data) this.media = data.media;
   }
 
-  isVirtual() {
+  get isVirtual(): boolean {
     return !this.filePath || this.filePath == null;
   }
 

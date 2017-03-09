@@ -1,5 +1,7 @@
 import * as hasher from '../utils/hasher';
 import {IUserProxy} from '../proxies/user.proxy';
+import {User} from '../models/user.model';
+import Request = e.Request;
 
 export interface IAuthDirector {
   verifyUser(username, password, next);
@@ -23,23 +25,22 @@ export default class AuthDirector implements IAuthDirector {
    * @param {string} password Password to check for.
    * @param {function} next A callback to be called to received response for check.
    */
-  verifyUser(username, password, next) {
-    this.userProxy
-      .getUserByUsernameWithPermissionsAsync(username)
-      .then(user => {
-        if (user === null) {
-          next(null, false, {message: 'Invalid credentials.'});
-          return;
-        }
-        const hashedPassword = hasher.computeHash(password, user.passwordSalt);
-        if (user.password === hashedPassword) {
-          next(null, user);
-        } else {
-          next(null, false, {message: 'Invalid credentials.'});
-        }
-      }, err => {
-        next(err);
-      });
+  async verifyUser(username: string, password: string, next: (p1: any, p2?: any, p3?: any) => void) {
+    try {
+      const user = await this.userProxy.getUserByUsernameWithPermissionsAsync(username);
+      if (user === null) {
+        next(null, false, {message: 'Invalid credentials.'});
+        return;
+      }
+      const hashedPassword = hasher.computeHash(password, user.passwordSalt);
+      if (user.password === hashedPassword) {
+        next(null, user);
+      } else {
+        next(null, false, {message: 'Invalid credentials.'});
+      }
+    } catch (err) {
+      next(err);
+    }
   }
 
   /**
@@ -51,15 +52,15 @@ export default class AuthDirector implements IAuthDirector {
    *
    * @returns {Promise} A promise returning an user
    */
-  getUserByUsernameAsync(username) {
+  getUserByUsernameAsync(username: string): Promise<User> {
     return this.userProxy.getUserByUsernameWithPermissionsAsync(username);
   }
 
-  serializeUser(user, next) {
+  serializeUser(user: User, next: (p1: any, p2?: any, p3?: any) => void) {
     next(null, user.username);
   }
 
-  deserializeUser(username, next) {
+  deserializeUser(username: string, next: (p1: any, p2?: any, p3?: any) => void) {
     this.getUserByUsernameAsync(username) // TODO Really need of cache to avoid excessive queries
       .then(user => {
         next(null, user);

@@ -31,7 +31,7 @@ userPermissionsSchema.set('toJSON', { virtuals: true });
 // virtuals: false to avoid inserting links to database
 userPermissionsSchema.set('toObject', { virtuals: false });
 userPermissionsSchema.methods.toJSON = function() {
-  var obj = this.toObject();
+  let obj = this.toObject();
   // TODO This id is used only for client side's ui. Client should rather only use its own ids
   //obj.id = obj._id;
   obj.links = this.links;
