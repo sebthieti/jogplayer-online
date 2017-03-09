@@ -1,10 +1,11 @@
 import {IUserDirector} from './user.director';
 import {IConfigService} from '../services/config.service';
 import {IEvents} from '../events/index';
+import {IUserDto} from '../dto/user.dto';
 
 export interface IConfigDirector {
-  setRootUserAsync(rootUserDto);
-  isDbInitializedAsync();
+  setRootUserAsync(rootUserDto: IUserDto): Promise<IUserDto>;
+  isDbInitializedAsync(): Promise<boolean>;
 }
 
 export default class ConfigDirector implements IConfigDirector {
@@ -16,7 +17,7 @@ export default class ConfigDirector implements IConfigDirector {
     this.checkFileConfigExistsAsync();
   }
 
-  setRootUserAsync(rootUserDto) {
+  setRootUserAsync(rootUserDto: IUserDto): Promise<IUserDto> {
     return this.userDirector
       .addRootUserAsync({
         username: rootUserDto.username,
@@ -24,19 +25,16 @@ export default class ConfigDirector implements IConfigDirector {
       });
   }
 
-  isDbInitializedAsync() {
+  isDbInitializedAsync(): Promise<boolean> {
     return this.isRootUserFileConfigExistsAsync();
   }
 
-  private checkFileConfigExistsAsync() {
-    return this.configService
-      .checkFileConfigExistsAsync()
-      .then(exists => {
-        this.events.emitConfigFileIsValid(exists);
-      });
+  private isRootUserFileConfigExistsAsync(): Promise<boolean> {
+    return this.userDirector.isRootUserSetAsync();
   }
 
-  private isRootUserFileConfigExistsAsync() {
-    return this.userDirector.isRootUserSetAsync();
+  private async checkFileConfigExistsAsync() {
+    const exists = await this.configService.checkFileConfigExistsAsync();
+    this.events.emitConfigFileIsValid(exists);
   }
 }
