@@ -3,16 +3,20 @@ import Schema = mongoose.Schema;
 import * as mongooseTypes from 'mongoose-types-ext';
 mongooseTypes(mongoose);
 import routes from '../routes';
+import {MediumDocument} from './medium.model';
 
 export interface Playlist extends mongoose.Document {
+  id: string;
   ownerId: string;
   name: string;
   index: number;
   filePath: string;
-  media: any[];
+  media: MediumDocument[];
   createdOn: Date;
   updatedOn: Date;
   links: string[];
+  isVirtual: boolean;
+  isAvailable: boolean;
   setMedia(media);
   setUpdatedOn(updatedOn);
 }
