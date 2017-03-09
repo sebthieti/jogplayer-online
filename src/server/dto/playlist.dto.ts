@@ -9,6 +9,7 @@ export interface IPlaylistDto extends IDto {
   index: string;
   filePath: string;
   isAvailable: string;
+  isVirtual: boolean;
   media: any[];
 }
 
@@ -90,7 +91,7 @@ export default class PlaylistDto extends Dto implements IPlaylistDto {
     if ('media' in data) this.media = data.media;
   }
 
-  isVirtual() {
+  get isVirtual(): boolean {
     return !this.filePath || this.filePath == null;
   }
 
