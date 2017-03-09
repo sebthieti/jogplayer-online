@@ -9,7 +9,7 @@ export interface IPlaylistsProxy {
   saveNewPlaylist(playlist: Playlist, user: User): Promise<Playlist>;
   getPlaylistsAsync(user: User): Promise<Playlist[]>;
   getPlaylistIdIndexesAsync(user: User): { _id: string, index: number }[];
-  getPlaylistIdsLowerThanAsync(desiredIndex: number, includeSelf: boolean, issuer: User): Promise<number[]>;
+  getPlaylistIdsLowerThanAsync(desiredIndex: number, includeSelf: boolean, issuer: User): Promise<string[]>;
   playlistsPositionChangeByUserId(userId: string);
   removePlaylistByIdAsync(playlistId: string, issuer: User): Promise<void>;
 }
@@ -87,7 +87,7 @@ export default class PlaylistsProxy implements IPlaylistsProxy {
     desiredIndex: number,
     includeSelf: boolean,
     issuer: User
-  ): Promise<number[]> {
+  ): Promise<string[]> {
     const compositeKey = {
       index: desiredIndex,
       includeSelf: includeSelf,
