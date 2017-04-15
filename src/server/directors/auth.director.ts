@@ -1,24 +1,22 @@
-import * as hasher from '../utils/hasher';
-import {IUserProxy} from '../proxies/user.proxy';
-import {User} from '../models/user.model';
-import Request = e.Request;
+import {IUserModel} from '../models/user.model';
+import {IUserDirector} from './user.director';
 
 export interface IAuthDirector {
-  verifyUser(username, password, next);
-  getUserByUsernameAsync(username);
-  serializeUser(user, next);
-  deserializeUser(username, next);
+  verifyUser(username: string, password: string, next: (p1: any, p2?: any, p3?: any) => void);
+  getUserByUsernameAsync(username: string): Promise<IUserModel>;
+  serializeUser(user: IUserModel, next: (p1: any, p2?: any, p3?: any) => void);
+  deserializeUser(username: string, next: (p1: any, p2?: any, p3?: any) => void);
   ensureApiAuthenticated(req, res, next);
 }
 
 export default class AuthDirector implements IAuthDirector {
-  constructor(private userProxy: IUserProxy) {
+  constructor(private userDirector: IUserDirector) {
   }
 
   /**
    * @description
    *
-   * Verify user credentials with given username and password. Provide a callback to retrieve response.
+   * Verify user credentials with given username and hashedPassword. Provide a callback to retrieve response.
    * Response: (null, user|false, { message })
    *
    * @param {string} username User name to check for.
@@ -27,13 +25,12 @@ export default class AuthDirector implements IAuthDirector {
    */
   async verifyUser(username: string, password: string, next: (p1: any, p2?: any, p3?: any) => void) {
     try {
-      const user = await this.userProxy.getUserByUsernameWithPermissionsAsync(username);
+      const user = await this.userDirector.getUserByUsernameAsync(username);
       if (user === null) {
         next(null, false, {message: 'Invalid credentials.'});
         return;
       }
-      const hashedPassword = hasher.computeHash(password, user.passwordSalt);
-      if (user.password === hashedPassword) {
+      if (user.doesPasswordMatchWith(password)) {
         next(null, user);
       } else {
         next(null, false, {message: 'Invalid credentials.'});
@@ -42,6 +39,19 @@ export default class AuthDirector implements IAuthDirector {
       next(err);
     }
   }
+
+  serializeUser(user: IUserModel, next: (p1: any, p2?: any, p3?: any) => void) {
+    next(null, user.username);
+  }
+
+  async deserializeUser(username: string, next: (p1: any, p2?: any, p3?: any) => void) {
+    try {
+      const user = await this.getUserByUsernameAsync(username);
+      next(null, user);
+    } catch (err) {
+      next(err, false, {message: err});
+    }
+  };
 
   /**
    * @description
@@ -52,22 +62,9 @@ export default class AuthDirector implements IAuthDirector {
    *
    * @returns {Promise} A promise returning an user
    */
-  getUserByUsernameAsync(username: string): Promise<User> {
-    return this.userProxy.getUserByUsernameWithPermissionsAsync(username);
+  getUserByUsernameAsync(username: string): Promise<IUserModel> {
+    return this.userDirector.getUserByUsernameAsync(username);
   }
-
-  serializeUser(user: User, next: (p1: any, p2?: any, p3?: any) => void) {
-    next(null, user.username);
-  }
-
-  deserializeUser(username: string, next: (p1: any, p2?: any, p3?: any) => void) {
-    this.getUserByUsernameAsync(username) // TODO Really need of cache to avoid excessive queries
-      .then(user => {
-        next(null, user);
-      }, err => {
-        next(err, false, {message: err});
-      });
-  };
 
   ensureApiAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
