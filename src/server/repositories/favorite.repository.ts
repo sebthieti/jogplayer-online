@@ -1,73 +1,85 @@
-import {IFavoriteModel, Favorite} from '../models/favorite.model';
-import {User} from '../models/user.model';
-import {IFavoriteDto, default as FavoriteDto} from '../dto/favorite.dto';
+import {IMongoDbContext} from './mongoDb.context';
+import {Favorite} from '../entities/favorite';
+import {ObjectID} from 'mongodb';
+import {isNumber} from 'util';
 
 export interface IFavoriteRepository {
-  getSortedFavoritesAsync(issuer: User): Promise<Favorite[]>;
-  addFavoriteAsync(favorite: FavoriteDto, issuer: User): Promise<Favorite>;
-  updateFromFavoriteDtoAsync(favoriteId: string, favoriteDto: IFavoriteDto, issuer: User): Promise<Favorite>;
-  removeFavoriteByIdAsync(favoriteId: string, issuer: User): Promise<void>;
+  getAsync(issuerId: ObjectID): Promise<Favorite[]>;
+  addAsync(favorite: Favorite, issuerId: ObjectID): Promise<Favorite>;
+  updateAsync(favoriteIndex: number, favorite: Favorite, issuerId: ObjectID): Promise<Favorite>;
+  removeByIdAsync(favoriteIndex: number, issuerId: ObjectID): Promise<number>;
 }
 
 export default class FavoriteRepository implements IFavoriteRepository {
-  private Favorites: IFavoriteModel;
-
-  constructor(favoriteModel: IFavoriteModel) {
-    this.Favorites = favoriteModel;
+  constructor(private dbContext: IMongoDbContext) {
   }
 
-  getSortedFavoritesAsync(issuer: User): Promise<Favorite[]> {
-    return this.Favorites
-        .find({ ownerId: issuer.id })
-        .sort('index')
-        .exec();
+  getAsync(issuerId: ObjectID): Promise<Favorite[]> {
+    return this.dbContext.users
+      .find({ _id: issuerId }, { fields: 'favorites'})
+      .toArray();
   }
 
-  async addFavoriteAsync(favorite: FavoriteDto, issuer: User): Promise<Favorite> {
-    if (!favorite || !issuer || favorite._id) {
-      if (!favorite) {
-        throw new Error('FavoriteSaveService.addFavoriteAsync: favorite must be set');
-      } else if (!issuer) {
-        throw new Error('FavoriteSaveService.addFavoriteAsync: issuer must be set');
-      } else {
-        throw new Error('FavoriteSaveService.addFavoriteAsync: favorite.Id should not be set');
-      }
+  async addAsync(favorite: Favorite, issuerId: ObjectID): Promise<Favorite> {
+    if (!favorite) {
+      throw new Error('favorite must be set');
+    }
+    if (!issuerId) {
+      throw new Error('issuer must be set');
     }
 
-    let favFields = favorite.getDefinedFields();
-    favFields.ownerId = issuer.id;
-
-    return await this.Favorites.create(favFields);
-  }
-
-  async updateFromFavoriteDtoAsync(
-    favoriteId: string,
-    favoriteDto: IFavoriteDto,
-    issuer: User
-  ): Promise<Favorite> {
-    if (!favoriteDto || !favoriteId) {
-      if (!favoriteDto) {
-        throw new Error('FavoriteSaveService.updateFromFavoriteDtoAsync: favorite must be set');
-      } else {
-        throw new Error('FavoriteSaveService.updateFromFavoriteDtoAsync: favorite.Id should be set');
-      }
-    }
-
-    return await this.Favorites
+    const result = await this.dbContext
+      .users
       .findOneAndUpdate(
-        {_id: favoriteId, ownerId: issuer.id},
-        favoriteDto.getDefinedFields(),
-        {'new': true} // Return modified doc.
+        { _id: issuerId },
+        { $push: { favorites: favorite }},
+        { projection: { favorites: 1 }}
       );
+
+    const favorites = result.value.favorites as Favorite[];
+    return favorites[favorites.length - 1];
   }
 
-  async removeFavoriteByIdAsync(favoriteId: string, issuer: User): Promise<void> {
-    if (!favoriteId) {
-      throw new Error('FavoriteSaveService.removeFavoriteByIdAsync: favoriteId must be set');
+  async updateAsync(favoriteIndex: number, favorite: Favorite, issuerId: ObjectID): Promise<Favorite> {
+    if (!isNumber(favoriteIndex)) {
+      throw new Error('favorite index must be a number');
+    }
+    if (!favorite) {
+      throw new Error('favorite must be set');
+    }
+    if (!issuerId) {
+      throw new Error('issuer must be set');
     }
 
-    await this.Favorites
-      .findOneAndRemove({ _id: favoriteId, ownerId: issuer.id })
-      .exec();
+    let updateDbReq = { $set: {} };
+    updateDbReq.$set[`favorites.${favoriteIndex}`] = favorite;
+
+    const result = await this.dbContext
+      .users
+      .findOneAndUpdate(
+        { _id: issuerId },
+        updateDbReq,
+        { projection: { favorites: 1 }, returnOriginal: false }
+      );
+
+    const favorites = result.value.favorites as Favorite[];
+    return favorites[favoriteIndex];
+  }
+
+  async removeByIdAsync(favoriteIndex: number, issuerId: ObjectID): Promise<number> {
+    const updateDbReq = { $unset: {} };
+    updateDbReq.$unset[`favorites.${favoriteIndex}`] = 1;
+
+    await this.dbContext.users.update(
+      { _id: issuerId },
+      updateDbReq
+    );
+
+    await this.dbContext.users.update(
+      { _id: issuerId },
+      {$pull : { favorites : null }}
+    );
+
+    return 1;
   }
 }

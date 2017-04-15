@@ -1,153 +1,82 @@
-import * as _ from 'lodash';
-import {IUserModel, User} from '../models/user.model';
-import {IRepository} from './repository';
-import UserDto, {IUserDto} from '../dto/user.dto';
-import {UserPermissions} from '../models/userPermissions.model';
+import {IMongoDbContext} from './mongoDb.context';
+import {User} from '../entities/user';
+import {ObjectID} from 'mongodb';
 
 export interface IUserRepository {
   isRootUserSetAsync(): Promise<boolean>;
   getUsersAsync(): Promise<User[]>;
-  getUserByIdWithPermissionsAsync(userId: string): Promise<User>;
-  getUserByUsernameWithPermissionsAsync(username: string): Promise<User>;
-  addRootUserAsync(
-    userDto: IUserDto,
-    userPermissionsModel: UserPermissions[]
-  ): Promise<User>;
-  addUserAsync(
-    userDto: IUserDto,
-    userPermissionsModel: UserPermissions[],
-    issuer: User
-  ): Promise<User>;
-  addUserPermissionsAsync(
-    userId: string,
-    permissionsArray: UserPermissions[],
-    issuer: User
-  ): Promise<UserPermissions[]>;
-  updateFromUserDtoAsync (userId: string, userDto: UserDto, issuer: User): Promise<User>;
-  removeUserByIdAsync (userId: string, issuer: User): Promise<void>;
+  getUserByIdAsync(userId: ObjectID): Promise<User>;
+  getUserByUsernameAsync(username: string): Promise<User>;
+  addUserAsync(user: User): Promise<User>;
+  updateUserAsync(userId: ObjectID, user: User): Promise<User>;
+  removeUserByIdAsync(userId: ObjectID): Promise<void>;
 }
 
 export default class UserRepository implements IUserRepository {
-  private User: IUserModel;
-
-  constructor(private saveService: IRepository, userModel: IUserModel) {
-    this.User = userModel;
+  constructor(private dbContext: IMongoDbContext) {
   }
 
   async isRootUserSetAsync(): Promise<boolean> {
-    const allUsers = await <Promise<User[]>>this.User
-      .find({})
-      .populate('permissions')
-      .exec();
-
-    return _.some(allUsers
-      .map(user => user.permissions)
-      .filter(permissions => permissions.isRoot === true)
+    const user: User = await this.dbContext.users.findOne(
+      { 'permissions.isRoot': true },
+      { fields: { 'permissions.isRoot': 1 } }
     );
+    return user && user.permissions.isRoot;
   }
 
-  async getUsersAsync(): Promise<User[]> { // TODO getUsersWithPermissionsAsync
-    return await this.User
-      .find({})
-      .populate('permissions')
-      .exec();
+  getUsersAsync(): Promise<User[]> {
+    return this.dbContext.users
+      .find({}, {
+        isActive: 1,
+        isRoot: 1,
+        username: 1,
+        hashedPassword: 1,
+        passwordSalt: 1,
+        fullName: 1,
+        role: 1,
+        email: 1
+      })
+      .toArray();
   }
 
-  async getUserByIdWithPermissionsAsync(userId: string): Promise<User> {
-    return await this.User
-      .findOne({ _id: userId})
-      .populate('permissions')
-      .exec();
+  getUserByIdAsync(userId: ObjectID): Promise<User> {
+    return this.dbContext.users
+      .findOne({ _id: userId });
   }
 
-  async getUserByUsernameWithPermissionsAsync(username: string): Promise<User> {
-    return await this.User
-      .findOne({ username: username})
-      .populate('permissions')
-      .exec();
+  getUserByUsernameAsync(username: string): Promise<User> {
+    return this.dbContext.users
+      .findOne({ username: username });
   }
 
-  async addRootUserAsync(
-    userDto: IUserDto,
-    userPermissionsModel: UserPermissions[]
-  ): Promise<User> {
-    if (!userDto) {
-      throw new Error('SetupSaveService.addUserAsync: favorite must be set');
-    }
-    if (userDto.id) {
-      throw new Error('SetupSaveService.addUserAsync: user.Id should not be set');
-    }
-
-    // delete userDto.permissions;
-    userDto.permissions = null;
-    // var userFields = userDto.getDefinedFields();
-
-    let newUser = await <Promise<User>>this.User.create(userDto);
-    newUser.permissions = userPermissionsModel;
-    return await newUser.save();
-  }
-
-  async addUserAsync(
-    userDto: IUserDto,
-    userPermissions: UserPermissions[],
-    issuer: User
-  ): Promise<User> {
-    if (!userDto) {
-      throw new Error('SetupSaveService.addUserAsync: favorite must be set');
-    }
-    if (!issuer) {
-      throw new Error('SetupSaveService.addUserAsync: issuer must be set');
-    }
-    if (userDto.id) {
-      throw new Error('SetupSaveService.addUserAsync: user.Id should not be set');
+  async addUserAsync(user: User): Promise<User> {
+    if (!user) {
+      throw new Error('user must be set');
     }
 
-    //delete userDto.permissions;
-    userDto.permissions = null;
-    const userFields = userDto.getDefinedFields();
-
-    let newUser = await this.User.create(userFields);
-
-    newUser.permissions = userPermissions;
-    return await newUser.save();
+    const result = await this.dbContext.users.insertOne(user);
+    return result.ops[0] as User;
   }
 
-  async addUserPermissionsAsync(
-    userId: string,
-    permissionsArray: UserPermissions[],
-    issuer: User
-  ): Promise<UserPermissions[]> {
-    let user = await this.User
-      .findOne({_id: userId}) // , ownerId: issuer.id
-      .populate({path: 'permissions', select: '_id'})
-      .exec();
-
-    user.permissions = user.permissions.concat(permissionsArray);
-    await user.save();
-
-    return permissionsArray;
-  }
-
-  async updateFromUserDtoAsync(userId: string, userDto: UserDto, issuer: User): Promise<User> {
-    if (!userDto) {
-      throw new Error('SetupSaveService.updateFromUserDtoAsync: user must be set');
+  async updateUserAsync(userId: ObjectID, user: User): Promise<User> {
+    if (!user) {
+      throw new Error('user must be set');
     }
+
+    const updatedUser = await this.dbContext.users.findOneAndUpdate(
+      { _id: user._id },
+      user,
+      { returnOriginal: false }
+    );
+
+    return updatedUser.value as User;
+  }
+
+  async removeUserByIdAsync(userId: ObjectID): Promise<void> {
     if (!userId) {
-      throw new Error('SetupSaveService.updateFromUserDtoAsync: user.Id should be set');
+      throw new Error('userId must be set');
     }
 
-    return await this.User.findOneAndUpdate(
-      { _id: userId }, // , ownerId: issuer.id
-      userDto.getDefinedFields(),
-      { 'new': true }
-    ); // Return modified doc.
-  }
-
-  async removeUserByIdAsync(userId: string, issuer: User): Promise<void> {
-    if (!userId) {
-      throw new Error('SetupSaveService.removeUserByIdAsync: userId must be set');
-    }
-
-    await this.User.findOneAndRemove({ _id: userId });
+    await this.dbContext.users.findOneAndDelete({ _id: userId });
   }
 }

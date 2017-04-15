@@ -31,7 +31,7 @@ export default class Repository implements IRepository {
     process.on('uncaughtException', err => this.exitHandler({exit: true}, err));
 
     this.ensureDbFolderExists()
-      .then(this.ensureLogFolderExists)
+      .then(() => this.ensureLogFolderExists.bind(this))
       .then(() => {
         this.startDbService();
         this.listenToConfigReadyAndInit();
@@ -80,24 +80,20 @@ export default class Repository implements IRepository {
     this.exitHandler({ cleanup: true }, null);
   }
 
-  private ensureDbFolderExists(): Promise<void> {
-    const dbPath = path.join(process.cwd(), './db/db/');
-    return checkFileExistsAsync(dbPath)
-      .then(folderExists => {
-        if (!folderExists) {
-          return nfcall(fs.mkdir, dbPath);
-        }
-      });
+  private async ensureDbFolderExists(): Promise<void> {
+    return this.ensureDirectoryExists('./db/db/');
   }
 
   private ensureLogFolderExists(): Promise<void> {
-    const dbPath = path.join(process.cwd(), './db/log/');
-    return checkFileExistsAsync(dbPath)
-      .then(folderExists => {
-        if (!folderExists) {
-          return nfcall(fs.mkdir, dbPath);
-        }
-      });
+    return this.ensureDirectoryExists('./db/log/');
+  }
+
+  private async ensureDirectoryExists(dirPath: string): Promise<void> {
+    const dbPath = path.join(process.cwd(), dirPath);
+    const folderExists = await checkFileExistsAsync(dbPath);
+    if (!folderExists) {
+      await nfcall(fs.mkdir, dbPath);
+    }
   }
 
   private getMongodExecRelativePath(): string {

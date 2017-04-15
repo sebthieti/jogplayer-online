@@ -1,95 +1,45 @@
-import * as ReadWriteLock from 'rwlock';
-import {IMediumModel, MediumDocument} from '../models/medium.model';
-import {User} from '../models/user.model';
-const lock = new ReadWriteLock();
+import {Medium} from '../entities/medium';
+import {IMongoDbContext} from './mongoDb.context';
+import {ObjectID} from 'mongodb';
 
 export interface IMediaRepository {
-  getMediaByIdAsync(mediaId: string, issuer: User): Promise<MediumDocument>;
-  getMediumByIdAndPlaylistIdAsync(
-    playlistId: string,
-    mediumId: string,
-    issuer: User
-  ): Promise<MediumDocument>;
-  findIndexFromMediaIdsAsync(mediaId: string, issuer: User): Promise<number>;
-  updateMediaIndexByIdsAsync(
-    mediaIdIndexesToOffset: {_id: string, index: number}[],
-    issuer: User
-  ): Promise<void>;
-  updateMediaIndexByIdAsync(mediaId: string, newIndex: number, issuer: User): Promise<MediumDocument>;
-  removeMediaAsync(medium: MediumDocument[], issuer: User): Promise<MediumDocument[]>;
-  removeMediumAsync(medium: MediumDocument, issuer: User): Promise<MediumDocument>;
-  removeMediumByIdAsync(mediumId: string): Promise<MediumDocument>;
+  getMediumByIdAsync(mediumId: ObjectID): Promise<Medium>;
+  addMediumAsync(medium: Medium): Promise<Medium>;
+  updateMediumByIdAsync(mediumId: ObjectID, medium: Medium): Promise<Medium>;
+  removeMediaAsync(mediumId: ObjectID[]): Promise<void>;
+  removeMediumAsync(mediumId: ObjectID): Promise<void>;
+  removeMediumByIdAsync(mediumId: ObjectID): Promise<void>;
 }
 
 export default class MediaRepository implements IMediaRepository {
-  private Media: IMediumModel;
-
-  constructor(mediaModel: IMediumModel) {
-    this.Media = mediaModel;
+  constructor(private dbContext: IMongoDbContext) {
   }
 
-  async getMediaByIdAsync(mediaId: string, issuer: User): Promise<MediumDocument> {
-    return await this.Media.findOne({ _id: mediaId, ownerId: issuer.id });
+  getMediumByIdAsync(mediumId: ObjectID): Promise<Medium> {
+    return this.dbContext.media.findOne({ _id: mediumId });
   }
 
-  async getMediumByIdAndPlaylistIdAsync(
-    playlistId: string,
-    mediumId: string,
-    issuer: User
-  ): Promise<MediumDocument> {
-    return await this.Media.findOne({
-      _id: mediumId,
-      _playlistId: playlistId,
-      ownerId: issuer.id
-    });
+  async addMediumAsync(medium: Medium): Promise<Medium> {
+    const result = await this.dbContext.media.insertOne(medium);
+    return result.ops[0] as Medium;
   }
 
-  async findIndexFromMediaIdsAsync(mediaId: string, issuer: User): Promise<number> {
-    const medium = await this.Media
-      .findOne({ _id: mediaId, ownerId: issuer.id })
-      .select('index')
-      .exec();
-
-    return medium.index;
-  }
-
-  async updateMediaIndexByIdsAsync(
-    mediaIdIndexesToOffset: {_id: string, index: number}[],
-    issuer: User
-  ): Promise<void> {
-    const uow = async release => {
-      const updateMediaIdIndexPromises = mediaIdIndexesToOffset.map(value =>
-        this.updateMediaIndexByIdAsync(value._id, value.index, issuer)
-      );
-      await Promise.all(updateMediaIdIndexPromises);
-      release();
-    };
-
-    if (lock.writeLock(uow)) {
-    }
-  }
-
-  async updateMediaIndexByIdAsync(mediaId: string, newIndex: number, issuer: User): Promise<MediumDocument> {
-    const medium = await this.Media
-      .findOne({_id: mediaId, ownerId: issuer.id})
-      .select('index');
-
-    medium.index = newIndex;
-    return await medium.save();
-  }
-
-  removeMediaAsync(medium: MediumDocument[], issuer: User): Promise<MediumDocument[]> {
-    const removeMediumPromises = medium.map(medium =>
-      this.removeMediumAsync(medium, issuer)
+  updateMediumByIdAsync(mediumId: ObjectID, medium: Medium): Promise<Medium> {
+    return this.dbContext.media.findOneAndUpdate(
+      { _id: mediumId },
+      medium
     );
-    return Promise.all(removeMediumPromises);
   }
 
-  async removeMediumAsync(medium: MediumDocument, issuer: User): Promise<MediumDocument> {
-    return await medium.remove();
+  async removeMediaAsync(mediumId: ObjectID[]): Promise<void> {
+    await this.dbContext.media.deleteMany({ _id: mediumId });
+  }
+
+  async removeMediumAsync(mediumId: ObjectID): Promise<void> {
+    await this.dbContext.media.deleteOne({_id: mediumId});
   };
 
-   async removeMediumByIdAsync(mediumId: string): Promise<MediumDocument> { // TODO All remove method shall not return updated entity
-    return await this.Media.findOneAndRemove({ _id: mediumId });
+   async removeMediumByIdAsync(mediumId: ObjectID): Promise<void> { // TODO All remove method shall not return updated entity
+     await this.dbContext.media.deleteOne({ _id: mediumId });
   }
 }
