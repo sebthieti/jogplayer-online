@@ -1,10 +1,10 @@
-export interface IFFMpegMediumDetail {
-  streams: IFFMpegMediumStreamInfo[];
-  format: IFFMpegMediumFormat;
-  chapters: IFFMpegMediumChapter[];
+export interface FFMpegMediumDetail {
+  streams: FFMpegMediumStreamInfo[];
+  format: FFMpegMediumFormat;
+  chapters: FFMpegMediumChapter[];
 }
 
-export interface IFFMpegMediumStreamInfo {
+export interface FFMpegMediumStreamInfo {
   index: number;
   codec_name: string;
   codec_long_name: string;
@@ -30,10 +30,10 @@ export interface IFFMpegMediumStreamInfo {
   nb_frames: string;
   nb_read_frames: string;
   nb_read_packets: string;
-  disposition: IFFMpegMediumStreamDisposition;
+  disposition: FFMpegMediumStreamDisposition;
 }
 
-export interface IFFMpegMediumStreamDisposition {
+export interface FFMpegMediumStreamDisposition {
   default: number;
   dub: number;
   original: number;
@@ -47,23 +47,23 @@ export interface IFFMpegMediumStreamDisposition {
   attached_pic: number;
 }
 
-export interface IFFMpegMediumFormat {
+export interface FFMpegMediumFormat {
   filename: string;
-  nb_streams: 1;
-  nb_programs: 0;
+  nb_streams: number;
+  nb_programs: number;
   format_name: string;
   format_long_name: string;
-  start_time: 0.011995;
-  duration: 188.447347;
-  size: 7539222;
-  bit_rate: 320056;
-  probe_score: 51;
-  tags: IFFMpegMediumTags;
+  start_time: number;
+  duration: number;
+  size: number;
+  bit_rate: number;
+  probe_score: number;
+  tags: FFMpegMediumTags;
 }
 
-export interface IFFMpegMediumTags {
-  date: 2004;
-  track: 1;
+export interface FFMpegMediumTags {
+  date: number;
+  track: number;
   artist: string;
   composer: string;
   Engineer: string;
@@ -75,23 +75,11 @@ export interface IFFMpegMediumTags {
   encoder: string;
 }
 
-export interface IFFMpegMediumChapter {
+export interface FFMpegMediumChapter {
 }
 
-export interface IMediumInfo {
+export interface MediumInfo {
   name: string;
   fileext: string;
-  detailedInfo: IFFMpegMediumDetail;
-}
-
-export default class MediumInfo implements IMediumInfo {
-  name: string;
-  fileext: string;
-  detailedInfo: IFFMpegMediumDetail;
-
-  constructor(entity: IMediumInfo) {
-    this.name = entity.name;
-    this.fileext = entity.fileext;
-    this.detailedInfo = entity.detailedInfo;
-  }
+  detailedInfo: FFMpegMediumDetail;
 }
