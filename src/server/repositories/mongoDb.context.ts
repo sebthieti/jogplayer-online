@@ -1,8 +1,12 @@
-import * as util from 'util';
+import * as jsonfile from 'jsonfile';
 import {MongoClient, Db, Collection} from 'mongodb';
 import {EventEmitter} from 'events';
-import {IEvents} from '../events/index';
-import {IDbConfig} from '../services/config.service';
+import {nfcall} from '../utils/promiseHelpers';
+import * as path from 'path';
+
+interface IDbConfig {
+  connection: string;
+}
 
 export interface IMongoDbContext extends EventEmitter {
   users: Collection;
@@ -14,26 +18,22 @@ export class MongoDbContext extends EventEmitter implements IMongoDbContext {
   media: Collection;
   private db: Db;
 
-  constructor(events: IEvents) {
+  constructor() {
     super();
 
-    process.once('exit', this.disconnect.bind(this));
-    process.once('SIGINT', this.disconnect.bind(this));
+    process.once('exit', () => this.disconnect.bind(this));
+    process.once('SIGINT', () => this.disconnect.bind(this));
 
-    // TODO Will die, as the app shouldn't bootstrap db, and Config should be injected
-    events.onConfigReady(config => this.connectAndSetContext(config));
+    this.connectAndSetContext();
   }
 
-  private async connectAndSetContext(config: {DbConnection: IDbConfig}) {
-    const dbConnection = config.DbConnection;
-    const dbConnectionString = util.format(
-      'mongodb://%s:%d/%s',
-      dbConnection.host,
-      dbConnection.port,
-      dbConnection.dbName
+  private async connectAndSetContext(): Promise<void> {
+    const dbConfig = await nfcall<IDbConfig>(
+      jsonfile.readFile,
+      path.join(process.cwd(), 'config/dbConfig.json')
     );
 
-    this.db = await MongoClient.connect(dbConnectionString);
+    this.db = await MongoClient.connect(dbConfig.connection);
     this.setContextAndNotify(this.db);
   }
 
