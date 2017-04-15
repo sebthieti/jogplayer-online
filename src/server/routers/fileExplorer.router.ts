@@ -17,27 +17,29 @@ export default class FileExplorerRouter implements IRouter {
     });
 
     // Explore directory path TODO Use constants for url instead
-    this.app.get(/^\/api\/explore\/(.*[\/])*$/, this.authDirector.ensureApiAuthenticated, (req, res) => {
-      this.fileExplorerDirector
-        .getFolderContentAsync(this.extractUrlFromParams(req.params), req.user)
-        .then(fileDetails => {
-          res.send(fileDetails);
-        })
-        .catch(err => {
-          res.status(400).send(err);
-        });
+    this.app.get(/^\/api\/explore\/(.*[\/])*$/, this.authDirector.ensureApiAuthenticated, async (req, res) => {
+      try {
+        const fileDetails = await this.fileExplorerDirector.getFolderContentAsync(
+          this.extractUrlFromParams(req.params),
+          req.user
+        );
+        res.send(fileDetails);
+      } catch (err) {
+        res.status(400).send(err);
+      }
     });
 
     // Get file info by path
-    this.app.get(/^\/api\/explore\/(.*[\/].*)*$/, this.authDirector.ensureApiAuthenticated, (req, res) => {
-      this.fileExplorerDirector
-        .getFileInfoAsync(this.extractUrlFromParams(req.params), req.user)
-        .then(fileDetails => {
-          res.send(fileDetails);
-        })
-        .catch(err => {
-          res.status(400).send(err);
-        });
+    this.app.get(/^\/api\/explore\/(.*[\/].*)*$/, this.authDirector.ensureApiAuthenticated, async (req, res) => {
+      try {
+        const fileDetails = await this.fileExplorerDirector.getFileInfoAsync(
+          this.extractUrlFromParams(req.params),
+          req.user
+        );
+        res.send(fileDetails);
+      } catch (err) {
+        res.status(400).send(err);
+      }
     });
   }
 

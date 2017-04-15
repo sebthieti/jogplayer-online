@@ -18,13 +18,14 @@ import {IRouter} from './router';
 import PlaylistRouter from './playlist.router';
 import FileExplorerRouter from './fileExplorer.router';
 import FavoriteRouter from './favorite.router';
-import StateRouter from './state.router';
 import AuthRouter from './auth.router';
 import UserRouter from './user.router';
 import UserStateRouter from './userState.router';
 import HomeRouter from './home.router';
-import PlayMediaRouter from './playMedia.router';
+import MediaRouter from './media.router';
 import SetupRouter from './setup.router';
+import {IUserPermissionsDirector} from '../directors/userPermissions.director';
+import {IUserModel} from '../models/user.model';
 
 /**
  * @description
@@ -34,11 +35,11 @@ import SetupRouter from './setup.router';
  * @param {object} app The application object..
  */
 export default function register(container: any, app: express.Application) {
-  container.register('playMediaRouter', (
+  container.register('mediaRouter', (
     authDirector: IAuthDirector,
     mediaDirector: IMediaDirector,
     mediaStreamer: IMediaStreamer
-  ): IRouter => new PlayMediaRouter(
+  ): IRouter => new MediaRouter(
     app,
     authDirector,
     mediaDirector,
@@ -70,12 +71,6 @@ export default function register(container: any, app: express.Application) {
     authDirector,
     favoriteDirector
   ));
-  container.register('stateRouter', (
-    authDirector: IAuthDirector
-  ): IRouter => new StateRouter(
-    app,
-    authDirector
-  ));
   container.register('authRouter', (
     authDirector: IAuthDirector
   ): IRouter => new AuthRouter(
@@ -84,11 +79,13 @@ export default function register(container: any, app: express.Application) {
   ));
   container.register('userRouter', (
     authDirector: IAuthDirector,
-    userDirector: IUserDirector
+    userDirector: IUserDirector,
+    permissionsDirector: IUserPermissionsDirector
   ): IRouter => new UserRouter(
     app,
     authDirector,
-    userDirector
+    userDirector,
+    permissionsDirector
   ));
   container.register('userStateRouter', (
     authDirector: IAuthDirector,
@@ -105,10 +102,10 @@ export default function register(container: any, app: express.Application) {
     configDirector
   ));
   container.register('setupRouter', (
-    configDirector: IConfigDirector
+    userDirector: IUserDirector
   ): IRouter => new SetupRouter(
     app,
-    configDirector
+    userDirector
   ));
 }
 
@@ -116,10 +113,10 @@ export function postRegisterAuthenticationStack(container: any, app: express.App
   // Must be executed before any http request
   container.resolve((authDirector: IAuthDirector) => {
     passport.use(new LocalStategy(authDirector.verifyUser.bind(authDirector)));
-    passport.serializeUser((user, next) => {
+    passport.serializeUser((user: IUserModel, next) => {
       authDirector.serializeUser(user, next);
     });
-    passport.deserializeUser((username, next) => {
+    passport.deserializeUser((username: string, next) => {
       authDirector.deserializeUser(username, next);
     });
 

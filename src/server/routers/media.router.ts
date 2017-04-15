@@ -4,29 +4,29 @@ import {IRouter} from './router';
 import {IAuthDirector} from '../directors/auth.director';
 import {IMediaDirector} from '../directors/media.director';
 import {IMediaStreamer} from '../stream/mediaStreamer';
+import MediumValidator from '../validators/medium.validator';
 
-export default class PlayMediaRouter implements IRouter {
+export default class MediaRouter implements IRouter {
   constructor(
     private app: express.Application,
     private authDirector: IAuthDirector,
     private mediaDirector: IMediaDirector,
     private mediaStreamer: IMediaStreamer
-  ) {
-  }
+  ) {}
 
   bootstrap() {
-    this.app.get(routes.media.selfPath, this.authDirector.ensureApiAuthenticated, (req, res) => {
-      Promise
-        .resolve(this.assertAndGetPlaylistIdsAndMediumId(req.params))
-        .then(reqSet => {
-          return this.mediaDirector.getMediumByIdAndPlaylistIdAsync(reqSet.playlistId, reqSet.mediumId, req.user);
-        })
-        .then(data => {
-          res.status(200).send(data);
-        })
-        .catch(err => {
-          res.status(400).send(err);
-        });
+    this.app.get(routes.media.selfPath, this.authDirector.ensureApiAuthenticated, async (req, res) => {
+      try {
+        const reqSet = MediumValidator.assertAndGetPlaylistIndexAndMediumId(req.params);
+        const data = await this.mediaDirector.getMediumByIdAndPlaylistIdAsync(
+          reqSet.playlistIndex,
+          reqSet.mediumId,
+          req.user);
+
+        res.status(200).send(data);
+      } catch (err) {
+        res.status(400).send(err);
+      }
     });
 
     this.app.get(routes.media.selfPlay, this.authDirector.ensureApiAuthenticated, (req, res) => {
@@ -39,15 +39,5 @@ export default class PlayMediaRouter implements IRouter {
       const mediaPath = req.params[0];
       this.mediaStreamer.streamByMediaPath(mediaPath, req, res);
     });
-  }
-
-  private assertAndGetPlaylistIdsAndMediumId(params) {
-    const playlistId = params.playlistId;
-    const mediumId = params.mediumId;
-
-    if (!playlistId || !mediumId) {
-      throw new Error('playlistId or mediumId have not been provided.');
-    }
-    return {playlistId: playlistId, mediumId: mediumId};
   }
 }

@@ -1,25 +1,21 @@
 import * as express from 'express';
 import {IRouter} from './router';
-import {IConfigDirector} from '../directors/config.director';
+import {IUserDirector} from '../directors/user.director';
 
 export default class SetupRouter implements IRouter {
   constructor(
     private app: express.Application,
-    private configDirector: IConfigDirector
-  ) {
-  }
+    private userDirector: IUserDirector
+  ) {}
 
   bootstrap() {
     this.app.get('/setup', (req, res) => {
       res.render('setup');
     });
 
-    this.app.post('/setup', (req, res) => {
-      this.configDirector
-        .setRootUserAsync(req.body)
-        .then(() => {
-          res.redirect('/');
-        });
+    this.app.post('/setup', async (req, res) => {
+      await this.userDirector.addRootUserAsync(req.body);
+      res.redirect('/');
     });
   }
 }
