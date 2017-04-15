@@ -10,18 +10,18 @@ export default class HomeRouter implements IRouter {
   ) {}
 
   bootstrap() {
-    this.app.get('/', (req, res) => {
-      this.configDirector
-        .isDbInitializedAsync()
-        //.checkFileConfigExistsAsync()
-        .then(exists => {
-          if (exists) {
-            // TODO Check for valid db/connection settings/ having root user account before move to setup
-            res.render('index', {user: req.user});
-          } else {
-            res.redirect('/setup');
-          }
-        });
+    this.app.get('/', async (req, res) => {
+      try {
+        const isDbInitialized = await this.configDirector.isDbInitializedAsync();
+        if (isDbInitialized) {
+          // TODO Check for valid db/connection settings/ having root user account before move to setup
+          res.render('index', {user: req.user});
+        } else {
+          res.redirect('/setup');
+        }
+      } catch (err) {
+        res.status(400).send(err);
+      }
     });
 
     this.app.get(routes.api, (req, res) => {

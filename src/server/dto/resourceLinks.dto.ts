@@ -1,12 +1,11 @@
-import {ILinkDto} from './link.dto';
-import Dto from './dto';
+import {LinkDto} from './link.dto';
 
 export interface IResourceLinksDto {
-  links: ILinkDto[];
+  links: LinkDto[];
 }
 
-export default class ResourceLinksDto extends Dto implements IResourceLinksDto {
-  links: ILinkDto[];
+export default class ResourceLinksDto implements IResourceLinksDto {
+  links: LinkDto[];
 
   static toDto(data?: IResourceLinksDto) {
     ResourceLinksDto.assertValidData(data);
@@ -24,8 +23,6 @@ export default class ResourceLinksDto extends Dto implements IResourceLinksDto {
   }
 
   constructor(data?: IResourceLinksDto) {
-    super();
-
     if (!data) return;
     if (data.links) this.links = data.links;
   }

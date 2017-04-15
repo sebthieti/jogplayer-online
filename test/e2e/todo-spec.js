@@ -4,7 +4,7 @@ describe('jogplayer online logon', function() {
 
 		//element(by.model('todoList.todoText')).sendKeys('write first protractor test');
 		element(by.css('#loginForm input#username')).sendKeys('sebthieti');
-		element(by.css('#loginForm input#password')).sendKeys('seb');
+		element(by.css('#loginForm input#hashedPassword')).sendKeys('seb');
 		element(by.css('#loginForm [type="submit"]')).click();
 
 		var showWelcome = element(by.css('#welcome-screen > div'));

@@ -1,6 +1,7 @@
 import * as EventEmitter from 'events';
-import {Playlist} from '../models/playlist.model';
-import {User} from '../models/user.model';
+import {IDbConfig} from '../services/config.service';
+import {Playlist} from '../entities/playlist';
+import {User} from '../entities/user';
 
 export interface IPlaylistInsertEvent {
   playlist: Playlist;
@@ -15,7 +16,7 @@ export interface IEvents {
   emitPlaylistsRemove(playlistId: string);
   onPlaylistsRemove(fn: (playlistId: string) => void);
   emitConfigReady(config: any);
-  onConfigReady(cfg: (config) => void);
+  onConfigReady(cfg: (config: {DbConnection: IDbConfig}) => void);
   emitConfigFileIsValid(exists: boolean);
   onConfigFileIsValid(cfg: (exists: boolean) => void);
   emitDbConnectionReady();

@@ -11,53 +11,55 @@ import {IPlaylistRepository} from './playlist.repository';
 import UserStateRepository from './userState.repository';
 import {IUserStateRepository} from './userState.repository';
 import UserPermissionsRepository from './userPermissions.repository';
-import ConfigRepository from './config.repository';
 import {IUserPermissionsRepository} from './userPermissions.repository';
-import {IConfigRepository} from './config.repository';
 import {IEvents} from '../events/index';
-import {IMediumModel} from '../models/medium.model';
-import {IPlaylistModel} from '../models/playlist.model';
-import {IFavoriteModel} from '../models/favorite.model';
-import {IUserModel} from '../models/user.model';
-import {IUserStateModel} from '../models/userState.model';
-import {IUserPermissionsModel} from '../models/userPermissions.model';
+import {IMongoDbContext, MongoDbContext} from './mongoDb.context';
 
-export default function bootstrap(container: any) {
+export default function bootstrapAsync(container: any): Promise<void> {
+  // TODO Inject this one
+  //import * as config from 'config';
+  container.register(
+    'dbContext',
+    (events: IEvents): IMongoDbContext => new MongoDbContext(events)
+  );
+
   container.register(
     'repository',
     (events: IEvents): IRepository => new Repository(events)
   );
   container.register(
     'mediaRepository',
-    (mediaModel: IMediumModel): IMediaRepository => new MediaRepository(mediaModel)
+    (dbContext: IMongoDbContext): IMediaRepository => new MediaRepository(dbContext)
   );
   container.register(
     'playlistRepository',
-    (playlistModel: IPlaylistModel, mediaRepository: IMediaRepository): IPlaylistRepository =>
-      new PlaylistRepository(playlistModel, mediaRepository)
+    (dbContext: IMongoDbContext): IPlaylistRepository => new PlaylistRepository(dbContext)
   );
   container.register(
     'favoriteRepository',
-    (favoriteModel: IFavoriteModel): IFavoriteRepository =>
-      new FavoriteRepository(favoriteModel)
+    (dbContext: IMongoDbContext): IFavoriteRepository =>
+      new FavoriteRepository(dbContext)
   );
   container.register(
     'userRepository',
-    (repository: IRepository, userModel: IUserModel): IUserRepository =>
-      new UserRepository(repository, userModel)
+    (dbContext: IMongoDbContext): IUserRepository =>
+      new UserRepository(dbContext)
   );
   container.register(
     'userStateRepository',
-    (userStateModel: IUserStateModel): IUserStateRepository =>
-      new UserStateRepository(userStateModel)
+    (dbContext: IMongoDbContext): IUserStateRepository =>
+      new UserStateRepository(dbContext)
   );
   container.register(
     'userPermissionsRepository',
-    (userPermissionsModel: IUserPermissionsModel): IUserPermissionsRepository =>
-      new UserPermissionsRepository(userPermissionsModel)
+    (dbContext: IMongoDbContext): IUserPermissionsRepository =>
+      new UserPermissionsRepository(dbContext)
   );
-  container.register(
-    'configRepository',
-    (userModel: IUserModel): IConfigRepository => new ConfigRepository(userModel)
-  );
+
+  return new Promise<void>((resolve) => {
+    // TODO repository/configService will be removed once we won't crank up the DB
+    container.resolve((repository, configService, dbContext: IMongoDbContext) => {
+      dbContext.once('db.ready', () => resolve());
+    });
+  });
 }

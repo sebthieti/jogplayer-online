@@ -5,25 +5,29 @@ import mediaHelper from '../utils/mediaHelper';
 import {IMediaRepository} from '../repositories/media.repository';
 import {IMediaService} from '../services/media.service';
 import {IFileExplorerService} from '../services/fileExplorers/fileExplorer.service';
-import {User} from '../models/user.model';
-import {MediumDocument} from '../models/medium.model';
 import {ReadStream} from 'fs';
-import {UserPermissions} from '../models/userPermissions.model';
+import {IUserModel} from '../models/user.model';
+import {IUserPermissionsModel} from '../models/userPermissions.model';
+import {IMediumModel, MediumModel} from '../models/medium.model';
+import {ObjectID} from 'mongodb';
 
 export interface IMediaDirector {
-  getMediumByIdAndPlaylistIdAsync(playlistId: string, mediumId: string, issuer: User): Promise<MediumDocument>);
+  getMediumByIdAndPlaylistIdAsync(
+    playlistIndex: number,
+    mediumId: string,
+    issuer: IUserModel): Promise<IMediumModel>;
   getBinaryChunkAndFileSizeByIdAsync(
     mediumId: string,
     fromOffset: number,
     toOffset: number,
-    issuer: User
+    issuer: IUserModel
   ): Promise<{mimeType: string, dataStream: ReadStream, fileSize: number}>;
   getBinaryChunkAndFileSizeByPathAsync(
     mediaPath: string,
     fromOffset: number,
     toOffset: number
   ): Promise<{mimeType: string, dataStream: ReadStream, fileSize: number}>;
-  renameMe(mediaFilePath: string, browserFormats: string, issuer: User): Promise<string>;
+  renameMe(mediaFilePath: string, browserFormats: string, issuer: IUserModel): Promise<string>;
 }
 
 export default class MediaDirector implements IMediaDirector {
@@ -31,21 +35,24 @@ export default class MediaDirector implements IMediaDirector {
     private mediaRepository: IMediaRepository,
     private mediaService: IMediaService,
     private fileExplorerService: IFileExplorerService
-  ) {
-  }
+  ) { }
 
-  getMediumByIdAndPlaylistIdAsync(playlistId: string, mediumId: string, issuer: User): Promise<MediumDocument> {
-    return this.mediaRepository.getMediumByIdAndPlaylistIdAsync(playlistId, mediumId, issuer);
+  async getMediumByIdAndPlaylistIdAsync(
+    playlistIndex: number,
+    mediumId: string,
+    issuer: IUserModel
+  ): Promise<IMediumModel> {
+    const media = await issuer.playlists.getByIndex(playlistIndex).media.valueAsync;
+    return media.find(m => m.id === mediumId);
   }
 
   async getBinaryChunkAndFileSizeByIdAsync(
     mediumId: string,
     fromOffset: number,
     toOffset: number,
-    issuer: User
+    issuer: IUserModel
   ): Promise<{mimeType: string, dataStream: ReadStream, fileSize: number}> {
-    const medium = await this.mediaRepository
-      .getMediaByIdAsync(mediumId, issuer);
+    const medium = await this.findMediumById(mediumId, issuer);
 
     if (!this.acceptPath(medium.filePath, issuer.permissions)) {
       throw new Error('Unauthorized access');
@@ -78,7 +85,7 @@ export default class MediaDirector implements IMediaDirector {
     };
   }
 
-  async renameMe(mediaFilePath: string, browserFormats: string, issuer: User): Promise<string> {
+  async renameMe(mediaFilePath: string, browserFormats: string, issuer: IUserModel): Promise<string> {
     if (!this.acceptPath(mediaFilePath, issuer.permissions)) {
       throw new Error('Unauthorized access');
     }
@@ -112,6 +119,21 @@ export default class MediaDirector implements IMediaDirector {
     );
   }
 
+  private async findMediumById(mediumId: string, user: IUserModel): Promise<IMediumModel> {
+    const model = user.searchMediumByIdAsync(mediumId);
+    if (model) {
+      return model;
+    }
+
+    const medium = await this.mediaRepository.getMediumByIdAsync(new ObjectID(mediumId));
+    return MediumModel.buildFromEntity(
+      this.mediaService,
+      this.mediaRepository,
+      null,
+      medium
+    );
+  }
+
   private async findClosestMatchAsync(mediaFilePath: string): Promise<string> {
     const mediumFileName = path.basename(mediaFilePath).substring(0, path.basename(mediaFilePath).lastIndexOf('.'));
     const dirPath = path.dirname(mediaFilePath) + path.sep;
@@ -129,7 +151,7 @@ export default class MediaDirector implements IMediaDirector {
       : '';
   }
 
-  private acceptPath(urlPath: string, permissions: UserPermissions): boolean {
+  private acceptPath(urlPath: string, permissions: IUserPermissionsModel): boolean {
     if (permissions.isRoot || permissions.isAdmin) {
       return true;
     }
@@ -138,18 +160,12 @@ export default class MediaDirector implements IMediaDirector {
       return urlPath.startsWith(denyPath);
     });
     return !isPathDenied;
-
-    //var hasAcceptedPath = _.any(permissions.allowPaths, function(allowPath) {
-    //	return urlPath.startsWith(allowPath);
-    //});
-    //
-    //return hasAcceptedPath;
   }
 
   private async getOffsetAndFileSizeAsync(
     mediaPath: string,
     toOffset: number
-  ): Promise<{ offset: number, fileSize: number }> {
+  ): Promise<{ offset: number, fileSize: number, media?: IMediumModel }> {
     const fileSize = await this.mediaService.getFileSizeAsync(mediaPath);
     return {offset: toOffset, fileSize: fileSize};
   }

@@ -12,18 +12,15 @@ import ConfigDirector from './config.director';
 import {IMediaRepository} from '../repositories/media.repository';
 import {IMediaService} from '../services/media.service';
 import {IFileExplorerService} from '../services/fileExplorers/fileExplorer.service';
-import {IPlaylistProxy} from '../proxies/playlist.proxy';
-import {IPlaylistsProxy} from '../proxies/playlists.proxy';
 import {IPlaylistService} from '../services/m3uPlaylist.service';
-import {IUserProxy} from '../proxies/user.proxy';
-import {IPlaylistRepository} from '../repositories/playlist.repository';
-import {IFavoriteProxy} from '../proxies/favorite.proxy';
-import {IUserStateProxy} from '../proxies/userState.proxy';
-import {IUserRepository} from '../repositories/user.repository';
+import {IUserCache} from '../cache/user.cache';
 import {IEvents} from '../events/index';
 import {IConfigService} from '../services/config.service';
-import {IPlaylistBuilder} from '../invokers/playlistBuilder';
-import {IMediaBuilder} from '../invokers/mediaBuilder';
+import {IPlaylistRepository} from '../repositories/playlist.repository';
+import {IUserRepository} from '../repositories/user.repository';
+import {IFavoriteRepository} from '../repositories/favorite.repository';
+import {IUserPermissionsRepository} from '../repositories/userPermissions.repository';
+import {IUserStateRepository} from '../repositories/userState.repository';
 
 /**
  * @description
@@ -41,39 +38,15 @@ export default function (container: any) {
   );
   container.register(
     'playlistDirector',
-    (
-      playlistProxy: IPlaylistProxy,
-      playlistsProxy: IPlaylistsProxy,
-      mediaRepository: IMediaRepository,
-      fileExplorerService: IFileExplorerService,
-      playlistServices: IPlaylistService,
-      mediaBuilder: IMediaBuilder
-    ): IPlaylistDirector => new PlaylistDirector(
-      playlistProxy,
-      playlistsProxy,
-      mediaRepository,
-      fileExplorerService,
-      playlistServices,
-      mediaBuilder
-    )
+    (): IPlaylistDirector => new PlaylistDirector()
   );
   container.register(
     'authDirector',
-    (userProxy: IUserProxy): IAuthDirector => new AuthDirector(userProxy)
+    (userDirector: IUserDirector): IAuthDirector => new AuthDirector(userDirector)
   );
   container.register(
     'playlistsDirector',
-    (
-      playlistDirector: IPlaylistDirector,
-      playlistRepository: IPlaylistRepository,
-      playlistsProxy: IPlaylistsProxy,
-      playlistBuilder: IPlaylistBuilder
-    ): IPlaylistsDirector => new PlaylistsDirector(
-      playlistDirector,
-      playlistRepository,
-      playlistsProxy,
-      playlistBuilder
-    )
+    (): IPlaylistsDirector => new PlaylistsDirector()
   );
   container.register(
     'fileExplorerDirector',
@@ -82,28 +55,41 @@ export default function (container: any) {
   );
   container.register(
     'favoriteDirector',
-    (favoriteProxy: IFavoriteProxy): IFavoriteDirector =>
-      new FavoriteDirector(favoriteProxy)
+    (): IFavoriteDirector => new FavoriteDirector()
   );
   container.register(
     'userDirector',
     (
-      userProxy: IUserProxy,
-      userPermissionsDirector: IUserPermissionsDirector
+      userRepository: IUserRepository,
+      playlistService: IPlaylistService,
+      mediaRepository: IMediaRepository,
+      playlistRepository: IPlaylistRepository,
+      mediaService: IMediaService,
+      fileExplorerService: IFileExplorerService,
+      userCache: IUserCache,
+      favoriteRepository: IFavoriteRepository,
+      userPermissionsRepository: IUserPermissionsRepository,
+      userStateRepository: IUserStateRepository
     ): IUserDirector => new UserDirector(
-      userProxy,
-      userPermissionsDirector
+      userRepository,
+      playlistService,
+      mediaRepository,
+      playlistRepository,
+      mediaService,
+      fileExplorerService,
+      favoriteRepository,
+      userPermissionsRepository,
+      userStateRepository,
+      userCache
     )
   );
   container.register(
     'userStateDirector',
-    (userStateProxy: IUserStateProxy): IUserStateDirector =>
-      new UserStateDirector(userStateProxy)
+    (): IUserStateDirector => new UserStateDirector()
   );
   container.register(
-    'userPermissionsDirector',
-    (userRepository: IUserRepository): IUserPermissionsDirector =>
-      new UserPermissionsDirector(userRepository)
+    'permissionsDirector',
+    (): IUserPermissionsDirector => new UserPermissionsDirector()
   );
   container.register(
     'configDirector',

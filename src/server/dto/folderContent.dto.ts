@@ -1,10 +1,10 @@
 import ResourceLinksDto from './resourceLinks.dto';
-import {ILinkDto} from './link.dto';
 import {IFileInfoDto} from './fileInfo.dto';
 import {IResourceLinksDto} from './resourceLinks.dto';
+import {LinkDto} from './link.dto';
 
 export interface IFolderContentDto {
-  links: ILinkDto[]|IResourceLinksDto;
+  links: LinkDto[]|IResourceLinksDto;
   files: IFileInfoDto[];
 }
 
@@ -14,7 +14,7 @@ export interface IFolderContent {
 }
 
 export default class FolderContentDto implements IFolderContentDto {
-  links: ILinkDto[];
+  links: LinkDto[];
   files: IFileInfoDto[];
 
   constructor(data?: IFolderContent) {
@@ -42,7 +42,7 @@ export default class FolderContentDto implements IFolderContentDto {
     });
   }
 
-  setLinks(links: ILinkDto[]) {
+  setLinks(links: LinkDto[]) {
     return new FolderContentDto({
       resourceLinksDto: links,
       files: this.files

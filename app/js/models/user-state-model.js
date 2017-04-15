@@ -53,5 +53,5 @@ jpoApp.factory('UserStateModel', ['jpoModelBuilder', 'Model', function(jpoModelB
 		}
 	};
 
-	return jpoModelBuilder.model('user-states', userStateSchema);
+	return jpoModelBuilder.model('state', userStateSchema);
 }]);

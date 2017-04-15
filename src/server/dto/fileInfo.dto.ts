@@ -1,10 +1,10 @@
 import {IResourceLinksDto} from './resourceLinks.dto';
-import {ILinkDto} from './link.dto';
+import {LinkDto} from './link.dto';
 
 export interface IFileInfoDto {
   name: string;
   type: string;
-  links: ILinkDto[];
+  links: LinkDto[];
 }
 
 export interface IFileInfoDtoEntity {
@@ -16,7 +16,7 @@ export interface IFileInfoDtoEntity {
 export default class FileInfoDto implements IFileInfoDto {
   name: string;
   type: string;
-  links: ILinkDto[];
+  links: LinkDto[];
 
   constructor(data: IFileInfoDtoEntity) {
     if ('name' in data) this.name = data.name;

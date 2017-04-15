@@ -1,4 +1,3 @@
-import * as child_process from 'child_process';
 import * as path from 'path';
 
 import FileExplorerService from './fileExplorer.service';
@@ -39,18 +38,6 @@ export default class LinuxFileExplorerService extends FileExplorerService {
         driveArray = this.prependHomeDir(driveArray);
         return this.castDrivesToFileInfoList(driveArray);
       });
-  }
-
-  private getDrivesFromCmd(cmd: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      child_process.exec(cmd, (err, stdOut, stdErr) => {
-        if (err) {
-          reject(`Error running drive list command: ${err}|${stdErr}`);
-        } else {
-          resolve(stdOut);
-        }
-      });
-    });
   }
 
   private normalizeOutput(rawDrivesOutput: string): string[] {

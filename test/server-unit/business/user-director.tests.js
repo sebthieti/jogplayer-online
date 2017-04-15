@@ -97,7 +97,7 @@ describe('UserDirector', function() {
 			}
 
 			userDirector
-				.addUserAsync(userDto, issuer)
+				.addUserWithDefaultPermissionsAsync(userDto, issuer)
 				.then(function (user) {
 					assert(user !== undefined, 'users should be defined');
 					defer.resolve(user);
@@ -132,7 +132,7 @@ describe('UserDirector', function() {
 						fullName: 'A full name'
 					});
 					return userDirector
-						.updateFromUserDtoAsync(user.id, userDto, issuer)
+						.updateUserAsync(user.id, userDto, issuer)
 						.then(function (userPermissions) {
 							assert(userPermissions !== undefined, 'user permissions: users should be defined');
 							defer.resolve(userPermissions);
@@ -168,7 +168,7 @@ describe('UserDirector', function() {
 						homePath: 'C:\\FakePath2'
 					});
 					return userDirector
-						.updateUserPermissionsByUserIdAsync(user.id, userPermDto, issuer)
+						.updateUserPermissionsAsync(user.id, userPermDto, issuer)
 						.then(function (userPermissions) {
 							assert(userPermissions !== undefined, 'user permissions: users should be defined');
 							defer.resolve(userPermissions);

@@ -1,29 +1,30 @@
 import * as path from 'path';
+import * as _ from 'lodash';
 import linkBuilder from '../utils/linkBuilder';
 import {IFileExplorerService} from '../services/fileExplorers/fileExplorer.service';
-import {User} from '../models/user.model';
 import {IFolderContentDto} from '../dto/folderContent.dto';
 import {IFileInfoDto} from '../dto/fileInfo.dto';
 import {IFileInfo} from '../entities/fileInfo';
-import {UserPermissions} from '../models/userPermissions.model';
+import {IUserModel} from '../models/user.model';
+import {IUserPermissionsModel} from '../models/userPermissions.model';
 
 export interface IFileExplorerDirector {
-  getFolderContentAsync(urlPath: string, issuer: User): Promise<IFolderContentDto>;
-  getFileInfoAsync(urlPath: string, issuer: User): Promise<IFileInfoDto>;
+  getFolderContentAsync(urlPath: string, issuer: IUserModel): Promise<IFolderContentDto>;
+  getFileInfoAsync(urlPath: string, issuer: IUserModel): Promise<IFileInfoDto>;
 }
 
 export default class FileExplorerDirector implements IFileExplorerDirector {
   constructor(private fileExplorerService: IFileExplorerService) {
   }
 
-  getFolderContentAsync(urlPath: string, issuer: User): Promise<IFolderContentDto> {
+  getFolderContentAsync(urlPath: string, issuer: IUserModel): Promise<IFolderContentDto> {
     if (!this.acceptPath(urlPath, issuer.permissions)) {
       throw new Error('Unauthorized access'); // TODO Should become HTTP 403
     }
     return this.exploreFilePathAsync(urlPath, issuer);
   }
 
-  getFileInfoAsync(urlPath: string, issuer: User): Promise<IFileInfoDto> {
+  getFileInfoAsync(urlPath: string, issuer: IUserModel): Promise<IFileInfoDto> {
     if (!this.acceptPath(urlPath, issuer.permissions)) {
       throw new Error('Unauthorized access'); // TODO Should become HTTP 403
     }
@@ -31,20 +32,20 @@ export default class FileExplorerDirector implements IFileExplorerDirector {
     return this.getFileInfoPathAsync(urlPath);
   }
 
-  private async exploreFilePathAsync(urlPath: string, issuer: User): Promise<IFolderContentDto> {
+  private async exploreFilePathAsync(urlPath: string, issuer: IUserModel): Promise<IFolderContentDto> {
     const isRoot = urlPath === '/';
 
     let files = await this.fileExplorerService.readFolderContentAsync(urlPath);
     files = this.filterAuthorizedPaths(files, isRoot, urlPath, issuer);
-    files = this.filterFilesIfNotRoot(files, isRoot);
+    // files = this.filterFilesIfNotRoot(files, isRoot);
     return linkBuilder.toFolderContentDto(urlPath, files);
   }
 
-  private filterAuthorizedPaths(fileInfos: IFileInfo[], isRoot: boolean, urlPath: string, issuer: User): IFileInfo[] {
+  private filterAuthorizedPaths(fileInfos: IFileInfo[], isRoot: boolean, urlPath: string, issuer: IUserModel): IFileInfo[] {
     return fileInfos.filter(fileInfo => {
-        //var path = urlPath + fileInfo.getName() + (fileInfo.isDirectory() ? '/' : '');
-        return this.acceptPath(fileInfo.filePath, issuer.permissions); // fileInfo.isDirectory()
-      });
+      //var path = urlPath + fileInfo.getName() + (fileInfo.isDirectory() ? '/' : '');
+      return this.acceptPath(fileInfo.filePath, issuer.permissions); // fileInfo.isDirectory()
+    });
   }
 
   private filterFilesIfNotRoot(folderContent: IFileInfo[], isRoot: boolean): IFileInfo[] {
@@ -81,11 +82,15 @@ export default class FileExplorerDirector implements IFileExplorerDirector {
   private async getFileInfoPathAsync(urlPath: string): Promise<IFileInfoDto> {
     const file = await this.fileExplorerService.readFileInfoAsync(urlPath);
 
-    const dirPath = path.dirname(urlPath) + '/';
+    let dirPath = path.dirname(urlPath);
+    if (_.last(urlPath) !== '/') {
+      dirPath += '/';
+    }
+
     return linkBuilder.toFileInfoDto(dirPath, file);
   }
 
-  private acceptPath(urlPath: string, permissions: UserPermissions): boolean {
+  private acceptPath(urlPath: string, permissions: IUserPermissionsModel): boolean {
     if (permissions.isRoot || permissions.isAdmin) {
       return true;
     }
@@ -94,11 +99,5 @@ export default class FileExplorerDirector implements IFileExplorerDirector {
       return urlPath.startsWith(denyPath);
     });
     return !isPathDenied;
-
-    //var hasAcceptedPath = _.any(permissions.allowPaths, function(allowPath) {
-    //	return urlPath.startsWith(allowPath);
-    //});
-    //
-    //return hasAcceptedPath;
   }
 }

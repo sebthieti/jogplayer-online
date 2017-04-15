@@ -25,6 +25,5 @@ app.use(session({
 }));
 app.use(serveStatic(path.join(process.cwd(), 'app')));
 
-jpo.bootstrap(app);
-
-http.createServer(app).listen(10000);
+jpo.bootstrap(app)
+  .then(() => http.createServer(app).listen(10000));

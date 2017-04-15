@@ -1,56 +1,88 @@
-import * as mongoose from 'mongoose';
-import Schema = mongoose.Schema;
-import * as mongooseTypes from 'mongoose-types-ext';
-mongooseTypes(mongoose);
-import routes from '../routes';
+import {UserPermissions} from '../entities/userPermissions';
+import {UpdatePermissionsRequest} from "../requests/updatePermissions.request";
+import {IUserPermissionsRepository} from '../repositories/userPermissions.repository';
+import {IUserModel} from './user.model';
 
-export interface UserPermissions extends mongoose.Document {
+export interface IUserPermissionsModel {
   canWrite: boolean;
   isAdmin: boolean;
   isRoot: boolean;
   allowPaths: string[];
   denyPaths: string[];
   homePath: string;
-  links: string[];
+  setIsRoot(): IUserPermissionsModel;
+  setIsAdmin(): IUserPermissionsModel;
+  buildFromRequest(permissions: UpdatePermissionsRequest): IUserPermissionsModel;
+  updateAsync(): Promise<IUserPermissionsModel>;
+  updateWith(permissions: IUserPermissionsModel): IUserPermissionsModel;
+  setFromRequest(request: UpdatePermissionsRequest): IUserPermissionsModel;
+  toEntity(): UserPermissions;
 }
 
-export interface IUserPermissionsModel extends mongoose.Model<UserPermissions> {
+export default class UserPermissionsModel implements IUserPermissionsModel {
+  canWrite: boolean;
+  isAdmin: boolean;
+  isRoot: boolean;
+  allowPaths: string[];
+  denyPaths: string[];
+  homePath: string;
+
+  constructor(
+    private user: IUserModel,
+    private userPermissionsRepository: IUserPermissionsRepository,
+    userPermissions: UserPermissions
+  ) {
+    Object.assign(
+      this,
+      userPermissions, {
+        canWrite: null,
+        isAdmin: null,
+        isRoot: null,
+        allowPaths: [],
+        denyPaths: [],
+        homePath: null
+      } as UserPermissions
+    );
+  }
+
+  setIsRoot(): IUserPermissionsModel {
+    this.isRoot = true;
+    return this;
+  }
+
+  setIsAdmin(): IUserPermissionsModel {
+    this.isAdmin = true;
+    return this;
+  }
+
+  updateWith(permissions: IUserPermissionsModel): IUserPermissionsModel {
+    Object.assign(this, permissions);
+    return this;
+  }
+
+  setFromRequest(request: UpdatePermissionsRequest): IUserPermissionsModel {
+    Object.assign(this, request);
+    return this;
+  }
+
+  buildFromRequest(permissions: UpdatePermissionsRequest): IUserPermissionsModel {
+    Object.assign(this, permissions);
+    return this;
+  }
+
+  async updateAsync(): Promise<IUserPermissionsModel> {
+    await this.userPermissionsRepository.updateAsync(this.user._id, this.toEntity());
+    return this;
+  }
+
+  toEntity(): UserPermissions {
+    return {
+      canWrite: this.canWrite,
+      isAdmin: this.isAdmin,
+      isRoot: this.isRoot,
+      allowPaths: this.allowPaths,
+      denyPaths: this.denyPaths,
+      homePath: this.homePath
+    }
+  }
 }
-
-const userPermissionsSchema = new Schema({
-  //userId: { type: Schema.Types.ObjectId, ref: 'User' },
-  canWrite: Boolean,
-  isAdmin: Boolean,
-  isRoot: Boolean, // TODO This one must be read only
-  allowPaths: [ String ],
-  denyPaths: [ String ],
-  homePath: { type: String, maxLength: 128 }
-});
-
-userPermissionsSchema.set('toJSON', { virtuals: true });
-// virtuals: false to avoid inserting links to database
-userPermissionsSchema.set('toObject', { virtuals: false });
-userPermissionsSchema.methods.toJSON = function() {
-  let obj = this.toObject();
-  // TODO This id is used only for client side's ui. Client should rather only use its own ids
-  //obj.id = obj._id;
-  obj.links = this.links;
-  delete obj._id;
-  delete obj.userId;
-  delete obj.__v;
-  return obj;
-};
-userPermissionsSchema.virtual('links').get(function() {
-  return [{
-    rel: 'update',
-    href: routes.userPermissions.updatePath.replace(':userId', this.id)
-  }, (function(self){
-    return self.homePath
-      ? {
-        rel: 'self.browsingFolderPath',
-        href: routes.explore.fileInfoPathPattern.replace(':relativePath', self.homePath)
-      } : {};
-  }(this)) ];
-});
-
-export default mongoose.model<UserPermissions>('UserPermission', userPermissionsSchema);

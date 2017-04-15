@@ -6,7 +6,6 @@ export interface IFileInfo {
   isDirectory?: boolean;
   isFile?: boolean;
   isValid?: boolean;
-  // resourceLinksDto
 }
 
 export default class FileInfo implements IFileInfo {
@@ -24,7 +23,6 @@ export default class FileInfo implements IFileInfo {
     this.type = entity.type;
     this.isRoot = entity.isRoot;
     this.filePath = entity.filePath;
-    //this.links = resourceLinksDto.links;
   }
 
   get isDirectory(): boolean {

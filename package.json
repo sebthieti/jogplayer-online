@@ -13,6 +13,7 @@
     "@types/express": "^4.0.35",
     "@types/express-session": "0.0.32",
     "@types/lodash": "^4.14.52",
+    "@types/mongodb": "^2.1.41",
     "@types/mongoose": "^4.7.5",
     "@types/node": "^7.0.5",
     "@types/passport": "^0.3.3",

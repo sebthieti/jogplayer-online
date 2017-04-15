@@ -1,17 +1,22 @@
-import * as mongoose from 'mongoose';
-import Schema = mongoose.Schema;
+import {IModel} from "./model";
+import {Bookmark} from "../entities/bookmark";
 
-export interface Bookmark extends mongoose.Document {
+export interface IBookmarkModel extends IModel<Bookmark> {
   name: string;
-  comment: string;
   position: number;
 }
 
-export interface IBookmarkModel extends mongoose.Model<Bookmark> {
-}
+export class BookmarkModel implements IBookmarkModel {
+  name: string;
+  position: number;
 
-export default mongoose.model<Bookmark>('Bookmark', new Schema({
-  name: String,
-  comment: String,
-  position: Number
-}));
+  constructor(bookmark: Bookmark) {
+  }
+
+  toEntity(): Bookmark {
+    return {
+      name: this.name,
+      position: this.position
+    };
+  }
+}
