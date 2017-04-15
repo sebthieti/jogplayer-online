@@ -1,11 +1,11 @@
 import * as os from 'os';
+import * as _ from 'lodash';
 import ResourceLinksDto from '../dto/resourceLinks.dto';
-import LinkDto from '../dto/link.dto';
 import FileInfoDto from '../dto/fileInfo.dto';
 import FolderContentDto from '../dto/folderContent.dto';
 import {IFileInfo} from '../entities/fileInfo';
-import {ILinkDto} from '../dto/link.dto';
 import {IResourceLinksDto} from '../dto/resourceLinks.dto';
+import {LinkDto} from '../dto/link.dto';
 
 class LinkBuilder {
   toFolderContentDto(urlPath: string, files: IFileInfo[]): FolderContentDto {
@@ -48,17 +48,20 @@ class LinkBuilder {
       .addLink(this.tryMakeSelfPlayLink(parentFolderPath, file));
   }
 
-  private tryMakeFolderSelfPhysLink(folderPath: string): ILinkDto {
+  private tryMakeFolderSelfPhysLink(folderPath: string): LinkDto {
     if (!folderPath || folderPath === '/') {
       return;
     }
-    return new LinkDto({rel: 'self.phys', href: folderPath});
+    return {rel: 'self.phys', href: folderPath};
   }
 
-  private tryMakeFileSelfPhysLink(parentFolderPath: string, file: IFileInfo): ILinkDto {
+  private tryMakeFileSelfPhysLink(parentFolderPath: string, file: IFileInfo): LinkDto {
     let fullFilePath = null;
-    if (os.platform() === 'linux') { // TODO Stop here: cannot diff when first time show and clicking to / to show inside
-      parentFolderPath = (parentFolderPath === '/' ? '' : parentFolderPath);
+    if (os.platform() !== 'win32') { // TODO Stop here: cannot diff when first time show and clicking to / to show inside
+      parentFolderPath = (
+        parentFolderPath === '/' ||
+        parentFolderPath === '/root/'
+      ) ? '' : parentFolderPath;
       if (file.name.startsWith('~/')) {
         fullFilePath = parentFolderPath + file.name;
       } else if (file.name === '/') {
@@ -73,20 +76,22 @@ class LinkBuilder {
     if (!fullFilePath || fullFilePath === '/') {
       return;
     }
-    if (file.isDirectory) {
+    if (file.isDirectory && _.last(fullFilePath) !== '/') {
       fullFilePath += '/';
     }
 
-    return new LinkDto({rel: 'self.phys', href: fullFilePath});
+    return {rel: 'self.phys', href: fullFilePath};
   }
 
-  private makeSelfLinkToRes(parentFolderPath: string, file?: IFileInfo): ILinkDto {
+  private makeSelfLinkToRes(parentFolderPath: string, file?: IFileInfo): LinkDto {
     // encode url, no '/' if just file
     // ^\/api\/explore\/(.*[\/])*$/
     let fullFilePath;
     if (file) {
-      if (os.platform() === 'linux') {
-        parentFolderPath = (parentFolderPath === '/' ? '' : parentFolderPath);
+      if (os.platform() !== 'win32') {
+        parentFolderPath =
+          (parentFolderPath === '/' ||
+          parentFolderPath === '/root/') ? '' : parentFolderPath;
         if (file.name.startsWith('~/')) {
           fullFilePath = parentFolderPath + file.name;
         } else if (file.name === '/') {
@@ -95,7 +100,7 @@ class LinkBuilder {
           fullFilePath = parentFolderPath + file.name;
         }
 
-        if (file.isDirectory) {
+        if (file.isDirectory && _.last(fullFilePath) !== '/') {
           fullFilePath += '/';
         }
       } else {
@@ -107,15 +112,24 @@ class LinkBuilder {
     } else {
       fullFilePath = parentFolderPath;
     }
-    return new LinkDto({rel: 'self', href: '/api/explore' + fullFilePath});
+
+    if (fullFilePath === '/') {
+      return {rel: 'self', href: `/api/explore/root/`};
+    }
+
+    if (_.first(fullFilePath) !== '/') {
+      return {rel: 'self', href: `/api/explore/${fullFilePath}`};
+    } else {
+      return {rel: 'self', href: `/api/explore${fullFilePath}`};
+    }
   }
 
-  private tryMakeParentLink(urlPath: string): ILinkDto {
+  private tryMakeParentLink(urlPath: string): LinkDto {
     const upPath = this.tryMakeUpPath(urlPath);
     if (!upPath) {
       return;
     }
-    return new LinkDto({rel: 'parent', href: '/api/explore' + upPath});
+    return {rel: 'parent', href: '/api/explore' + upPath};
   }
 
   private tryMakeUpPath(urlPath: string): string {
@@ -128,11 +142,11 @@ class LinkBuilder {
     return noTrailingSlash.substring(0, noTrailingSlash.lastIndexOf('/') + 1);
   }
 
-  private tryMakeSelfPlayLink(parentFolderPath: string, file: IFileInfo): ILinkDto {
+  private tryMakeSelfPlayLink(parentFolderPath: string, file: IFileInfo): LinkDto {
     if (file.type && file.type === 'F') {
       const fullFilePath = parentFolderPath + file.name;
       // TODO only when playable
-      return new LinkDto({rel: 'self.play', href: '/api/media/play/path' + fullFilePath});
+      return {rel: 'self.play', href: '/api/media/play/path' + fullFilePath};
     }
   }
 
