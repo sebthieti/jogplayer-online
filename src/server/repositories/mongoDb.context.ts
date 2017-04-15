@@ -24,20 +24,17 @@ export class MongoDbContext extends EventEmitter implements IMongoDbContext {
     events.onConfigReady(config => this.connectAndSetContext(config));
   }
 
-  private connectAndSetContext(config: {DbConnection: IDbConfig}) {
-    const db = config.DbConnection;
+  private async connectAndSetContext(config: {DbConnection: IDbConfig}) {
+    const dbConnection = config.DbConnection;
     const dbConnectionString = util.format(
       'mongodb://%s:%d/%s',
-      db.host,
-      db.port,
-      db.dbName
+      dbConnection.host,
+      dbConnection.port,
+      dbConnection.dbName
     );
 
-    // TODO use Promise instead
-    MongoClient.connect(
-      dbConnectionString,
-      (error: MongoError, db: Db) => !error && this.setContextAndNotify(db)
-    );
+    this.db = await MongoClient.connect(dbConnectionString);
+    this.setContextAndNotify(this.db);
   }
 
   private setContextAndNotify(db: Db) {
