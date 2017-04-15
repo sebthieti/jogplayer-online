@@ -1,54 +1,89 @@
-import * as mongoose from 'mongoose';
-import Schema = mongoose.Schema;
-
-import * as mongooseTypes from 'mongoose-types-ext';
-mongooseTypes(mongoose);
 import routes from '../routes';
+import {IModel} from "./model";
+import {UserState} from "../entities/userState";
+import {UpdateUserStateRequest} from '../requests/updateUserState.request';
+import {Link} from '../entities/link';
+import {IUserModel} from './user.model';
+import {IUserStateRepository} from '../repositories/userState.repository';
 
-export interface UserState extends mongoose.Document {
-  ownerId: string;
+export interface IUserStateModel extends IModel<UserState> {
   playedPosition: number;
   mediaQueue: string[];
   browsingFolderPath: string;
   openedPlaylistId: string;
   playingMediumInQueueIndex: number;
-  links: string[];
+  links: Link[];
+  updateWith(updatedState: IUserStateModel): IUserStateModel;
+  updateAsync(): Promise<IUserStateModel>;
+  setFromRequest(request: UpdateUserStateRequest): IUserStateModel;
 }
 
-export interface IUserStateModel extends mongoose.Model<UserState> {
+export class UserStateModel implements IUserStateModel {
+  playedPosition: number;
+  mediaQueue: string[];
+  browsingFolderPath: string;
+  openedPlaylistId: string;
+  playingMediumInQueueIndex: number;
+
+  constructor(
+    private userStateRepository: IUserStateRepository,
+    private user: IUserModel,
+    entity?: UserState
+  ) { // TODO Have attach method on user side?
+    this.playedPosition = entity && entity.playedPosition || 0;
+    this.playingMediumInQueueIndex = entity && entity.playingMediumInQueueIndex || 0;
+    this.openedPlaylistId = entity && entity.openedPlaylistId || null;
+    this.browsingFolderPath = entity && entity.browsingFolderPath || null;
+
+    this.mediaQueue = entity && entity.mediaQueue || [];
+  }
+
+  setFromRequest(request: UpdateUserStateRequest): IUserStateModel {
+    if ('playedPosition' in request)
+      this.playedPosition = request.playedPosition;
+    if ('browsingFolderPath' in request)
+      this.browsingFolderPath = request.browsingFolderPath;
+    if ('openedPlaylistId' in request)
+      this.openedPlaylistId = request.openedPlaylistId;
+    if ('playingMediumInQueueIndex' in request)
+      this.playingMediumInQueueIndex = request.playingMediumInQueueIndex;
+    if ('mediaQueue' in request) {
+      this.mediaQueue = request.mediaQueue;
+    }
+
+    return this;
+  }
+
+  updateWith(state: IUserStateModel): IUserStateModel {
+    Object.assign(this, state);
+    return this;
+  }
+
+  async updateAsync(): Promise<IUserStateModel> {
+    await this.userStateRepository.updateAsync(
+      this.toEntity(),
+      this.user._id
+    );
+    return this;
+  }
+
+  get links(): Link[] {
+    return [{
+      rel: 'self',
+      href: routes.userStates.selfPath
+    }, {
+      rel: 'update',
+      href: routes.userStates.updatePath
+    }];
+  }
+
+  toEntity(): UserState {
+    return {
+      playedPosition: this.playedPosition,
+      mediaQueue: this.mediaQueue,
+      browsingFolderPath: this.browsingFolderPath,
+      openedPlaylistId: this.openedPlaylistId,
+      playingMediumInQueueIndex: this.playingMediumInQueueIndex
+    };
+  }
 }
-
-const userStateSchema: Schema = new Schema({
-  ownerId: { type: Schema.Types.ObjectId, ref: 'User' },
-  playedPosition: Number,
-  mediaQueue: [ String ],
-  browsingFolderPath: { type: String, maxLength: 128 },
-  openedPlaylistId: String, // TODO Put a link url in it ? | s/b an ObjectID instead
-  playingMediumInQueueIndex: Number
-});
-userStateSchema.set('toJSON', { virtuals: true });
-// virtuals: false to avoid inserting links to database
-userStateSchema.set('toObject', { virtuals: false });
-userStateSchema.methods.toJSON = function() {
-  let obj = this.toObject();
-  // TODO This id is used only for client side's ui. Client should rather only use its own ids
-  obj.links = this.links;
-  delete obj._id;
-  delete obj.ownerId;
-  delete obj.__v;
-  return obj;
-};
-userStateSchema.virtual('links').get(function() {
-  return [{
-    rel: 'self',
-    href: routes.userStates.selfPath.replace(':userStateId', this.id)
-  }, {
-    rel: 'update',
-    href: routes.userStates.updatePath.replace(':userStateId', this._id)
-  }, {
-    rel: 'remove',
-    href: routes.userStates.deletePath.replace(':userStateId', this._id)
-  }];
-});
-
-export default mongoose.model<UserState>('UserState', userStateSchema);
