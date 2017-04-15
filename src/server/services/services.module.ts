@@ -3,8 +3,6 @@ import FileExplorerServiceStrategy from './fileExplorers/fileExplorerStrategy.se
 import {IFileExplorerService} from './fileExplorers/fileExplorer.service';
 import M3UPlaylistService, {IPlaylistService} from './m3uPlaylist.service';
 import {IPathBuilder} from '../utils/pathBuilder';
-import ConfigService, {IConfigService} from './config.service';
-import {IEvents} from '../events/index';
 
 /**
  * @description
@@ -24,7 +22,4 @@ export default function bootstrap(container: any) {
     fileExplorerService,
     pathBuilder
   ));
-  container.register('configService', (events: IEvents): IConfigService =>
-    new ConfigService(events)
-  );
 }

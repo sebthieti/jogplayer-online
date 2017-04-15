@@ -1,8 +1,12 @@
-import * as util from 'util';
-import {MongoClient, Db, MongoError, Collection} from 'mongodb';
+import * as jsonfile from 'jsonfile';
+import {MongoClient, Db, Collection} from 'mongodb';
 import {EventEmitter} from 'events';
-import {IEvents} from '../events/index';
-import {IDbConfig} from '../services/config.service';
+import {nfcall} from '../utils/promiseHelpers';
+import * as path from 'path';
+
+interface IDbConfig {
+  connection: string;
+}
 
 export interface IMongoDbContext extends EventEmitter {
   users: Collection;
@@ -12,29 +16,25 @@ export interface IMongoDbContext extends EventEmitter {
 export class MongoDbContext extends EventEmitter implements IMongoDbContext {
   users: Collection;
   media: Collection;
+  private db: Db;
 
-  constructor(events: IEvents) {
+  constructor() {
     super();
 
-    // TODO Gently disconnect
-    // TODO Will die, as the app shouldn't bootstrap db, and Config should be injected
-    events.onConfigReady(config => this.connectAndSetContext(config));
+    process.once('exit', () => this.disconnect.bind(this));
+    process.once('SIGINT', () => this.disconnect.bind(this));
+
+    this.connectAndSetContext();
   }
 
-  private connectAndSetContext(config: {DbConnection: IDbConfig}) {
-    const db = config.DbConnection;
-    const dbConnectionString = util.format(
-      'mongodb://%s:%d/%s',
-      db.host,
-      db.port,
-      db.dbName
+  private async connectAndSetContext(): Promise<void> {
+    const dbConfig = await nfcall<IDbConfig>(
+      jsonfile.readFile,
+      path.join(process.cwd(), 'config/dbConfig.json')
     );
 
-    // TODO use Promise instead
-    MongoClient.connect(
-      dbConnectionString,
-      (error: MongoError, db: Db) => !error && this.setContextAndNotify(db)
-    );
+    this.db = await MongoClient.connect(dbConfig.connection);
+    this.setContextAndNotify(this.db);
   }
 
   private setContextAndNotify(db: Db) {
@@ -42,5 +42,9 @@ export class MongoDbContext extends EventEmitter implements IMongoDbContext {
     this.media = db.collection('media');
 
     this.emit('db.ready');
+  }
+
+  private disconnect() {
+    return this.db.close();
   }
 }

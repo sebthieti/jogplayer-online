@@ -14,8 +14,6 @@ import {IMediaService} from '../services/media.service';
 import {IFileExplorerService} from '../services/fileExplorers/fileExplorer.service';
 import {IPlaylistService} from '../services/m3uPlaylist.service';
 import {IUserCache} from '../cache/user.cache';
-import {IEvents} from '../events/index';
-import {IConfigService} from '../services/config.service';
 import {IPlaylistRepository} from '../repositories/playlist.repository';
 import {IUserRepository} from '../repositories/user.repository';
 import {IFavoriteRepository} from '../repositories/favorite.repository';
@@ -93,7 +91,6 @@ export default function (container: any) {
   );
   container.register(
     'configDirector',
-    (events: IEvents, userDirector: IUserDirector, configService: IConfigService) =>
-      new ConfigDirector(events, userDirector, configService)
+    (userDirector: IUserDirector) => new ConfigDirector(userDirector)
   );
 }
