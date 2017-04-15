@@ -76,10 +76,6 @@ export default class Repository implements IRepository {
     if (options.exit) process.exit();
   }
 
-  private disconnectFromDb() {
-    this.exitHandler({ cleanup: true }, null);
-  }
-
   private async ensureDbFolderExists(): Promise<void> {
     return this.ensureDirectoryExists('./db/db/');
   }
