@@ -1,5 +1,4 @@
 import * as EventEmitter from 'events';
-import {IDbConfig} from '../services/config.service';
 import {Playlist} from '../entities/playlist';
 import {User} from '../entities/user';
 
@@ -15,10 +14,6 @@ export interface IEvents {
   onPlaylistsInsert(fn: (playlistInfos: IPlaylistInsertEvent) => void);
   emitPlaylistsRemove(playlistId: string);
   onPlaylistsRemove(fn: (playlistId: string) => void);
-  emitConfigReady(config: any);
-  onConfigReady(cfg: (config: {DbConnection: IDbConfig}) => void);
-  emitConfigFileIsValid(exists: boolean);
-  onConfigFileIsValid(cfg: (exists: boolean) => void);
   emitDbConnectionReady();
   onDbConnectionReady(cfg: () => void);
 }
@@ -48,22 +43,6 @@ export default class Events implements IEvents {
 
   onPlaylistsRemove(fn: (playlistId: string) => void) {
     this.emitter.on('playlists.remove', fn);
-  }
-
-  emitConfigReady(config: any) {
-    this.emitter.emit('config.ready', config);
-  }
-
-  onConfigReady(cfg: (config) => void) {
-    this.emitter.once('config.ready', cfg);
-  }
-
-  emitConfigFileIsValid(exists: boolean) {
-    this.emitter.emit('config.is-valid', exists);
-  }
-
-  onConfigFileIsValid(cfg: (exists: boolean) => void) {
-    this.emitter.on('config.is-valid', cfg);
   }
 
   emitDbConnectionReady() {
