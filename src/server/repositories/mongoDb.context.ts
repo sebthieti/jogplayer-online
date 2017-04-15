@@ -1,5 +1,5 @@
 import * as util from 'util';
-import {MongoClient, Db, MongoError, Collection} from 'mongodb';
+import {MongoClient, Db, Collection} from 'mongodb';
 import {EventEmitter} from 'events';
 import {IEvents} from '../events/index';
 import {IDbConfig} from '../services/config.service';
@@ -12,11 +12,14 @@ export interface IMongoDbContext extends EventEmitter {
 export class MongoDbContext extends EventEmitter implements IMongoDbContext {
   users: Collection;
   media: Collection;
+  private db: Db;
 
   constructor(events: IEvents) {
     super();
 
-    // TODO Gently disconnect
+    process.once('exit', this.disconnect.bind(this));
+    process.once('SIGINT', this.disconnect.bind(this));
+
     // TODO Will die, as the app shouldn't bootstrap db, and Config should be injected
     events.onConfigReady(config => this.connectAndSetContext(config));
   }
@@ -42,5 +45,9 @@ export class MongoDbContext extends EventEmitter implements IMongoDbContext {
     this.media = db.collection('media');
 
     this.emit('db.ready');
+  }
+
+  private disconnect() {
+    return this.db.close();
   }
 }
