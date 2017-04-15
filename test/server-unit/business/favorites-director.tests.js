@@ -57,7 +57,7 @@ describe('FavoriteDirector', function() {
 			});
 
 			favoriteDirector
-				.addFavoriteAsync(favorite)
+				.addAsync(favorite)
 				.then(function (fav) {
 					assert(fav !== undefined, 'users should be defined');
 					defer.reject('Should be in error');
@@ -80,7 +80,7 @@ describe('FavoriteDirector', function() {
 			}
 
 			favoriteDirector
-				.addFavoriteAsync(null, user)
+				.addAsync(null, user)
 				.then(function (fav) {
 					assert(fav !== undefined, 'users should be defined');
 					defer.reject('Should be in error');
@@ -111,7 +111,7 @@ describe('FavoriteDirector', function() {
 			});
 
 			favoriteDirector
-				.addFavoriteAsync(favorite, user)
+				.addAsync(favorite, user)
 				.then(function (fav) {
 					assert(fav !== undefined, 'users should be defined');
 					defer.resolve(fav);
@@ -134,7 +134,7 @@ describe('FavoriteDirector', function() {
 			}
 
 			return favoriteDirector
-				.getUserFavoritesAsync(issuer)
+				.getAsync(issuer)
 				.then(function (favorites) {
 					expect(favorites.length).to.be.gte(0);
 					defer.resolve(true);
@@ -157,7 +157,7 @@ describe('FavoriteDirector', function() {
 			}
 
 			return favoriteDirector
-				.getUserFavoritesAsync(issuer)
+				.getAsync(issuer)
 				.then(function (favorites) {
 					assert(favorites !== undefined, 'favorites should be defined');
 					expect(favorites.length).to.be.gte(0);
@@ -173,7 +173,7 @@ describe('FavoriteDirector', function() {
 					});
 
 					return favoriteDirector
-						.updateFromFavoriteDtoAsync(favorite.id, favDto, issuer)
+						.updateFavoriteAsync(favorite.id, favDto, issuer)
 						.then(function (fav) {
 							assert(fav !== undefined, 'fav should be defined');
 							expect(fav.name).to.be.equal('Test fav updated');
@@ -198,7 +198,7 @@ describe('FavoriteDirector', function() {
 			}
 
 			return favoriteDirector
-				.getUserFavoritesAsync(issuer)
+				.getAsync(issuer)
 				.then(function (favorites) {
 					assert(favorites !== undefined, 'favorites should be defined');
 					expect(favorites.length).to.be.gte(0);
@@ -209,11 +209,11 @@ describe('FavoriteDirector', function() {
 					return _.findWhere(favorites, { name: 'Test fav updated' }); // This name comes from update test
 				})
 				.then(function(favorite) {
-					return favoriteDirector.removeFavoriteByIdAsync(favorite.id, issuer);
+					return favoriteDirector.removeByIdAsync(favorite.id, issuer);
 				})
 				.then(function() {
 					// Ensure favorite is really removed
-					return favoriteDirector.getUserFavoritesAsync(issuer)
+					return favoriteDirector.getAsync(issuer)
 				})
 				.then(function (favorites) {
 					var deletedFavorite = _.findWhere(favorites, { name: 'Test fav updated' });
