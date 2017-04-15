@@ -7,13 +7,11 @@ import * as dependable from '@bruce17/dependable';
 import {IRouter} from './routers/router';
 import registerRouterModule, {postRegisterAuthenticationStack} from './routers/router.module';
 import registerServicesModule from './services/services.module';
-import registerRepositoriesModule from './repositories/repository.module';
+import registerRepositoriesModuleAsync from './repositories/repository.module';
 import registerUtilsModule from './utils/utils.module';
 import registerStreamModule from './stream/stream.module';
-import registerModelsModule from './models/models.module';
-import registerProxiesModule from './proxies/proxies.module';
+import registerProxiesModule from './cache/proxies.module';
 import registerDirectorsModule from './directors/directors.module';
-import registerInvokersModule from './invokers/invokers.module';
 import registerEventsModule from './events/events.module';
 
 class JogPlayerServer {
@@ -26,68 +24,62 @@ class JogPlayerServer {
    *
    * @param {object} app The application object..
    */
-  bootstrap(app: express.Application) {
+  async bootstrap(app: express.Application) {
     // TODO Move ffmpeg/ffprobe to dedicated folder
     this.checkAndSetRequiredEnvVar();
 
-    this.registerApp(app);
+    await this.registerApp(app);
   }
 
-  bootstrapForUnitTests() {
+  async bootstrapForUnitTests() {
     // TODO Move ffmpeg/ffprobe to dedicated folder
-    this.registerTest();
+    await this.registerTest();
   }
 
   giveContainer() {
     return this.container;
   };
 
-  private registerApp(app: express.Application) {
+  private async registerApp(app: express.Application) {
+    registerEventsModule(this.container);
     registerServicesModule(this.container);
-    registerRepositoriesModule(this.container);
+    await registerRepositoriesModuleAsync(this.container);
     registerUtilsModule(this.container);
     registerStreamModule(this.container);
-    registerModelsModule(this.container);
     registerProxiesModule(this.container);
     registerDirectorsModule(this.container);
-    registerInvokersModule(this.container);
     registerRouterModule(this.container, app);
-    registerEventsModule(this.container);
 
     postRegisterAuthenticationStack(this.container, app);
 
     this.container.resolve((
       setupRouter: IRouter,
       homeRouter: IRouter,
-      playMediaRouter: IRouter,
+      mediaRouter: IRouter,
       playlistRouter: IRouter,
       fileExplorerRouter: IRouter,
       favoriteRouter: IRouter,
-      stateRouter: IRouter,
       authRouter: IRouter,
       userRouter: IRouter,
       userStateRouter: IRouter
     ) => {
       homeRouter.bootstrap();
       setupRouter.bootstrap();
-      playMediaRouter.bootstrap();
+      mediaRouter.bootstrap();
       playlistRouter.bootstrap();
       fileExplorerRouter.bootstrap();
       favoriteRouter.bootstrap();
-      stateRouter.bootstrap();
       authRouter.bootstrap();
       userRouter.bootstrap();
       userStateRouter.bootstrap();
     });
   }
 
-  private registerTest() {
+  private async registerTest() {
     registerServicesModule(this.container);
-    registerRepositoriesModule(this.container);
+    await registerRepositoriesModuleAsync(this.container);
     registerUtilsModule(this.container);
     registerStreamModule(this.container);
-    registerModelsModule(this.container);
-    registerInvokersModule(this.container);
     registerProxiesModule(this.container);
     registerDirectorsModule(this.container);
   }
