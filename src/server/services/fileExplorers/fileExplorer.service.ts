@@ -3,6 +3,7 @@ import {Stats} from 'fs';
 import * as path from 'path';
 import FileInfo, {IFileInfo} from '../../entities/fileInfo';
 import {nfcall} from '../../utils/promiseHelpers';
+import * as child_process from 'child_process';
 
 export interface IFileExplorerService {
   readFileInfoAsync(urlPath: string): Promise<IFileInfo>;
@@ -58,7 +59,20 @@ export default class FileExplorerService implements IFileExplorerService {
     throw new Error('abstract member');
   }
 
-  private async performFolderReadDirAsync(basePath: string, urlPath: string): Promise<IFileInfo[]> {
+  protected getDrivesFromCmd(cmd: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      child_process.exec(cmd, (err, stdOut, stdErr) => {
+        if (err) {
+          reject(`Error running drive list command: ${err}|${stdErr}`);
+        } else {
+          resolve(stdOut);
+        }
+      });
+    });
+  }
+
+
+  protected async performFolderReadDirAsync(basePath: string, urlPath: string): Promise<IFileInfo[]> {
     const fileNames = await nfcall<string[]>(fs.readdir, basePath);
     let fileInfos = await this.spreadFileStatsQueriesInDirAsync(basePath, fileNames);
     fileInfos = await this.filterByValidFiles(fileInfos);
@@ -78,7 +92,7 @@ export default class FileExplorerService implements IFileExplorerService {
     );
   }
 
-  private mapUrlToServerPath(urlPath: string): string {
+  protected mapUrlToServerPath(urlPath: string): string {
     return this.normalizePathForCurrentOs(urlPath);
   }
 

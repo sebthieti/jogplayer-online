@@ -4,15 +4,15 @@ import * as path from 'path';
 import * as ffmpeg from 'fluent-ffmpeg';
 import * as fsHelpers from '../utils/fsHelpers';
 import {nfcall} from '../utils/promiseHelpers';
-import MediumInfo, {IMediumInfo} from '../entities/mediumInfo';
 import {ReadStream} from 'fs';
+import {MediumInfo} from '../entities/mediumInfo';
 const ffprobe = ffmpeg.ffprobe;
 
 export interface IMediaService {
   getFileSizeAsync(filePath: string): Promise<number>;
   convertMediumToAsync(mediaFilePath: string, outputFormat: string): Promise<string>;
   getFileStream(filePath: string, fromOffset: number, toOffset: number): ReadStream;
-  getMediumInfosAsync(mediaFilePath): Promise<IMediumInfo>;
+  getMediumInfosAsync(mediaFilePath): Promise<MediumInfo>;
 }
 
 export default class MediaService implements IMediaService {
@@ -39,14 +39,19 @@ export default class MediaService implements IMediaService {
     return fs.createReadStream(filePath, { start: fromOffset, end: toOffset });
   }
 
-  async getMediumInfosAsync(mediaFilePath: string): Promise<IMediumInfo> {
+  async getMediumInfosAsync(mediaFilePath: string): Promise<MediumInfo> {
     const basicInfo = this.getBasicMediumInfo(mediaFilePath);
-    const detailedMediumInfo = await nfcall(ffprobe, mediaFilePath);
-    return new MediumInfo({
+    let infos = {
       name: basicInfo.name,
       fileext: basicInfo.fileext,
-      detailedInfo: detailedMediumInfo
-    } as IMediumInfo);
+    } as MediumInfo;
+    try {
+      const detailedMediumInfo = await nfcall(ffprobe, mediaFilePath);
+      infos.detailedInfo = detailedMediumInfo;
+    } catch (err) {
+      console.log(err);
+    }
+    return infos;
   }
 
   private getBasicMediumInfo(filePath: string): { name: string, fileext: string } {
@@ -105,17 +110,4 @@ export default class MediaService implements IMediaService {
 
     return path.join(convertionFolderPath, mediaFileNameNoExt + outputFormat);
   }
-
-//var checkAndUpdateMustRelocalizeAsync = function(media) {
-//	var checkAndUpdatePromises = media.map(function(medium) {
-//		return utils.checkFileExistsAsync(medium.filePath)
-//			.then(function (fileExists) { return setMustRelocalize(medium, fileExists) });
-//	});
-//	return Q.all(checkAndUpdatePromises);
-//};
-//
-//var setMustRelocalize = function(medium, fileExists) {
-//	return medium.setMustRelocalize(!fileExists);
-//};
-
 }

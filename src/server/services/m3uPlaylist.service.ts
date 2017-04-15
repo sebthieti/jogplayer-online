@@ -6,13 +6,12 @@ import * as _ from 'lodash';
 import {nfcall} from '../utils/promiseHelpers';
 import {IFileExplorerService} from './fileExplorers/fileExplorer.service';
 import {IPathBuilder} from '../utils/pathBuilder';
-import {IMediaBuilder} from '../invokers/mediaBuilder';
-import {Playlist} from '../models/playlist.model';
-import {IMediumSummary} from '../entities/mediumSummary';
+import {MediumSummary} from '../entities/medium';
+import {IPlaylistModel} from '../models/playlist.model';
 
 export interface IPlaylistService {
-  loadMediaSummariesFromPlaylistAsync(filePath: string): Promise<IMediumSummary[]>;
-  savePlaylistAsync(playlist: Playlist): Promise<Playlist>;
+  loadMediaSummariesFromPlaylistAsync(filePath: string): Promise<MediumSummary[]>;
+  savePlaylistAsync(playlist: IPlaylistModel): Promise<IPlaylistModel>;
   isOfType(filePath: string): boolean;
 }
 
@@ -21,21 +20,21 @@ export default class M3UPlaylistService implements IPlaylistService {
 
   constructor(
     private fileExplorer: IFileExplorerService,
-    private pathBuilder: IPathBuilder,
-    private mediaBuilder: IMediaBuilder
+    private pathBuilder: IPathBuilder
   ) {
   }
 
-  async loadMediaSummariesFromPlaylistAsync(filePath: string): Promise<IMediumSummary[]> {
+  async loadMediaSummariesFromPlaylistAsync(filePath: string): Promise<MediumSummary[]> {
     const playlistContent = await this.readPlaylistAsync(filePath);
     return this.parsePlaylist(playlistContent, filePath);
   }
 
-  async savePlaylistAsync(playlist: Playlist): Promise<Playlist> {
-    let lines = new Array(playlist.media.length * 2 + 1); // 2 lines per title + header
+  async savePlaylistAsync(playlist: IPlaylistModel): Promise<IPlaylistModel> {
+    const media = await playlist.media.valueAsync;
+    let lines = new Array(media.length * 2 + 1); // 2 lines per title + header
     lines[0] = this.Extended;
     let cursor = 0;
-    playlist.media.forEach(medium => {
+    media.forEach(medium => {
       lines[++cursor] = this.generateLine(medium.title, medium.duration);
       lines[++cursor] = this.pathBuilder.toRelativePath(playlist.filePath, medium.filePath);
     });
@@ -63,13 +62,12 @@ export default class M3UPlaylistService implements IPlaylistService {
     );
   }
 
-  private parsePlaylist(playlistContent: string, filePath: string): IMediumSummary[] {
+  private parsePlaylist(playlistContent: string, filePath: string): MediumSummary[] {
     let playlistContentParsed = _(playlistContent.split(os.EOL))
       .dropWhile(c => c.indexOf(this.Extended) !== -1)
-      .drop(1)
       .value();
 
-    let medias: IMediumSummary[] = [];
+    let medias: MediumSummary[] = [];
     for (let lineIndex = 0; lineIndex < playlistContentParsed.length; lineIndex++) {
       let mediaFirstLine = playlistContentParsed[lineIndex];
       if (!mediaFirstLine) {
@@ -92,12 +90,11 @@ export default class M3UPlaylistService implements IPlaylistService {
 
       let mediaPath = playlistContentParsed[lineIndex];
 
-      let media = this.mediaBuilder.buildMediumSummary(
-        this.pathBuilder.toAbsolutePath(filePath, mediaPath),
-        title,
-        medias.length,
-        duration
-      );
+      let media = {
+        filePath: this.pathBuilder.toAbsolutePath(filePath, mediaPath),
+        title: title,
+        duration: duration
+      } as MediumSummary;
 
       medias.push(media);
     }

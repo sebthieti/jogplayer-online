@@ -5,7 +5,6 @@ import M3UPlaylistService, {IPlaylistService} from './m3uPlaylist.service';
 import {IPathBuilder} from '../utils/pathBuilder';
 import ConfigService, {IConfigService} from './config.service';
 import {IEvents} from '../events/index';
-import {IMediaBuilder} from '../invokers/mediaBuilder';
 
 /**
  * @description
@@ -17,15 +16,13 @@ export default function bootstrap(container: any) {
   container.register('fileExplorerService', (): IFileExplorerService =>
     new FileExplorerServiceStrategy().buildFileExplorerService()
   );
-  // TODO Should contain a list of.
-  container.register('playlistServices', (
+  // TODO Should give one service, (playlistServiceSelector) contain a list of.
+  container.register('playlistService', (
     fileExplorerService: IFileExplorerService,
-    pathBuilder: IPathBuilder,
-    mediaBuilder: IMediaBuilder
+    pathBuilder: IPathBuilder
   ): IPlaylistService => new M3UPlaylistService(
     fileExplorerService,
-    pathBuilder,
-    mediaBuilder
+    pathBuilder
   ));
   container.register('configService', (events: IEvents): IConfigService =>
     new ConfigService(events)
