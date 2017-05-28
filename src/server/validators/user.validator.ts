@@ -32,7 +32,7 @@ export default class UserValidator {
     if (rawRequest.email && !utils.isString(rawRequest.email)) {
       throw new Error('email must be of type String');
     }
-    if (rawRequest.hashedPassword && !utils.isString(rawRequest.hashedPassword)) {
+    if (rawRequest.password && !utils.isString(rawRequest.password)) {
       throw new Error('hashedPassword must be of type String');
     }
   }
@@ -44,7 +44,7 @@ export default class UserValidator {
     if ('username' in rawRequest) request.username = rawRequest.username;
     if ('fullName' in rawRequest) request.fullName = rawRequest.fullName;
     if ('email' in rawRequest) request.email = rawRequest.email;
-    if ('hashedPassword' in rawRequest) request.password = rawRequest.hashedPassword;
+    if ('password' in rawRequest) request.password = rawRequest.password;
 
     return request;
   }

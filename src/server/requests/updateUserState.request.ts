@@ -2,6 +2,6 @@ export interface UpdateUserStateRequest {
   playedPosition: number;
   mediaQueue: string[];
   browsingFolderPath: string;
-  openedPlaylistId: string;
+  openedPlaylistPosition: string;
   playingMediumInQueueIndex: number;
 }

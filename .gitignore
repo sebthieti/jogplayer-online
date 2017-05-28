@@ -5,3 +5,4 @@ node_modules
 build
 aws-config.json
 ffmpeg
+dist

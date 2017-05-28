@@ -1,0 +1,46 @@
+<template>
+  <require from="../../../resources/elements/addOrEditUser"></require>
+
+  <div id="manage-users-outer">
+
+    <div id="manage-users-inner">
+
+      <ol id="user-list">
+        <li repeat.for="userVm of usersVm">
+          <div hide.bind="userVm.isEditing" class="edit-container">
+            <div class="edit">
+              <button type="button"
+                      class="btn-rounded-new btn-small icon-pencil"
+                      style="display: block"
+                      click.delegate="beginEditUser(userVm)"></button>
+              <button type="button"
+                      class="btn-rounded-new btn-small"
+                      style="display: block;margin-top: 5px"
+                      hide.bind="userVm.permissions.isRoot"
+                      click.delegate="removeUser($index, userVm)">X</button>
+            </div>
+            <compose view="./userSummary.html"></compose>
+          </div>
+          <div show.bind="userVm.isEditing">
+            <button type="button"
+                    class="btn-rounded-new btn-small"
+                    style="position: absolute;right: 22px"
+                    click.delegate="cancelEditUser(userVm)">X</button>
+            <add-or-edit-user user-vm.bind="userVm"></add-or-edit-user>
+          </div>
+        </li>
+        <li>
+          <!-- TODO Remove show.bind once accordion anim in use -->
+          <!-- TODO Should not looks like a button -->
+          <div id="add-user" hide.bind="canShowAddUserPanel">
+            <button type="button"
+                    id="add-user-btn"
+                    class="icon-user-plus btn-middle"
+                    click.delegate="beginAddUser()"></button>
+          </div>
+        </li>
+      </ol>
+
+    </div>
+  </div>
+</template>

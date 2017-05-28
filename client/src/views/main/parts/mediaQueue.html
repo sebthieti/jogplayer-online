@@ -1,0 +1,25 @@
+<template>
+  <require from="../../../resources/attributes/stopEvent"></require>
+
+  <div id="queue-inner">
+    <ul id="queue">
+      <li repeat.for="mVm of mediaQueueViewModels"
+          click.trigger="playMedium($index, mVm)"
+          class="not-selectable ${mVm.isPlaying ? 'active btn-enabled' : 'btn-enabled'}">
+        <button type="button"
+                click.trigger="innerRemove($index, mVm)"
+                class="remove"
+                stop-event>[x]</button>
+        <span class="error" show.bind="mVm.hasError" stop-event>[!]</span>
+        <span textcontent.one-time="mVm.name || mVm.title"></span>
+      </li>
+    </ul>
+    <button type="button"
+            id="clear-queue"
+            class="icon-bin btn-enabled"
+            title="Clear queue"
+            show.bind="hasAny"
+            click.delegate="clearQueue()">
+    </button>
+  </div>
+</template>

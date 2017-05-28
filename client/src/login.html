@@ -1,0 +1,29 @@
+<template>
+  <require from="./resources/attributes/shakeOnInvalidCredentials"></require>
+
+  <form id="loginForm"
+        role="form"
+        submit.delegate="submitCredentials()"
+        shake-on-invalid-credentials="logonStatus">
+    <p>
+      <input id="username"
+             autofocus
+             type="text"
+             name="username"
+             placeholder="User Name"
+             value.bind="username"
+             required>
+    </p>
+    <p>
+      <input id="password"
+             type="password"
+             name="password"
+             placeholder="Password"
+             value.bind="password">
+    </p>
+    <button type="submit" title="Let me in">
+      <img src="img/logo.png">
+      <span>Let me in</span>
+    </button>
+  </form>
+</template>

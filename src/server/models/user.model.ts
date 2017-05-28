@@ -139,8 +139,6 @@ export default class UserModel implements IUserModel {
     this.passwordSalt = hasher.createSalt();
     this.hashedPassword = hasher.computeHash(password, this.passwordSalt); // TODO Rename in model to hashedPassword
 
-    this.permissions.setIsRoot();
-
     return this;
   }
 

@@ -9,7 +9,7 @@
     "lib": ["es6", "es2015", "dom"],
     "pretty": false,
     "noImplicitAny": false,
-    "outDir": "./build",
+    "outDir": "./dist",
     "typeRoots": [
       "./node_modules/@types",
       "./node_modules"
@@ -18,7 +18,9 @@
       "node"
     ]
   },
-
+  "include": [
+    "./src/server/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
     "app"

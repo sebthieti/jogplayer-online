@@ -1,0 +1,48 @@
+<template>
+  <div id="audio-player">
+    <div>
+      <div id="previous-container">
+        <button type="button"
+                class="icon-previous2 btn btn-enabled"
+                click.delegate="playPrevious()">
+        </button>
+      </div>
+      <div id="play-container">
+        <button type="button"
+                id="btnPlay"
+                class="icon-play3 btn btn-enabled btn-large"
+                click.delegate="playOrPause()">
+        </button>
+      </div>
+      <div id="next-container">
+        <button type="button"
+                class="icon-next2 btn btn-enabled"
+                click.delegate="playNext()">
+        </button>
+      </div>
+      <div id="elapsed-time-container">
+        <span id="elapsed-time" class="time">0:00</span>
+      </div>
+
+      <div id="time-line-container">
+        <div id="time-line">
+          <div id="loaded-chunks"></div>
+          <div id="cursor" title="Cursor" class="btn-enabled hidden"></div>
+        </div>
+      </div>
+
+      <div id="remaining-time-container">
+        <span id="remaining-time" class="time">0:00</span>
+      </div>
+      <div id="volume-container">
+        <button type="button"
+                class="btn btn-enabled ${isMuting ? 'icon-volume-mute2' : 'icon-volume-high'}"
+                click.delegate="mute()">
+        </button>
+        <div id="volume-bar-container">
+          <div id="volume-bar" class="btn-enabled"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

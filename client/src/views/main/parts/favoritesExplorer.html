@@ -1,0 +1,42 @@
+<template>
+  <require from="../../../resources/attributes/enter"></require>
+  <require from="../../../resources/attributes/focusWhen"></require>
+
+  <ul id="favorites">
+    <li repeat.for="favoriteVm of favoritesVm"
+        class="btn-enabled">
+      <span class="icon-heart favorite"></span>
+      <input show.bind="favoriteVm.isEditing"
+             enter.call="done($index, favoriteVm)"
+             focus-when.bind="favoriteVm.isEditing"
+             type="text"
+             value.bind="favoriteVm.name">
+      <button type="button"
+              show.bind="favoriteVm.isEditing"
+              class="icon-checkmark rename"
+              stop-event
+              click.delegate="done($index, favoriteVm)"></button>
+      <button type="button"
+              show.bind="favoriteVm.isEditing"
+              class="icon-close cancel"
+              stop-event
+              click.delegate="cancel(favoriteVm)"></button>
+
+      <button type="button"
+              hide.bind="favoriteVm.isEditing"
+              class="favName"
+              click.delegate="goToFolder(favoriteVm)"
+              textcontent.bind="favoriteVm.name"></button>
+      <button type="button"
+              hide.bind="favoriteVm.isEditing"
+              class="icon-pencil rename"
+              stop-event
+              click.delegate="editFavorite($index, favoriteVm)"></button>
+      <button type="button"
+              hide.bind="favoriteVm.isEditing"
+              class="icon-close delete"
+              stop-event
+              click.delegate="innerDeleteFavorite($index)"></button>
+    </li>
+  </ul>
+</template>

@@ -1,0 +1,28 @@
+<template>
+  <div id="file-explorer-commands">
+    <button id="addToPlaylist"
+            type="button"
+            class="button medium btn-rounded-new btn-middle"
+            title="Add files to current playlist"
+            disabled.bind="!canAddFilesToPlaylist"
+            click.delegate="addFilesToPlaylist()">&lt; P</button>
+    <button id="addMediaToQueue"
+            type="button"
+            class="button medium btn-rounded-new btn-middle"
+            title="Add media to queue (left panel)"
+            disabled.bind="!canEnqueueMediaSelection"
+            click.delegate="enqueueMediaSelection()">&gt; Q</button>
+    <button id="addFilesToQueue"
+            type="button"
+            class="button medium btn-rounded-new btn-middle"
+            title="Add files to queue (right panel)"
+            disabled.bind="!canEnqueueFileSelection"
+            click.delegate="enqueueFileSelection()">Q &lt;</button>
+    <button id="addFolderToFavorites"
+            type="button"
+            class="button medium btn-rounded-new btn-middle"
+            title="Add folder to favorites"
+            disabled.bind="!canAddFolderToFavorites"
+            click.delegate="addFolderToFavoritesCmd()">&#9829;+</button>
+  </div>
+</template>

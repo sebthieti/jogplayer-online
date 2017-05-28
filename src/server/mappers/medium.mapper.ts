@@ -12,6 +12,7 @@ export default function toMediumDto(medium: IMediumModel): MediumDto {
     ext: medium.ext,
     title: medium.title,
     duration: medium.duration,
+    filePath: medium.filePath,
     links: medium.links.map(l => toLinkDto(l))
   } as MediumDto;
 }

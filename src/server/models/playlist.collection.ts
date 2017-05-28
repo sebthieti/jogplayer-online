@@ -148,7 +148,16 @@ export default class PlaylistCollection implements IPlaylistCollection {
     );
 
     await playlist.loadPlaylistFromFileAndSaveAsync(request.filePath);
-
+    if (isNullOrUndefined(position)) {
+      await this.playlistRepository.addPlaylistAsync(
+        playlist.toEntity(),
+        this.user._id);
+    } else {
+      await this.playlistRepository.insertPlaylistAsync(
+        playlist.toEntity(),
+        position,
+        this.user._id);
+    }
     this.playlists.splice(position, 0, playlist);
 
     return playlist;

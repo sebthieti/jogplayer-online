@@ -17,7 +17,7 @@ export default class UserPermissionsRepository implements IUserPermissionsReposi
 
     const result = await this.dbContext.users.findOneAndUpdate(
       { _id: userId },
-      { permissions: permissions },
+      { $set: { permissions: permissions }},
       { projection: { permissions: 1 }, returnOriginal: false }
     );
 
