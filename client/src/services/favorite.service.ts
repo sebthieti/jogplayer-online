@@ -36,8 +36,8 @@ export default class FavoriteService {
 
   async addFolderToFavoritesAsync(folderPath: string): Promise<FavoriteModel> {
     let model = new FavoriteModel().setFromFolderPath(folderPath);
-    const addedFavorite = await this.repository.insertAsync(model.toEntity());
-    model = model.setFromEntity(addedFavorite);
+    const addedFavorite = await this.repository.insertAsync(model.toInsertRequest());
+    model.setFromEntity(addedFavorite);
 
     this.favorites.push(model);
     this.favoritesSubject.onNext(this.favorites);

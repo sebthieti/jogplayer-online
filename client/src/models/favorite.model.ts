@@ -48,7 +48,7 @@ export default class FavoriteModel {
     return upsert;
   }
 
-  toEntity(): Favorite {
+  toInsertRequest(): InsertFavorite {
     return {
       name: this.name,
       folderPath: this.folderPath
