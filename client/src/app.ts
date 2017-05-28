@@ -1,6 +1,6 @@
 import {autoinject} from 'aurelia-framework';
 import {ConfiguresRouter, Router, RouterConfiguration} from 'aurelia-router';
-import {AuthorizeStep} from './pipelines/authorizeStep';
+import {AuthenticationStep} from './pipelines/authenticationStep';
 import UnauthorizedRedirectorService from './services/unauthorizedRedirector.service';
 
 @autoinject
@@ -13,7 +13,7 @@ export class App implements ConfiguresRouter {
   configureRouter(config: RouterConfiguration, router: Router): void {
     this.router = router;
     config.title = 'JogPlayer Online';
-    config.addAuthorizeStep(AuthorizeStep);
+    config.addAuthorizeStep(AuthenticationStep);
     config.map([
       {
         route: ['', 'home'],
