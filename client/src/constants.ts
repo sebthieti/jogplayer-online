@@ -1,8 +1,7 @@
-export const EntityStatus = {
-  Unknown: 'unknown',
-  Added: 'added',
-  Updated: 'updated',
-  Removed: 'removed'
+export const ChangeEvent = {
+  Add: 'add',
+  Update: 'update',
+  Remove: 'remove'
 };
 
 export const AuthenticationStatus = {

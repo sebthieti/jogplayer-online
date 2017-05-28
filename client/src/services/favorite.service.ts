@@ -4,11 +4,17 @@ import FavoriteModel from '../models/favorite.model';
 import {FavoriteRepository} from '../repositories/favorite.repository';
 import PlaylistExplorerService from './playlistExplorer.service';
 import FileExplorerService from './fileExplorer.service';
+import {ChangeEvent} from '../constants';
+
+export interface FavoriteChangeEvent {
+  type: string;
+  entity: FavoriteModel;
+  position?: number;
+}
 
 @autoinject
 export default class FavoriteService {
-  private favorites: FavoriteModel[] = [];
-  private favoritesSubject = new Subject<FavoriteModel[]>();
+  private favoriteChangeSubject = new Subject<FavoriteChangeEvent>();
 
   constructor(
     private repository: FavoriteRepository,
@@ -16,8 +22,8 @@ export default class FavoriteService {
     private fileExplorerService: FileExplorerService
   ) { }
 
-  observeFavorites(): Observable<FavoriteModel[]> {
-    return this.favoritesSubject.whereIsDefined();
+  observeFavoriteChange(): Observable<FavoriteChangeEvent> {
+    return this.favoriteChangeSubject.whereIsDefined();
   }
 
   changeSelectedFavorite(favorite: FavoriteModel) {
@@ -29,9 +35,7 @@ export default class FavoriteService {
 
   async getFavorites(): Promise<FavoriteModel[]> {
     const favorites = await this.repository.getAsync();
-
-    this.favorites = favorites.map(fav => new FavoriteModel(fav));
-    return this.favorites;
+    return favorites.map(fav => new FavoriteModel(fav));
   }
 
   async addFolderToFavoritesAsync(folderPath: string): Promise<FavoriteModel> {
@@ -39,8 +43,10 @@ export default class FavoriteService {
     const addedFavorite = await this.repository.insertAsync(model.toInsertRequest());
     model.setFromEntity(addedFavorite);
 
-    this.favorites.push(model);
-    this.favoritesSubject.onNext(this.favorites);
+    this.favoriteChangeSubject.onNext({
+      type: ChangeEvent.Add,
+      entity: model
+    });
 
     return model;
   }
@@ -48,13 +54,25 @@ export default class FavoriteService {
   async updateFavoriteAsync(position: number, favoriteModel: FavoriteModel): Promise<FavoriteModel> {
     const updateRequest = favoriteModel.toUpdateRequest();
     const updatedFavorite = await this.repository.updateAsync(position, updateRequest);
-    this.favorites[position] = favoriteModel.setFromEntity(updatedFavorite);
+
+    favoriteModel.setFromEntity(updatedFavorite);
+
+    this.favoriteChangeSubject.onNext({
+      type: ChangeEvent.Update,
+      entity: favoriteModel,
+      position: position
+    });
 
     return favoriteModel;
   }
 
-  async removeFavorite(position: number): Promise<void> {
+  async removeFavorite(position: number, favoriteModel: FavoriteModel): Promise<void> {
     await this.repository.deleteAsync(position);
-    this.favorites.splice(position, 1);
+
+    this.favoriteChangeSubject.onNext({
+      type: ChangeEvent.Remove,
+      entity: favoriteModel,
+      position: position
+    });
   }
 }
