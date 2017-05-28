@@ -3,7 +3,12 @@ export interface Favorite {
   folderPath: string;
 }
 
-export interface UpsertFavorite {
+export interface InsertFavorite {
+  name: string;
+  folderPath: string;
+}
+
+export interface UpdateFavorite {
   name?: string;
   folderPath?: string;
 }

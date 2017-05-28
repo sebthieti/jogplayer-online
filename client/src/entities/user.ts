@@ -6,7 +6,16 @@ export interface User {
   username: string;
   fullName: string;
   email: string;
-  password: string;
+  // password: string;
+  permissions: UserPermissions;
+}
+
+export interface NewUser {
+  isActive: boolean;
+  username: string;
+  fullName: string;
+  email: string;
+  // password: string;
   permissions: UserPermissions;
 }
 

@@ -21,6 +21,7 @@
     "@types/passport-local": "^1.0.29",
     "@types/serve-static": "^1.7.31",
     "assert": "^1.4.1",
+    "aurelia-fetch-client": "^1.1.2",
     "body-parser": "^1.16.1",
     "config": "^1.25.1",
     "cookie-parser": "^1.4.3",

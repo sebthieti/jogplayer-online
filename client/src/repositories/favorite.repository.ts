@@ -1,6 +1,6 @@
 import {HttpClient, json} from 'aurelia-fetch-client';
 import {autoinject} from 'aurelia-framework';
-import {Favorite, UpsertFavorite} from '../entities/favorite';
+import {Favorite, InsertFavorite, UpdateFavorite} from '../entities/favorite';
 
 @autoinject
 export class FavoriteRepository {
@@ -18,36 +18,43 @@ export class FavoriteRepository {
   async getAsync(): Promise<Favorite[]> {
     const resp = await this.http.fetch(this.baseUrl);
     const data = await resp.json();
-    return data as Favorite[];
+    return data.map(x => this.toFavorite(x));
   }
 
   async getByIndexAsync(index: number): Promise<Favorite> {
     const resp = await this.http.fetch(`${this.baseUrl}/${index}`);
     const data = await resp.json();
-    return data as Favorite;
+    return this.toFavorite(data);
   }
 
-  async insertAsync(favorite: Favorite): Promise<Favorite> {
+  async insertAsync(favorite: InsertFavorite): Promise<Favorite> {
     const resp = await this.http.fetch(this.baseUrl, {
       method: 'POST',
       body: json(favorite)
     });
     const data = await resp.json();
-    return data as Favorite;
+    return this.toFavorite(data);
   }
 
-  async updateAsync(index: number, favorite: UpsertFavorite): Promise<Favorite> {
+  async updateAsync(index: number, favorite: UpdateFavorite): Promise<Favorite> {
     const resp = await this.http.fetch(`${this.baseUrl}/${index}`, {
       method: 'PATCH',
       body: json(favorite)
     });
     const data = await resp.json();
-    return data as Favorite;
+    return this.toFavorite(data);
   }
 
   async deleteAsync(index: number): Promise<void> {
     await this.http.fetch(`${this.baseUrl}/${index}`, {
       method: 'DELETE'
     });
+  }
+
+  private toFavorite(entity: any): Favorite {
+    return {
+      name: entity.name,
+      folderPath: entity.folderPath
+    };
   }
 }
