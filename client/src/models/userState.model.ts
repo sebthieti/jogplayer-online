@@ -1,80 +1,70 @@
-import {UserState} from '../entities/userState';
+import * as _ from 'lodash';
+import {UpdateUserState, UserState} from '../entities/userState';
+
+interface UserStateModelSnapshot {
+  playedPosition?: number;
+  mediaQueue?: string[];
+  browsingFolderPath?: string;
+  openedPlaylistPosition?: number;
+  playingMediumInQueueIndex?: number;
+}
 
 export class UserStateModel {
   playedPosition: number;
   mediaQueue: string[];
   browsingFolderPath: string;
-  openedPlaylistId: string;
+  openedPlaylistPosition: number;
   playingMediumInQueueIndex: number;
 
+  private previousSnapshot: UserStateModelSnapshot;
+
   constructor(state?: UserState) {
-    Object.assign(this, state);
+    this.setFromEntity(state);
   }
 
-  async loadUserState() { // TODO Move to service
-    // authBusiness
-    //   .observeAuthenticatedUser()
-    //   .whereHasValue()
-    //   .do(function(__) {
-    // const vol = this.tryLoadVolumeState() || 1.0;
-    // this.audioService.setVolume(vol);
-    //
-    // const userState = await this.userStateRepository.getCurrentUserState();
-    // initializingState = true;
+  setFromEntity(state?: UserState): UserStateModel {
+    state && Object.assign(this, {
+      playedPosition: state.playedPosition,
+      mediaQueue: state.mediaQueue,
+      browsingFolderPath: state.browsingFolderPath,
+      openedPlaylistPosition: state.openedPlaylistPosition,
+      playingMediumInQueueIndex: state.playingMediumInQueueIndex
+    });
 
+    this.takeSnapshot();
 
-    // UserStateModel
-    //   .getCurrentUserStateAsync()
-    //   .then(function(userState) {
-    //     initializingState = true;
-    //     mediators.setIsUserStateInitialized(initializingState);
-    //     userStateSubject.onNext(userState);
-    //     if (!userState) {
-    //       initializingState = false;
-    //       mediators.setIsUserStateInitialized(initializingState);
-    //       return;
-    //     }
-    //
-    //     $q.all([
-    //       loadMediaQueueAsync(userState)
-    //         .then(function() {
-    //           return loadCurrentMediumAsync(userState);
-    //         }),
-    //       loadCurrentPlaylist(userState)
-    //     ]).then(function() {
-    //       initializingState = false;
-    //       mediators.setIsUserStateInitialized(initializingState);
-    //     }, function() {
-    //       initializingState = false;
-    //       mediators.setIsUserStateInitialized(initializingState);
-    //     });
-    //   });
-    // })
-    // .silentSubscribe();
+    return this;
   }
 
-  // setPlayedPosition(position: number): UserStateModel {
-  //   this.playedPosition = position;
-  //   return this;
-  // }
-  //
-  // setMediaQueue(mediaQueue: string[]): UserStateModel {
-  //   this.mediaQueue = mediaQueue;
-  //   return this;
-  // }
-  //
-  // setBrowsingFolderPath(browsingFolderPath: string): UserStateModel {
-  //   this.browsingFolderPath = browsingFolderPath;
-  //   return this;
-  // }
-  //
-  // setPlayingMediumInQueueIndex(mediumInQueueIndex: number): UserStateModel {
-  //   this.playingMediumInQueueIndex = mediumInQueueIndex;
-  //   return this;
-  // }
-  //
-  // setOpenedPlaylistId(playlistId: string): UserStateModel {
-  //   this.openedPlaylistId = playlistId;
-  //   return this;
-  // }
+  private takeSnapshot(): void {
+    this.previousSnapshot = {
+      playedPosition: this.playedPosition,
+      mediaQueue: this.mediaQueue,
+      browsingFolderPath: this.browsingFolderPath,
+      openedPlaylistPosition: this.openedPlaylistPosition,
+      playingMediumInQueueIndex: this.playingMediumInQueueIndex
+    };
+  }
+
+  toUpdateUserStateRequest(): UpdateUserState {
+    let update = {} as UpdateUserState;
+
+    if (this.playedPosition && this.playedPosition !== this.previousSnapshot.playedPosition) {
+      update.playedPosition = this.playedPosition;
+    }
+    if (this.mediaQueue && !_.isEqual(this.mediaQueue, this.previousSnapshot.mediaQueue)) {
+      update.mediaQueue = this.mediaQueue;
+    }
+    if (this.browsingFolderPath && this.browsingFolderPath !== this.previousSnapshot.browsingFolderPath) {
+      update.browsingFolderPath = this.browsingFolderPath;
+    }
+    if (this.openedPlaylistPosition !== undefined && this.openedPlaylistPosition !== this.previousSnapshot.openedPlaylistPosition) {
+      update.openedPlaylistPosition = this.openedPlaylistPosition;
+    }
+    if (this.playingMediumInQueueIndex && this.playingMediumInQueueIndex !== this.previousSnapshot.playingMediumInQueueIndex) {
+      update.playingMediumInQueueIndex = this.playingMediumInQueueIndex;
+    }
+
+    return update;
+  }
 }

@@ -1,5 +1,5 @@
-import {Favorite, UpsertFavorite} from '../entities/favorite';
-import {FavoriteRepository} from '../repositories/favorite.repository';
+import * as _ from 'lodash';
+import {Favorite, UpdateFavorite} from '../entities/favorite';
 
 interface FavoriteModelSnapshot {
   name?: string;
@@ -12,24 +12,28 @@ export default class FavoriteModel {
 
   private previousSnapshot: FavoriteModelSnapshot;
 
-  constructor(
-    private repository: FavoriteRepository,
-    private indexFn: (favorite: FavoriteModel) => number,
-    favorite?: Favorite
-  ) {
+  constructor(favorite?: Favorite) {
     this.setFromEntity(favorite);
+  }
+
+  setFromFolderPath(folderPath: string): FavoriteModel {
+    this.folderPath = folderPath;
+    this.name = this.extractFolderNameFromPath(folderPath);
+
+    return this;
+  }
+
+  // TODO May be moved to helper ? Was splitFolderPath(folderPath: string): string[]
+  private extractFolderNameFromPath(folderPath: string): string {
+    return _(folderPath)
+      .split('/')
+      .filter(segment => segment !== '')
+      .last();
   }
 
   setFromEntity(favorite?: Favorite): FavoriteModel {
     Object.assign(this, favorite);
     this.takeSnapshot();
-    return this;
-  }
-
-  async update(): Promise<FavoriteModel> {
-    const index = this.indexFn(this);
-
-    await this.repository.updateAsync(index, this.toUpsertRequest());
     return this;
   }
 
@@ -40,8 +44,8 @@ export default class FavoriteModel {
     };
   }
 
-  toUpsertRequest(): UpsertFavorite {
-    let upsert = {} as UpsertFavorite;
+  toUpdateRequest(): UpdateFavorite {
+    let upsert = {} as UpdateFavorite;
 
     if (this.name !== this.previousSnapshot.name) {
       upsert.name = this.name;
@@ -50,5 +54,12 @@ export default class FavoriteModel {
     }
 
     return upsert;
+  }
+
+  toEntity(): Favorite {
+    return {
+      name: this.name,
+      folderPath: this.folderPath
+    }
   }
 }

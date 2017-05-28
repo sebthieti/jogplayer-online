@@ -1,7 +1,7 @@
-import {UserPermissions} from '../entities/userPermissions';
-import {UserRepository} from '../repositories/user.repository';
+import {NewUserPermissions, UserPermissions} from '../entities/userPermissions';
 import UserModel from './user.model';
 import {UpdatePermissions} from '../entities/user';
+import UserService from '../services/user.service';
 
 interface UserPermissionsModelSnapshot {
   isAdmin: boolean;
@@ -12,8 +12,8 @@ interface UserPermissionsModelSnapshot {
 }
 
 export default class UserPermissionsModel {
-  isAdmin: boolean;
   isRoot: boolean;
+  isAdmin: boolean;
   canWrite: boolean;
   allowPaths: string[];
   denyPaths: string[];
@@ -22,26 +22,16 @@ export default class UserPermissionsModel {
   private previousSnapshot: UserPermissionsModelSnapshot;
 
   constructor(
-    private userRepository: UserRepository,
-    private user: UserModel,
-    permissions?: UserPermissions
+    private userService: UserService,
+    public user: UserModel,
+    permissions?: UserPermissions | NewUserPermissions
   ) {
     this.setFromEntity(permissions);
   }
 
-  setFromEntity(permissions: UserPermissions): UserPermissionsModel {
+  setFromEntity(permissions: UserPermissions | NewUserPermissions): UserPermissionsModel {
     Object.assign(this, permissions);
     this.takeSnapshot();
-    return this;
-  }
-
-  async update(): Promise<UserPermissionsModel> {
-    const updatedPermissions = await this.userRepository.updateUserPermissions(
-      this.user.id,
-      this.toUpdateRequest()
-    );
-    this.setFromEntity(updatedPermissions);
-
     return this;
   }
 

@@ -1,76 +1,54 @@
 import {Playlist} from '../entities/playlist';
-import PlaylistRepository, {UpsertPlaylist} from '../repositories/playlist.repository';
+import {UpsertPlaylist} from '../repositories/playlist.repository';
 import MediumModel from './medium.model';
-import {FileExplorerRepository} from '../repositories/fileExplorer.repository';
-import MediaQueueService from '../services/mediaQueue.service';
+
+interface PlaylistModelSnapshot {
+  name?: string;
+  filePath?: string;
+}
 
 export default class PlaylistModel {
-  index: number;
   name: string;
+  filePath: string;
   isAvailable: boolean;
-  media: MediumModel[] = [];
+  media: MediumModel[];
 
-  private original: Playlist;
+  private original: PlaylistModelSnapshot;
 
-  constructor(
-    private repository: PlaylistRepository,
-    private fileExplorer: FileExplorerRepository,
-    private mediaQueueService: MediaQueueService,
-    playlist?: Playlist
-  ) {
+  constructor(playlist?: Playlist) {
+    this.original = playlist || {} as PlaylistModelSnapshot;
+    this.setFromEntity(playlist);
+  }
+
+  setFromEntity(playlist?: Playlist): PlaylistModel {
     Object.assign(this, playlist);
-    Object.assign(this.original, {}, playlist);
+    this.takeSnapshot();
+    return this;
   }
 
-  async getMedia(): Promise<MediumModel[]> {
-    const media = await this.repository.getMedia(this.index);
-    const models = media.map(medium => new MediumModel(
-      this.fileExplorer,
-      this.mediaQueueService,
-      medium
-    ));
-    this.media = this.media.concat(models);
-    return models;
-  }
-
-  async getMediumFromUrl(url: string): Promise<MediumModel> {
-    const medium = await this.repository.getMediumByPath(url);
-    return new MediumModel(this.fileExplorer, this.mediaQueueService, medium);
+  private takeSnapshot(): void {
+    this.original = {
+      name: this.name,
+      filePath: this.filePath
+    };
   }
 
   findMediumIndex(medium: MediumModel): number {
-    return this.media.indexOf(medium);
+    return this.media && this.media.indexOf(medium);
   }
 
   hasMedium(medium: MediumModel): boolean {
-    return this.media.indexOf(medium) !== -1;
+    return this.media && this.media.indexOf(medium) !== -1;
   }
 
-  async addMediumByFilePathToPlaylist(filePath: string): Promise<MediumModel> {
-    const medium = await this.repository.addMedium(this.index, filePath);
-    const position = this.media.push(new MediumModel(this.fileExplorer, this.mediaQueueService, medium));
-    return this.media[position];
-  }
-
-  async insertMediumByFilePathToPlaylist(filePath: string, index: number) {
-    const medium = await this.repository.insertMedium(this.index, index, filePath);
-    const position = this.media.push(new MediumModel(this.fileExplorer, this.mediaQueueService, medium));
-    return this.media[position];
-  }
-
-  async updatePlaylistAsync(): Promise<PlaylistModel> {
+  toUpdateRequest(): UpsertPlaylist {
     let data: UpsertPlaylist = {};
     if (this.original.name !== this.name) {
       data.name = this.name;
     }
-
-    await this.repository.updatePlaylist(this.index, data);
-    return this;
-  }
-
-  async removeMedium(medium: MediumModel): Promise<void> {
-    const index = this.media.indexOf(medium);
-    await this.repository.removeMedium(this.index, index);
-    this.media.splice(index, 1);
+    if (this.original.filePath !== this.filePath) {
+      data.filePath = this.filePath;
+    }
+    return data;
   }
 }
