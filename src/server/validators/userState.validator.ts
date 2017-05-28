@@ -1,3 +1,4 @@
+import * as utils from 'util';
 import {UpdateUserStateRequest} from '../requests/updateUserState.request';
 
 export default class UserStateValidator {
@@ -11,19 +12,19 @@ export default class UserStateValidator {
       throw new Error('No rawRequest has been provided for userState');
     }
 
-    if (rawRequest.playedPosition && typeof rawRequest.playedPosition !== 'number') {
+    if (rawRequest.playedPosition && !utils.isNumber(rawRequest.playedPosition)) {
       throw new Error('playedPosition must be of type Number');
     }
-    if (rawRequest.mediaQueue && !(rawRequest.mediaQueue instanceof Array)) {
+    if (rawRequest.mediaQueue && !utils.isArray(rawRequest.mediaQueue)) {
       throw new Error('mediaQueue must be of type Array');
     }
-    if (rawRequest.browsingFolderPath && typeof rawRequest.browsingFolderPath !== 'string') {
+    if (rawRequest.browsingFolderPath && !utils.isString(rawRequest.browsingFolderPath)) {
       throw new Error('browsingFolderPath must be of type String');
     }
-    if (rawRequest.openedPlaylistId && typeof rawRequest.openedPlaylistId !== 'string') {
-      throw new Error('openedPlaylistId must be of type String');
+    if (rawRequest.openedPlaylistPosition && !utils.isNumber(rawRequest.openedPlaylistPosition)) {
+      throw new Error('openedPlaylistPosition must be of type String');
     }
-    if (rawRequest.playingMediumInQueueIndex && typeof rawRequest.playingMediumInQueueIndex !== 'number') {
+    if (rawRequest.playingMediumInQueueIndex && !utils.isNumber(rawRequest.playingMediumInQueueIndex)) {
       throw new Error('playingMediumInQueueIndex must be of type Number');
     }
   }
