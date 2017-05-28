@@ -1,4 +1,4 @@
-/// This file is temporary and will be removed soon
+// TODO This file is temporary and will be removed soon
 
 export default class Mediators {
   isUserStateInitialized = false;

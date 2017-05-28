@@ -1,52 +1,33 @@
-export class BreadCrumbService {
-  constructor() {
+import {autoinject} from 'aurelia-framework';
+import {ExplorerService} from './explorer.service';
+import PlaylistExplorerService from './playlistExplorer.service';
+import FileExplorerService from './fileExplorer.service';
+
+export abstract class BreadCrumbService {
+  constructor(private explorerService: ExplorerService) {
   }
 
+  observeCurrentDir() {
+    return this.explorerService
+      .observeCurrentFolderContent()
+      .map(folderContentVm => folderContentVm.path);
+  }
 
+  changeDir(folderPath) {
+    this.explorerService.changeFolderByApiUrlAndResetSelection(folderPath);
+  }
 }
 
-// jpoApp.factory('breadCrumbPlaylistExplorerBusiness', [
-//   'breadCrumbBusinessFactory',
-//   function(breadCrumbBusinessFactory) {
-//     return breadCrumbBusinessFactory.buildBreadCrumbForPlaylistExplorerBusiness();
-//   }
-// ]).factory('breadCrumbFileExplorerBusiness', [
-//   'breadCrumbBusinessFactory',
-//   function(breadCrumbBusinessFactory) {
-//     return breadCrumbBusinessFactory.buildBreadCrumbForFileExplorerBusiness();
-//   }]).factory('breadCrumbBusinessFactory', [
-//   'playlistExplorerBusiness',
-//   'fileExplorerBusiness',
-//   function(playlistExplorerBusiness, fileExplorerBusiness) {
-//
-//     function BreadCrumbBusiness(business) {
-//
-//       function observeCurrentDir() {
-//         return business
-//           .observeCurrentFolderContent()
-//           .select(function(folderContentVm) {
-//             return folderContentVm.links;
-//           });
-//       }
-//
-//       function changeDir(folderPath) {
-//         var folderApiLink = '/api/explore' + folderPath;
-//         business.changeFolderByApiLinkAndResetSelection(folderApiLink);
-//       }
-//
-//       return {
-//         observeCurrentDir: observeCurrentDir,
-//         changeDir: changeDir
-//       };
-//     }
-//
-//     return {
-//       buildBreadCrumbForFileExplorerBusiness: function() {
-//         return new BreadCrumbBusiness(fileExplorerBusiness);
-//       },
-//
-//       buildBreadCrumbForPlaylistExplorerBusiness: function() {
-//         return new BreadCrumbBusiness(playlistExplorerBusiness);
-//       }
-//     };
-//   }]);
+@autoinject
+export class BreadCrumbPlaylistExplorerService extends BreadCrumbService {
+  constructor(playlistExplorerService: PlaylistExplorerService) {
+    super(playlistExplorerService);
+  }
+}
+
+@autoinject
+export class BreadCrumbFileExplorerService extends BreadCrumbService {
+  constructor(playlistExplorerService: FileExplorerService) {
+    super(playlistExplorerService);
+  }
+}

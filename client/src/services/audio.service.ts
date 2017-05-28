@@ -1,8 +1,11 @@
 import { Subject, Observable } from 'rx';
 import * as _ from 'lodash';
 import {autoinject} from 'aurelia-framework';
-import {JpoEvent} from '../constants';
+import {PlayerEvent} from '../constants';
 import MediumSourceTag from '../helpers/mediumSourceTag.helper';
+import MediumModel from '../models/medium.model';
+import {FileViewModel} from '../view-models/file.viewModel';
+import FileModel from '../models/file.model';
 
 export interface AudioServiceEvent {
   name: string,
@@ -14,47 +17,47 @@ export interface AudioServiceEventValue {
   currentTime?: number,
   buffered?: TimeRanges,
   volume?: number,
-  mediumOrFile?: string
+  mediumOrFile?: MediumModel | FileModel;
 }
 
 @autoinject
 export default class AudioService {
-  private currentState = JpoEvent.Unknown;
+  private currentState = PlayerEvent.Unknown;
   private eventSubject = new Subject<AudioServiceEvent>();
   private audioPlayer: HTMLAudioElement;
   private backupVolume = 0;
-  
+
   constructor(private mediumSourceTag: MediumSourceTag) {
-    this.initAudioPlayer();
   }
 
-  private initAudioPlayer(): void {
-    this.initAndGiveAudio();
+  init(playerElementName: string): void {
+    this.initAndGiveAudio(playerElementName);
     this.initEvents();
   }
 
-  private initAndGiveAudio(): void {
-    this.audioPlayer = <HTMLAudioElement>document.getElementById('audioPlayer');
+  private initAndGiveAudio(playerElementName: string): void {
+    // TODO Don't use document
+    this.audioPlayer = <HTMLAudioElement>document.getElementById(playerElementName);
   }
 
   private initEvents(): void {
     this.audioPlayer.addEventListener('playing', () => {
-      this.currentState = JpoEvent.Play;
+      this.currentState = PlayerEvent.Play;
       this.eventSubject.onNext({ name: this.currentState, value: null });
     }, true);
 
     this.audioPlayer.addEventListener('pause', () => {
-      this.currentState = JpoEvent.Pause;
+      this.currentState = PlayerEvent.Pause;
       this.eventSubject.onNext({ name: this.currentState, value: null });
     }, true);
 
     this.audioPlayer.addEventListener('ended', () => {
-      this.currentState = JpoEvent.Ended;
+      this.currentState = PlayerEvent.Ended;
       this.eventSubject.onNext({ name: this.currentState, value: null });
     }, true);
 
     this.audioPlayer.addEventListener('abort', () => {
-      this.currentState = JpoEvent.Aborted;
+      this.currentState = PlayerEvent.Aborted;
       this.eventSubject.onNext({ name: this.currentState, value: null });
     }, true);
 
@@ -65,14 +68,14 @@ export default class AudioService {
         this.audioPlayer.currentSrc.lastIndexOf('.')
       );
       if (ext === '.mp3') { // MP3 is the last chance try
-        this.currentState = JpoEvent.Error;
-        this.eventSubject.onNext({ name: JpoEvent.Error, value: null });
+        this.currentState = PlayerEvent.Error;
+        this.eventSubject.onNext({ name: PlayerEvent.Error, value: null });
       }
     }, true);
 
     this.audioPlayer.addEventListener('timeupdate', (ev) => {
       this.eventSubject.onNext({
-        name: JpoEvent.TimeUpdate,
+        name: PlayerEvent.TimeUpdate,
         value: {
           currentTime: (ev.target as HTMLAudioElement).currentTime,
           duration: (ev.target as HTMLAudioElement).duration
@@ -82,7 +85,7 @@ export default class AudioService {
 
     this.audioPlayer.addEventListener('durationchange', ev => {
       this.eventSubject.onNext({
-        name: JpoEvent.DurationChange,
+        name: PlayerEvent.DurationChange,
         value: {
           duration: (ev.target as HTMLAudioElement).duration,
           buffered: (ev.target as HTMLAudioElement).buffered
@@ -92,7 +95,7 @@ export default class AudioService {
 
     this.audioPlayer.addEventListener('progress', ev => {
       this.eventSubject.onNext({
-        name: JpoEvent.Progress,
+        name: PlayerEvent.Progress,
         value: {
           duration: (ev.target as HTMLAudioElement).duration,
           buffered: (ev.target as HTMLAudioElement).buffered
@@ -113,42 +116,42 @@ export default class AudioService {
     return this.eventSubject;
   }
 
-  observePlayingMedium(): Observable<string> {
+  observePlayingMedium(): Observable<MediumModel | FileModel> {
     return this.observeEvents()
-      .filter(e => e.name === JpoEvent.MediumSet)
+      .filter(e => e.name === PlayerEvent.MediumSet)
       .map(e => e.value.mediumOrFile);
   }
 
   observeMediumEnded(): Observable<AudioServiceEvent> {
     return this.observeEvents()
-      .filter(e => e.name === JpoEvent.Ended);
+      .filter(e => e.name === PlayerEvent.Ended);
   }
 
   observeVolume(): Observable<number> {
     return this.observeEvents()
-      .filter(e => e.name === JpoEvent.Volume)
+      .filter(e => e.name === PlayerEvent.Volume)
       .map(e => e.value.volume);
   }
 
   observeTimeUpdate(): Observable<AudioServiceEventValue> {
     return this.observeEvents()
-      .filter(e => e.name === JpoEvent.TimeUpdate)
+      .filter(e => e.name === PlayerEvent.TimeUpdate)
       .map(e => e.value);
   }
 
   playOrPause(): void {
     // If media is set, play it. otherwise, ask the queue
     switch (this.currentState) {
-      case JpoEvent.Ended:
-      case JpoEvent.Pause:
+      case PlayerEvent.Ended:
+      case PlayerEvent.Pause:
         this.audioPlayer.play();
         break;
-      case JpoEvent.Play:
+      case PlayerEvent.Play:
         this.audioPlayer.pause();
         break;
-      case JpoEvent.Error:
+      case PlayerEvent.Error:
         break;
-      case JpoEvent.Unknown:
+      case PlayerEvent.Unknown:
         break;
       default:
         this.audioPlayer.play();
@@ -159,9 +162,7 @@ export default class AudioService {
   stop(): void {
     // Search for source tag to set medium to read.
     const allSourceTags = this.audioPlayer.querySelectorAll('source');
-    _.each(allSourceTags, function(tag) {
-      this.audioPlayer.removeChild(tag);
-    });
+    _.each(allSourceTags, tag => this.audioPlayer.removeChild(tag));
 
     this.audioPlayer.load();
   }
@@ -176,7 +177,7 @@ export default class AudioService {
     this.audioPlayer.volume = safeVolumePerOne;
 
     this.eventSubject.onNext({
-      name: JpoEvent.Volume,
+      name: PlayerEvent.Volume,
       value: { volume: safeVolumePerOne }
     });
   }
@@ -214,25 +215,23 @@ export default class AudioService {
     this.audioPlayer.play();
   }
 
-  setMediumToPlayAsync(mediumOrFile): Promise<void> {
+  setMediumToPlayAsync(mediumOrFile: MediumModel | FileModel): Promise<void> {
     return new Promise<void>(resolve => {
       const mediumToPlayLoaded = () => {
         this.audioPlayer.removeEventListener('loadeddata', mediumToPlayLoaded);
-        this.currentState = JpoEvent.MediumLoaded;
+        this.currentState = PlayerEvent.MediumLoaded;
         resolve();
       };
       this.audioPlayer.addEventListener('loadeddata', mediumToPlayLoaded, true);
 
-      const mediumModel = mediumOrFile.model || mediumOrFile;
-
-      const extPos = mediumModel.selectSelfPlayFromLinks().lastIndexOf('.');
-      const mediumExt = mediumModel.selectSelfPlayFromLinks().substring(extPos);
+      const extPos = mediumOrFile.playPath.lastIndexOf('.');
+      const mediumExt = mediumOrFile.playPath.substring(extPos);
 
       // Search for source tag to set medium to read.
       const allSourceTags = this.audioPlayer.querySelectorAll('source');
       _.each(allSourceTags, tag => this.audioPlayer.removeChild(tag));
 
-      const src = mediumModel.selectSelfPlayFromLinks();
+      const src = mediumOrFile.playPath;
       this.audioPlayer.appendChild(this.mediumSourceTag.build(src));
 
       // We'll have mp3 and ogg, in case the browser can't play
@@ -251,7 +250,7 @@ export default class AudioService {
       this.audioPlayer.load();
 
       this.eventSubject.onNext({
-        name: JpoEvent.MediumSet, // TODO To avoid event data corruption, make name private, give getName
+        name: PlayerEvent.MediumSet, // TODO To avoid event data corruption, make name private, give getName
         value: { mediumOrFile: mediumOrFile }
       });
     });

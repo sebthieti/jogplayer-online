@@ -2,32 +2,25 @@ import * as _ from 'lodash';
 import {autoinject} from 'aurelia-framework';
 import { Subject, BehaviorSubject, Observable } from 'rx';
 import MediumModel from '../models/medium.model';
-import {JpoEvent} from '../constants';
+import {PlayerEvent} from '../constants';
 import AudioService from './audio.service';
 import Mediators from "../mediators";
+import FileModel from '../models/file.model';
 
-// jpoApp.factory('mediaQueueBusiness', [
-//   '$q',
-//   'audioService',
-//   'authBusiness',
-//   'viewModelBuilder',
-//   'mediators',
-//   function($q, audioService, authBusiness, viewModelBuilder, mediators) {
 @autoinject
 export default class MediaQueueService {
-  private currentMediumInQueueSubject = new BehaviorSubject<MediumModel>(null);
+  private currentMediumInQueueSubject = new BehaviorSubject<MediumModel|FileModel>(null);
+  private currentMediumIndexInQueueSubject = new BehaviorSubject<number>(-1);
   private mediaQueueSubject = new BehaviorSubject<string[]>([]);
-  private mediumOnErrorSubject = new Subject<MediumModel>();
-  private observeQueueEndedWithMediumSubject = new Subject<MediumModel>();
+  private mediumOnErrorSubject = new Subject<MediumModel|FileModel>();
+  private observeQueueEndedWithMediumSubject = new Subject<MediumModel|FileModel>();
 
   constructor(
     private audioService: AudioService,
     private mediators: Mediators
-  ) {
-    this.initMediaQueue();
-  }
+  ) { }
 
-  private initMediaQueue(): void {
+  init(): void {
     this.audioService
       .observePlayingMedium()
       .do(mediumVm => {
@@ -40,42 +33,30 @@ export default class MediaQueueService {
       .observeEvents()
       .do(e => {
         switch (e.name) {
-          case JpoEvent.Error:
+          case PlayerEvent.Error:
             this.displayMediumErrorResumeNext();
             break;
-          case JpoEvent.Ended:
-          case JpoEvent.Next:
+          case PlayerEvent.Ended:
+          case PlayerEvent.Next:
             this.playNext();
             break;
-          case JpoEvent.Previous:
+          case PlayerEvent.Previous:
             this.playPrevious();
             break;
-          case JpoEvent.PlayFirst:
+          case PlayerEvent.PlayFirst:
             this.playFirst();
             break;
         }
       })
       .subscribe();
 
-    // this.clearUsersOnUserLogoff();
-
     this.onFirstMediumInQueueStartPlay();
     this.onLastMediumEndAndNewOneAppendedStartPlay();
   }
 
-  // clearUsersOnUserLogoff() {
-  //   authBusiness
-  //     .observeCurrentUserAuthentication()
-  //     .whereIsNull()
-  //     .mapMany(() => { return mediaQueueSubject.take(1) })
-  //     .where(mediaQueue => { return mediaQueue.length > 0 })
-  //     .do(() => { mediaQueueSubject.onNext([]) })
-  //     .silentSubscribe();
-  // }
-
   private displayMediumErrorResumeNext(): void {
     // Notify error playing and try next.
-    const currentMedium = this.observeCurrentMediumInQueue().getValue();
+    const currentMedium = this.currentMediumInQueueSubject.getValue();
 
     this.mediumOnErrorSubject.onNext(currentMedium);
     this.playNext();
@@ -85,12 +66,13 @@ export default class MediaQueueService {
     return this.mediumOnErrorSubject;
   }
 
-  playMedium(mediumVm): void {
-    this.audioService.setMediumToPlayAndPlayAsync(mediumVm);
+  playMedium(mediumPosition: number, mediumVm) {
+    this.currentMediumIndexInQueueSubject.onNext(mediumPosition);
+    return this.audioService.setMediumToPlayAndPlayAsync(mediumVm);
   }
 
   getMediumAtIndexAsync(index: number): MediumModel {
-    const mediaQueue = this.observeMediaQueue().getValue();
+    const mediaQueue = this.mediaQueueSubject.getValue();
     return mediaQueue[index];
   }
 
@@ -108,6 +90,8 @@ export default class MediaQueueService {
         const nextMediumIndex = currentMediumIndex + 1;
         const nextMediumViewModelInQueue = mediaQueueSet.mediaViewModelsQueue[nextMediumIndex];
 
+        this.currentMediumIndexInQueueSubject.onNext(nextMediumIndex);
+
         this.audioService.setMediumToPlayAndPlayAsync(nextMediumViewModelInQueue);
       })
       .subscribe();
@@ -124,7 +108,9 @@ export default class MediaQueueService {
         }
 
         const previousMediaIndex = currentMediumIndex-1;
-        const previousMediaInQueue = this.mediaQueueSubject.value[previousMediaIndex];
+        const previousMediaInQueue = this.mediaQueueSubject.getValue()[previousMediaIndex];
+
+        this.currentMediumIndexInQueueSubject.onNext(previousMediaIndex);
 
         this.audioService.setMediumToPlayAndPlayAsync(previousMediaInQueue);
       })
@@ -136,9 +122,9 @@ export default class MediaQueueService {
       .filter(x => !!x)
       .filter(() => this.mediators.getIsUserStateInitialized())
       .mapWithPreviousValue((oldValue, newValue) => {
-        return oldValue !== null && _.isEmpty(oldValue) && newValue.some();
+        return oldValue !== null && _.isEmpty(oldValue) && newValue.length > 0;
       })
-      .filter(firstTimeQueueFilled => firstTimeQueueFilled)
+      .filter(firstTimeQueueFilled => !!firstTimeQueueFilled)
       .do(_ => this.playFirst())
       .subscribe();
   }
@@ -153,7 +139,7 @@ export default class MediaQueueService {
           mediaQueue: newValue
         }
       })
-      .filter(x => x.mediaAdded)
+      .filter(x => !!x.mediaAdded)
       .combineLatest( // TODO Optimize this chain
         this.audioService.observeMediumEnded(),
         (mediaQueueSet, playStatus) => {
@@ -162,12 +148,14 @@ export default class MediaQueueService {
       )
       .map(x => x.mediaQueueSet.mediaQueue)
       .do(newMediaQueue => {
-        const currentMedium = this.observeCurrentMediumInQueue().getValue();
+        const currentMedium = this.currentMediumInQueueSubject.getValue();
         const currentMediumIndex = newMediaQueue.indexOf(currentMedium);
 
         // Check for next media in queue
         const nextMediumIndex = currentMediumIndex + 1;
         const nextMediumViewModelInQueue = newMediaQueue[nextMediumIndex];
+
+        this.currentMediumIndexInQueueSubject.onNext(nextMediumIndex);
 
         this.audioService.setMediumToPlayAndPlayAsync(nextMediumViewModelInQueue);
       })
@@ -181,24 +169,24 @@ export default class MediaQueueService {
     }
 
     const firstMediumInQueue = mediaQueue[0];
+    this.currentMediumIndexInQueueSubject.onNext(0);
+
     this.audioService.setMediumToPlayAndPlayAsync(firstMediumInQueue);
   }
 
   enqueueMediumAndStartQueue(mediumModel): void {
-    // const mediumVm = viewModelBuilder.buildQueuedMediumViewModel(mediumModel);
-    const mediaQueue = this.observeMediaQueue().getValue();
+    const mediaQueue = this.mediaQueueSubject.getValue();
     const mediaQueueWithMedium = mediaQueue.concat(mediumModel);
     this.mediaQueueSubject.onNext(mediaQueueWithMedium);
   }
 
   enqueueMediaAndStartQueue(mediaModels): void {
-    // const mediaVm = mediaModels.map(viewModelBuilder.buildQueuedMediumViewModel);
-    const mediaQueue = this.observeMediaQueue().getValue();
+    const mediaQueue = this.mediaQueueSubject.getValue();
     const mediaQueueWithMedia = mediaQueue.concat(mediaModels/*mediaVm*/);
     this.mediaQueueSubject.onNext(mediaQueueWithMedia);
   }
 
-  removeMedium(medium): void {
+  removeMedium(mediumPosition: number, medium): void {
     this.observeMediaQueueAndCurrentMedium()
       .do(mediaQueueSet => {
         // If medium to remove is current playing...
@@ -239,11 +227,7 @@ export default class MediaQueueService {
   }
 
   observeCurrentMediumIndexInQueue(): Observable<number> {
-    return this.observeMediaQueue()
-      .combineLatest(
-        this.observeCurrentMediumInQueue(),
-        (mediaQueue, currentMediumInQueue) => mediaQueue.indexOf(currentMediumInQueue)
-      );
+    return this.currentMediumIndexInQueueSubject;
   }
 
   observeMediaQueue(): BehaviorSubject<string[]> {
