@@ -1,0 +1,13 @@
+<template>
+  <ul>
+    <li class="btn-enabled"
+        repeat.for="lvl of levels"
+        click.delegate="goToLevel(lvl.index)">
+      <!--<span class="icon-play playFolder"-->
+      <!--ng-show="canShowPlayFolder(lvl)"-->
+      <!--ng-class="lvl.playHole ? 'active' : ''"-->
+      <!--ng-click="innerPlayFolder(lvl)"></span>-->
+      <span textcontent.bind="lvl.name"></span>
+    </li>
+  </ul>
+</template>
