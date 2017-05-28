@@ -1,0 +1,117 @@
+<template>
+  <require from="../../../resources/attributes/focusWhen"></require>
+  <require from="../../../resources/attributes/enter"></require>
+  <require from="../../../resources/elements/fileExplorer"></require>
+  <require from="../../../resources/value-converters/time.valueConverter"></require>
+
+  <div id="playlist-browser">
+    <div id="playlists-container">
+      <ul>
+        <!-- TODO repeat.for="playlistVm of playlistsVm | orderBy: 'index'" -->
+        <li class="btn-enabled pl"
+            repeat.for="playlistVm of playlistsVm"
+            class.bind="selectedPlaylistIndex === $index ? 'selected' : ''"
+            click.trigger="innerPlaylistSelected($index, playlistVm)">
+          <div show.bind="playlistVm.isEditing">
+            <!-- Editing mode -->
+            <input type="text"
+                   value.bind="playlistVm.name"
+                   focus-when.bind="playlistVm.isEditing"
+                   enter.call="endEditPlaylist($index, playlistVm)">
+
+            <button type="button"
+                    class="icon-checkmark rename"
+                    stop-event
+                    click.trigger="endEditPlaylist($index, playlistVm)"></button>
+            <button type="button"
+                    class="icon-close cancel"
+                    stop-event
+                    click.trigger="cancelAddPlaylist(playlistVm)"></button>
+          </div>
+          <span show.bind="!playlistVm.isEditing"
+                textcontent.bind="playlistVm.name || 'Empty'"
+                class="title">
+          </span>
+          <div class="tab-tools" show.bind="!playlistVm.isEditing">
+            <!-- Non editing mode -->
+            <button type="button"
+                    class="icon-pencil rename"
+                    stop-event
+                    click.trigger="beginEditPlaylist(playlistVm)">
+            </button>
+            <button type="button"
+                    class="icon-close delete"
+                    stop-event
+                    click.trigger="innerRemovePlaylist($index, playlistVm)">
+            </button>
+          </div>
+        </li>
+        <li show.bind="isAdding" class="btn-enabled">
+          <!--TODO Turn this to a form-->
+          <input type="text"
+                 value.bind="newPlaylist.name"
+                 enter.call="endAddVirtualPlaylist()">
+          <button type="button"
+                  class="icon-checkmark rename"
+                  stop-event
+                  click.trigger="endAddVirtualPlaylist()"></button>
+          <button type="button"
+                  class="icon-close cancel"
+                  stop-event
+                  click.trigger="cancelAddPlaylist()"></button>
+        </li>
+        <li show.bind="!isAdding" class="btn-enabled">
+          <button type="button"
+                  id="add-playlist-virtual"
+                  click.trigger="beginAddVirtualPlaylist()">+</button>
+          <button type="button"
+                  id="add-playlist-phys"
+                  class="icon-download"
+                  click.trigger="beginAddPhysicalPlaylist()"></button>
+        </li>
+      </ul>
+    </div>
+    <div id="media-container">
+      <ul show.bind="canShowMediaInPlaylist">
+        <li repeat.for="mediumVm of selectedPlaylist.media"
+            click.trigger="mediaSelected(mediumVm)"
+            dblclick.delegate="innerPlayMedium($index)"
+            class="btn-enabled not-selectable ${mediumVm.isPlaying || mediumVm.selected ? 'current' : ''}">
+
+          <button type="button"
+                  class="icon-play3 btn-enabled"
+                  click.trigger="innerPlayMedium($index)"
+                  stop-event
+                  textcontent.bind="hasMediaQueueAny ? '+' : ''"></button>
+
+          <span class="title"
+                textcontent.one-time="mediumVm.title || 'Empty'"></span>
+          <div class="duration"
+               textcontent.one-time="mediumVm.duration | time"></div>
+          <button type="button"
+                  class="icon-close remove btn-enabled"
+                  stop-event
+                  click.trigger="innerRemoveMedium(mediumVm)"></button>
+        </li>
+      </ul>
+
+      <file-explorer id="plSelector"
+                     is-visible.bind="isPlaylistFinderVisible"
+                     bind-to-favorites="false"
+                     explore-when-visible="true"
+                     selected-files.two-way="selectedPlaylistFiles">
+      </file-explorer>
+
+      <div id="playlistFinderValidation" show.bind="canShowPlaylistFinderValidate">
+        <button type="button"
+                class="icon-checkmark btn-enabled btn-large"
+                click.trigger="endAddPhysicalPlaylist()"></button>
+        <button type="button"
+                class="icon-close btn-enabled btn-large"
+                id="playlistFinderValidationCancel"
+                click.trigger="cancelImport()"></button>
+      </div>
+
+    </div>
+  </div>
+</template>

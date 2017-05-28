@@ -117,6 +117,7 @@
           "aurelia-templating",
           "aurelia-templating-binding",
           "aurelia-fetch-client",
+          "aurelia-animator-css",
           "lodash",
           "moment",
           "text",

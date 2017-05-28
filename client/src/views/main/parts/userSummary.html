@@ -1,0 +1,39 @@
+<template>
+  <div class="user-info">
+    <div class="avatar-container"></div>
+    <div class="user">
+      <div>
+        <div>
+          <span class="full-name"
+                textcontent.bind="userVm.fullName"></span>&nbsp;
+          (<span class="user-name"
+                textcontent.bind="userVm.username"></span>)
+        </div>
+        <span class="email"
+              textcontent.bind="userVm.email"></span>
+      </div>
+      <div>
+        <input id="is-root"
+               name="isRoot"
+               type="checkbox"
+               disabled
+               checked.bind="userVm.permissions.isRoot">
+        <span>Is Root</span>
+      </div>
+      <div>
+        <input id="is-admin"
+               name="isAdmin"
+               type="checkbox"
+               checked.bind="userVm.permissions.isAdmin">
+        <span>Is Admin</span>
+      </div>
+      <div>
+        <input id="can-write"
+               name="canWrite"
+               type="checkbox"
+               checked.bind="userVm.permissions.canWrite">
+        <span>Can Write</span>
+      </div>
+    </div>
+  </div>
+</template>
