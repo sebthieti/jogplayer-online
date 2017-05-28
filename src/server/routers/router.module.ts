@@ -119,8 +119,5 @@ export function postRegisterAuthenticationStack(container: any, app: express.App
     passport.deserializeUser((username: string, next) => {
       authDirector.deserializeUser(username, next);
     });
-
-    app.use(passport.initialize());
-    app.use(passport.session());
   });
 }

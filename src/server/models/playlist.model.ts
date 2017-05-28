@@ -115,7 +115,7 @@ export class PlaylistModel implements IPlaylistModel {
     const playlistExt = path.extname(filePath);
     this.name = path.basename(filePath, playlistExt);
 
-    await this.updatePlaylistAsync();
+    // await this.updatePlaylistAsync();
 
     return this;
   }

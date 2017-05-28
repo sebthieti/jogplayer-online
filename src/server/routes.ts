@@ -84,7 +84,7 @@ export default {
     deletePath: '/api/users/:userId'
   },
   userPermissions: {
-    //selfPath: '/api/users/:userId/permissions/:userPermissionId',
+    selfPath: '/api/users/:userId/permissions/',
     getPath: '/api/users/:userId/permissions/',
     updatePath: '/api/users/:userId/permissions/'
     //insertPath: '/api/users/:userId/permissions/',

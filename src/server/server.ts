@@ -2,6 +2,7 @@ import * as http from 'http';
 import * as path from 'path';
 import * as express from 'express';
 import * as session from 'express-session';
+import * as passport from 'passport';
 import * as bodyParser from 'body-parser';
 import * as cookieParser from 'cookie-parser';
 import * as serveStatic from 'serve-static';
@@ -41,9 +42,13 @@ app.use(session({
   saveUninitialized: false,
   secret: 'keyboard cat', // TODO Secret s/b env like env.get("SESSION_SECRET"),
   cookie: {
+    secure: false,
+    httpOnly: false,
     maxAge: 2678400000 // 31 days
   }
 }));
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(serveStatic(path.join(process.cwd(), 'app')));
 
 jpo.bootstrap(app)

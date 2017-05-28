@@ -9,5 +9,6 @@ export interface MediumDto {
   ext: string;
   title: string;
   duration: number;
+  filePath: string;
   links: LinkDto[];
 }
