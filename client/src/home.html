@@ -1,0 +1,65 @@
+<template>
+  <require from="./css/lato.css"></require>
+  <require from="./css/fonts.css"></require>
+  <require from="./css/app.css"></require>
+  <require from="./resources/attributes/hideParentOnClick"></require>
+  <require from="./resources/attributes/resizer"></require>
+
+  <div id="queue-outer">
+    <router-view name="mediaQueue"></router-view>
+
+    <div id="sidebar-resizer"
+         resizer="orientation: vertical; width: 6; left: #queue-outer; max: 502; min: 50">
+    </div>
+
+    <button id="queue-toggle"
+            hide-parent-on-click="show-text: &gt;&gt;; hide-text: &lt;&lt;">
+      &lt;&lt;
+    </button>
+  </div>
+  <div style="clear: both"></div>
+
+  <div id="main-container">
+    <div>
+      <div id="command-bar">
+        <router-view name="audioControls"></router-view>
+      </div>
+
+      <span id="full-name" textcontent.bind="currentUser.fullName"></span>
+      <div id="menu" show.bind="canShowMenu">
+        <button type="button"
+                id="logout"
+                class="icon-exit btn-rounded-new"
+                title="Disconnect"
+                click.delegate="logout()"></button>
+
+        <button type="button"
+                class="icon-users btn-rounded-new btn-menu"
+                title="Manage users"
+                show.bind="isAdmin"
+                click.delegate="toggleUserManager()"></button>
+
+        <router-view show.bind="manageUserVisible" name="manageUsers"></router-view>
+      </div>
+    </div>
+
+    <div id="middle-container">
+      <router-view name="playlistExplorer" id="playlist-explorer"></router-view>
+      <router-view name="controlBar"></router-view>
+
+      <div id="right-section">
+        <div id="file-explorer">
+          <router-view name="fileExplorer"></router-view>
+        </div>
+        <div id="favorites-container">
+          <router-view name="favoritesExplorer"></router-view>
+        </div>
+      </div>
+    </div>
+  </div>
+  <audio id="audioPlayer"
+         class="audioPlayer"
+         crossorigin="use-credentials"
+         controls
+         style="display:none"></audio>
+</template>
