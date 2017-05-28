@@ -65,7 +65,15 @@ export default class UserRepository implements IUserRepository {
 
     const updatedUser = await this.dbContext.users.findOneAndUpdate(
       { _id: user._id },
-      user,
+      { $set: {
+        isActive: user.isActive,
+        username: user.username,
+        hashedPassword: user.hashedPassword,
+        passwordSalt: user.passwordSalt,
+        fullName: user.fullName,
+        role: user.role,
+        email: user.email,
+      }},
       { returnOriginal: false }
     );
 

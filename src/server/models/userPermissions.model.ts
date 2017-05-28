@@ -34,14 +34,15 @@ export default class UserPermissionsModel implements IUserPermissionsModel {
   ) {
     Object.assign(
       this,
-      userPermissions, {
+      {
         canWrite: null,
         isAdmin: null,
         isRoot: null,
         allowPaths: [],
         denyPaths: [],
         homePath: null
-      } as UserPermissions
+      } as UserPermissions,
+      userPermissions
     );
   }
 

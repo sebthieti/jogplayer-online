@@ -4,7 +4,7 @@ export interface UserStateDto {
   playedPosition: number;
   mediaQueue: string[];
   browsingFolderPath: string;
-  openedPlaylistId: string;
+  openedPlaylistPosition: string;
   playingMediumInQueueIndex: number;
   links: Link[]
 }

@@ -35,7 +35,7 @@ export default class UserStateValidator {
     if ('playedPosition' in rawRequest) request.playedPosition = rawRequest.playedPosition;
     if ('mediaQueue' in rawRequest) request.mediaQueue = rawRequest.mediaQueue;
     if ('browsingFolderPath' in rawRequest) request.browsingFolderPath = rawRequest.browsingFolderPath;
-    if ('openedPlaylistId' in rawRequest) request.openedPlaylistId = rawRequest.openedPlaylistId;
+    if ('openedPlaylistPosition' in rawRequest) request.openedPlaylistPosition = rawRequest.openedPlaylistPosition;
     if ('playingMediumInQueueIndex' in rawRequest) request.playingMediumInQueueIndex = rawRequest.playingMediumInQueueIndex;
 
     return request;

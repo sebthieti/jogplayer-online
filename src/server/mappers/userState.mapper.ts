@@ -6,7 +6,7 @@ export default function toUserStateDto(userPermissions: IUserStateModel): UserSt
     playedPosition: userPermissions.playedPosition,
     mediaQueue: userPermissions && userPermissions.mediaQueue,
     browsingFolderPath: userPermissions.browsingFolderPath,
-    openedPlaylistId: userPermissions.openedPlaylistId,
+    openedPlaylistPosition: userPermissions.openedPlaylistPosition,
     playingMediumInQueueIndex: userPermissions.playingMediumInQueueIndex,
     links: userPermissions.links
   } as UserStateDto;
