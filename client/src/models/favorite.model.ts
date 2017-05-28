@@ -1,5 +1,5 @@
-import * as _ from 'lodash';
-import {Favorite, UpdateFavorite} from '../entities/favorite';
+import {Favorite, InsertFavorite, UpdateFavorite} from '../entities/favorite';
+import {extractFolderNameFromPath} from '../helpers/folder.helper';
 
 interface FavoriteModelSnapshot {
   name?: string;
@@ -18,17 +18,9 @@ export default class FavoriteModel {
 
   setFromFolderPath(folderPath: string): FavoriteModel {
     this.folderPath = folderPath;
-    this.name = this.extractFolderNameFromPath(folderPath);
+    this.name = extractFolderNameFromPath(folderPath);
 
     return this;
-  }
-
-  // TODO May be moved to helper ? Was splitFolderPath(folderPath: string): string[]
-  private extractFolderNameFromPath(folderPath: string): string {
-    return _(folderPath)
-      .split('/')
-      .filter(segment => segment !== '')
-      .last();
   }
 
   setFromEntity(favorite?: Favorite): FavoriteModel {
