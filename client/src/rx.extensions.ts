@@ -10,7 +10,7 @@ declare module 'rx' {
     asAsyncValue(): Observable<T>
     doAsync(callback: (value: T) => void): Observable<T>;
     selectUnit(): Observable<any>;
-    mapWithPreviousValue<TResult>(selector: PreviousValueSelector<T, TResult>): Observable<T>;
+    mapWithPreviousValue<TResult>(selector: PreviousValueSelector<T, TResult>): Observable<TResult>;
     whereHasValue(): Observable<T>;
     whereIsDefined(): Observable<T>;
     whereIsNotNull(): Observable<T>;
