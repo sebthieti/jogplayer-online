@@ -4,10 +4,10 @@
   <div id="queue-inner">
     <ul id="queue">
       <li repeat.for="mVm of mediaQueueViewModels"
-          click.trigger="playMedium($index, mVm)"
+          click.trigger="playMediumAsync($index, mVm)"
           class="not-selectable ${mVm.isPlaying ? 'active btn-enabled' : 'btn-enabled'}">
         <button type="button"
-                click.trigger="innerRemove($index, mVm)"
+                click.trigger="innerRemove($index)"
                 class="remove"
                 stop-event>[x]</button>
         <span class="error" show.bind="mVm.hasError" stop-event>[!]</span>

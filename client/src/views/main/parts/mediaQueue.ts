@@ -1,6 +1,6 @@
 import {autoinject, computedFrom} from 'aurelia-framework';
-import {MediaQueueViewModel} from '../../../view-models/mediaQueue.viewModel';
 import MediaQueueService from '../../../services/mediaQueue.service';
+import MediumModel from '../../../models/medium.model';
 
 @autoinject
 export class MediaQueue {
@@ -38,12 +38,12 @@ export class MediaQueue {
       .subscribe()
   }
 
-  playMedium(mediumPosition: number, mediumVm) {
-    this.mediaQueueService.playMedium(mediumPosition, mediumVm);
+  playMediumAsync(mediumPosition: number, medium: MediumModel) {
+    return this.mediaQueueService.playMediumAsync(mediumPosition, medium);
   }
 
-  innerRemove(mediumPosition: number, medium) {
-    this.mediaQueueService.removeMedium(mediumPosition, medium);
+  innerRemove(mediumPosition: number) {
+    this.mediaQueueService.removeMedium(mediumPosition);
   }
 
   clearQueue() {
