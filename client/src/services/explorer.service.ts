@@ -1,4 +1,4 @@
-import { BehaviorSubject } from 'rx';
+import { BehaviorSubject, Observable } from 'rx';
 import FavoriteService from './favorite.service';
 import UserModel from '../models/user.model';
 import MediaQueueService from './mediaQueue.service';
@@ -6,7 +6,6 @@ import AuthenticationService from './authentication.service';
 import {FileExplorerRepository} from '../repositories/fileExplorer.repository';
 import FolderModel from '../models/folder.model';
 import FileModel from '../models/file.model';
-import Observable = Rx.Observable;
 
 export class ExplorerService {
   folderContentSubject = new BehaviorSubject<FolderModel>(null);
@@ -74,7 +73,7 @@ export class ExplorerService {
       .startWith(false);
   }
 
-  observeFileSelection() {
+  observeFileSelection(): Observable<FileModel[]> {
     // TODO Really check that here, not from UI (ensure Folder mustn't be selectable) ?
     return this.selectedFilesSubject
       .filter(x => !!x)
@@ -82,6 +81,10 @@ export class ExplorerService {
         // Where all elements in selection are files, no dir.
         return fileViewModelsSelection.every(fileViewModel => fileViewModel.isFile);
       }); // TODO Use publish to avoid traverse entire Rx ?
+  }
+
+  getFileSelection(): FileModel[] {
+    return this.selectedFilesSubject.getValue();
   }
 
   // TODO Should be in fileExplorerBusiness, not ExplorerBusiness

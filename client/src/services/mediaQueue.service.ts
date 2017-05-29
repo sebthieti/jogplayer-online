@@ -11,7 +11,7 @@ import FileModel from '../models/file.model';
 export default class MediaQueueService {
   private currentMediumInQueueSubject = new BehaviorSubject<MediumModel|FileModel>(null);
   private currentMediumIndexInQueueSubject = new BehaviorSubject<number>(-1);
-  private mediaQueueSubject = new BehaviorSubject<string[]>([]);
+  private mediaQueueSubject = new BehaviorSubject<MediumModel[]>([]);
   private mediumOnErrorSubject = new Subject<MediumModel|FileModel>();
   private observeQueueEndedWithMediumSubject = new Subject<MediumModel|FileModel>();
 
@@ -180,7 +180,7 @@ export default class MediaQueueService {
     this.mediaQueueSubject.onNext(mediaQueueWithMedium);
   }
 
-  enqueueMediaAndStartQueue(mediaModels): void {
+  enqueueMediaAndStartQueue(mediaModels: MediumModel[]): void {
     const mediaQueue = this.mediaQueueSubject.getValue();
     const mediaQueueWithMedia = mediaQueue.concat(mediaModels/*mediaVm*/);
     this.mediaQueueSubject.onNext(mediaQueueWithMedia);

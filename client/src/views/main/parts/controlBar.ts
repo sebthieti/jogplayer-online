@@ -4,7 +4,9 @@ import FileExplorerService from '../../../services/fileExplorer.service';
 import PlaylistService from '../../../services/playlist.service';
 import FavoriteService from '../../../services/favorite.service';
 import MediaQueueService from '../../../services/mediaQueue.service';
-import {FileViewModel} from '../../../view-models/file.viewModel';
+import {toMedium} from '../../../models/file.model';
+import FavoriteModel from "../../../models/favorite.model";
+import MediumModel from '../../../models/medium.model';
 
 @autoinject
 export class ControlBarViewPort {
@@ -43,43 +45,31 @@ export class ControlBarViewPort {
 
     this.fileExplorerService
       .observeCurrentFolderContent()
-      .do(isBrowsing => this.canAddFolderToFavorites = isBrowsing)
+      .do(isBrowsing => this.canAddFolderToFavorites = !!isBrowsing)
       .subscribe();
   }
 
-  addFolderToFavoritesCmd() {
+  addFolderToFavoritesCmd(): Promise<FavoriteModel> {
     const folderContent = this.fileExplorerService.getCurrentFolderContent();
-    const folderPath = folderContent.path;
-    this.favoriteService.addFolderToFavoritesAsync(folderPath);
+    return this.favoriteService.addFolderToFavoritesAsync(folderContent.path);
   }
 
-  addFilesToPlaylist() {
-    this.fileExplorerService
-      .observeFileSelection()
-      .asAsyncValue()
-      .filter(fileSelection => fileSelection.length > 0)
-      .map((files: FileViewModel[]) => {
-        return files.map(file => file.filePath);
-      })
-      .do(fileSelection => this.playlistService.addFilesToSelectedPlaylist(fileSelection))
-      .subscribe();
+  addFilesToPlaylist(): Promise<MediumModel[]> {
+    const fileModels = this.fileExplorerService.getFileSelection();
+    return this.playlistService.addFilesToSelectedPlaylist(
+      fileModels.map(file => file.filePath)
+    );
   }
 
-  enqueueMediaSelection() {
-    this.mediaService
-      .observeMediaSelection()
-      .select(mediaViewModelsSelection => mediaViewModelsSelection.map(m => m))
-      .getValueAsync(mediaModelsSelection =>
-        this.mediaQueueService.enqueueMediaAndStartQueue(mediaModelsSelection)
-      );
+  enqueueMediaSelection(): void {
+    const mediaModels = this.mediaService.getMediaSelection();
+    this.mediaQueueService.enqueueMediaAndStartQueue(mediaModels);
   }
 
-  enqueueFileSelection() {
-    this.fileExplorerService
-      .observeFileSelection()
-      .select(fileViewModel => fileViewModel.map(f => f.model))
-      .getValueAsync(fileModels =>
-        this.mediaQueueService.enqueueMediaAndStartQueue(fileModels)
-      );
+  enqueueFileSelection(): void {
+    const fileModels = this.fileExplorerService.getFileSelection();
+    this.mediaQueueService.enqueueMediaAndStartQueue(
+      fileModels.map(file => toMedium(file))
+    );
   };
 }

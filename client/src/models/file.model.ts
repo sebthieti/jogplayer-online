@@ -1,4 +1,5 @@
 import {File} from '../entities/file';
+import MediumModel from './medium.model';
 
 export default class FileModel {
   name: string;
@@ -29,4 +30,18 @@ export default class FileModel {
   get isFile(): boolean {
     return this.type === 'F'
   }
+}
+
+export function toMedium(file: FileModel): MediumModel {
+  return new MediumModel('file', {
+    id: 'INVALID',
+    title: file.name,
+    isAvailable: true,
+    duration: 0,
+    isChecked: true,
+    mimeType: '',
+
+    filePath: file.filePath,
+    ext: file.name.substr(file.name.lastIndexOf('.'))
+  })
 }

@@ -20,6 +20,10 @@ export default class MediaService {
     return this.mediaSelectionSubject.filter(x => !!x);
   };
 
+  getMediaSelection(): MediumModel[] {
+    return this.mediaSelectionSubject.getValue();
+  }
+
   changeMediaSelection(media) {
     this.mediaSelectionSubject.onNext(media);
   };
