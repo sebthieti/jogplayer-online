@@ -1,73 +1,55 @@
-import {bindable, autoinject} from 'aurelia-framework';
-import {
-  BreadCrumbFileExplorerService, BreadCrumbPlaylistExplorerService, BreadCrumbService
-} from '../../services/breadCrumb.service';
+import {bindable, bindingMode, autoinject} from 'aurelia-framework';
+import * as _ from 'lodash';
+
+interface Level {
+  index: number;
+  name: string;
+  playHole: boolean;
+}
 
 @autoinject
 export class BreadCrumbCustomElement {
-  @bindable groupName: string;
-  levels = [];
+  @bindable({ defaultBindingModeBindingMode: bindingMode.twoWay })
+  command: (obj: {folderPath: string}) => void;
 
-  private breadCrumbService: BreadCrumbService;
-  private emptyArray = [];
-  private rootPath = '/';
-  private folderPath: string;
+  @bindable({ defaultBindingMode: bindingMode.oneTime })
+  folderPath: string;
 
-  constructor(
-    private playlistExplorerService: BreadCrumbPlaylistExplorerService,
-    private fileExplorerService: BreadCrumbFileExplorerService
-  ) {
+  private levels = [];
+  private root = '/';
+
+  folderPathChanged(folderPath: string) {
+    this.levels = this.parseFolderPath(folderPath);
   }
 
-  bind() {
-    if (this.groupName === 'file-explorer') {
-      this.breadCrumbService = this.fileExplorerService;
-    } else if (this.groupName === 'playlist-finder') {
-      this.breadCrumbService = this.playlistExplorerService;
-    } else {
-      throw new Error('BreadCrumb groupName: Must set groupName');
-    }
-  }
-
-  attached() {
-    this.breadCrumbService
-      .observeCurrentDir()
-      .do(dirPhysPath => {
-        this.folderPath = dirPhysPath;
-        this.levels = this.parseFolderPath(dirPhysPath);
-      })
-      .subscribeOnError(err => console.log(err));
-  }
-
-  goToLevel(index) {
+  goToLevel(index: number) {
     const folderPath = this.composePathToLevelIndex(index);
-    this.breadCrumbService.changeDir(folderPath);
+    this.changeDir(folderPath);
   }
 
-  canShowPlayFolder(level) {
+  private changeDir(dirPath: string) {
+    this.command({folderPath: dirPath});
+  }
+
+  canShowPlayFolder(level: Level) {
     // Only allow to play last folder in tree
-    return level.index === this.levels.length-1;
+    return level.index === this.levels.length - 1;
   }
 
-  innerPlayFolder(level) {
+  innerPlayFolder(level: Level) {
     level.playHole = !level.playHole;
   }
 
-  private composePathToLevelIndex(index) {
+  private composePathToLevelIndex(index: number): string {
     const levels = this.splitFolderPath(this.folderPath);
-    let path = '';
-    for (let currentLevel = 0; currentLevel <= index; currentLevel++) {
-      path += levels[currentLevel];
-      if (currentLevel > 0) {// TODO Revamp with join
-        path += '/';
-      }
-    }
-    return path;
+    return _(levels)
+      .take(index+1)
+      .reduce((path, level, index) => path + level + (index > 0 ? '/' : ''), '');
   }
 
-  private parseFolderPath(folderPath) {
+  private parseFolderPath(folderPath: string) {
     if (!folderPath) {
-      return this.emptyArray;
+      return [];
     }
 
     return this.splitFolderPath(folderPath).map((lvl, index) => {
@@ -75,12 +57,13 @@ export class BreadCrumbCustomElement {
     });
   }
 
-  private splitFolderPath(folderPath) {
-    if (folderPath === this.rootPath) {
-      return [ this.rootPath ];
+  private splitFolderPath(folderPath: string): string[] {
+    if (folderPath === this.root) {
+      return [ this.root ];
     }
-    let levels = folderPath.split("/");
-    levels[0] = this.rootPath; // TODO Ugly
-    return levels.filter(lvl => lvl !== '');
+    return [
+      this.root,
+      ..._(folderPath.split('/')).drop(1).value()
+    ];
   }
 }

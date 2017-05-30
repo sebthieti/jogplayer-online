@@ -12,7 +12,7 @@ export class FileExplorerCustomElement {
   @bindable bindToFavorites: boolean;
   @bindable isVisible;
   @bindable exploreWhenVisible: boolean = false; // TODO Read https://github.com/aurelia/templating/issues/96, as it's not a bool but string
-  @bindable currentFolder: string;
+  @observable currentFolder: string;
   @bindable selectedFiles: FileViewModel[];
 
   private selectionMode: string;
@@ -67,9 +67,15 @@ export class FileExplorerCustomElement {
   }
 
   fileSelected(fileViewModel: FileViewModel) {
+  changeFolder(folderPath: string) {
+    return this.explorerService.changeFolderByApiUrlAndResetSelection(
+      folderPath,
+      this.fileFilter);
+  }
     const isBrowsable = !fileViewModel.type || fileViewModel.isDirectory;
     if (isBrowsable) {
       this.explorerService.browseFolder(fileViewModel);
+      this.currentFolder = fileViewModel.filePath;
     } else {
       this.updateFileSelection(fileViewModel);
     }
@@ -77,6 +83,7 @@ export class FileExplorerCustomElement {
 
   goUp(folderViewModel: FolderViewModel) {
     this.explorerService.goUp(folderViewModel);
+    this.currentFolder = folderViewModel.parentPath;
   }
 
   isVisibleChanged(isVisible: boolean) {
