@@ -1,6 +1,6 @@
 import {autoinject} from 'aurelia-framework';
 import MediaService from '../../../services/media.service';
-import FileExplorerService from '../../../services/fileExplorer.service';
+import {FileExplorerService} from '../../../services/fileExplorer.service';
 import PlaylistService from '../../../services/playlist.service';
 import FavoriteService from '../../../services/favorite.service';
 import MediaQueueService from '../../../services/mediaQueue.service';
@@ -44,13 +44,13 @@ export class ControlBarViewPort {
       .subscribe();
 
     this.fileExplorerService
-      .observeCurrentFolderContent()
+      .observeMainExplorerContent()
       .do(isBrowsing => this.canAddFolderToFavorites = !!isBrowsing)
       .subscribe();
   }
 
   addFolderToFavoritesCmd(): Promise<FavoriteModel> {
-    const folderContent = this.fileExplorerService.getCurrentFolderContent();
+    const folderContent = this.fileExplorerService.getMainFolderContent();
     return this.favoriteService.addFolderToFavoritesAsync(folderContent.path);
   }
 

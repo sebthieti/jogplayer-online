@@ -1,25 +1,26 @@
-import {bindable, inject, bindingMode, PLATFORM, DOM, Platform} from 'aurelia-framework';
-import {ExplorerService} from '../../services/explorer.service';
-import FileExplorerService from '../../services/fileExplorer.service';
-import PlaylistExplorerService from '../../services/playlistExplorer.service';
+import {bindable, inject, observable, PLATFORM, Platform} from 'aurelia-framework';
 import MediaQueueService from '../../services/mediaQueue.service';
 import {FileViewModel} from '../../view-models/file.viewModel';
 import {FolderViewModel} from '../../view-models/folder.viewModel';
 import {KeyCode, SelectionMode} from '../../constants';
+import FolderModel from '../../models/folder.model';
+import {FileExplorerService} from '../../services/fileExplorer.service';
+import FileModel, {toMedium} from '../../models/file.model';
 
-@inject(PLATFORM, DOM.Element, MediaQueueService, FileExplorerService, PlaylistExplorerService)
+@inject(PLATFORM, MediaQueueService, FileExplorerService)
 export class FileExplorerCustomElement {
   @bindable bindToFavorites: boolean;
   @bindable isVisible;
   @bindable exploreWhenVisible: boolean = false; // TODO Read https://github.com/aurelia/templating/issues/96, as it's not a bool but string
   @observable currentFolder: string;
   @bindable selectedFiles: FileViewModel[];
+  @bindable fileFilter: string;
+  @bindable isMainExplorer = false;
 
-  private selectionMode: string;
-  private lastSelectedFileViewModel: any;
+  private selectionMode = SelectionMode.Single;
+  private lastSelectedFileViewModel: FileViewModel = null;
   private defaultMode = SelectionMode.Single;
   private currentMode = this.defaultMode;
-  protected explorerService: ExplorerService;
 
   folderViewModel: FolderViewModel;
   files = [];
@@ -30,22 +31,11 @@ export class FileExplorerCustomElement {
 
   constructor(
     private platform: Platform,
-    private element: Element,
     private mediaQueueService: MediaQueueService,
-    private fileExplorerService: FileExplorerService,
-    private playlistExplorerService: PlaylistExplorerService
-  ) {
-    this.selectionMode = SelectionMode.Single;
-    this.lastSelectedFileViewModel = null;
-  }
+    private fileExplorerService: FileExplorerService
+  ) {}
 
   bind() {
-    const explorerBusiness = this.bindToFavorites ?
-      this.fileExplorerService :
-      this.playlistExplorerService;
-
-    this.setExplorerService(explorerBusiness);
-
     this.mediaQueueService
       .observeMediaQueue()
       .whereHasValue()
@@ -53,37 +43,52 @@ export class FileExplorerCustomElement {
       .do(hasMediaQueueAny => this.hasMediaQueueAny = hasMediaQueueAny)
       .subscribe();
 
-    this.explorerService
-      .observeCurrentFolderContent()
-      .do(folderContent => {
-        this.isActive = true;
-        this.folderViewModel = new FolderViewModel(folderContent);
-        this.currentFolder = folderContent.path;
-      })
-      .subscribe();
+    if (this.isMainExplorer) {
+      this.fileExplorerService
+        .observeChangeMainFolderByFavorite()
+        .do(folderPath => this.changeFolder(folderPath))
+        .subscribe();
+    }
 
     // TODO Handle a disposeWith method
     // TODO Remember that a failed Observable will end, so find a way to let it alive
   }
 
-  fileSelected(fileViewModel: FileViewModel) {
-  changeFolder(folderPath: string) {
-    return this.explorerService.changeFolderByApiUrlAndResetSelection(
+  async changeFolder(folderPath: string) {
+    const folderContent = await this.fileExplorerService.changeFolderByApiUrlAndResetSelection(
       folderPath,
+      this.isMainExplorer,
       this.fileFilter);
+    this.setFolderContent(folderContent);
   }
+
+  private setFolderContent(folderContent: FolderModel) {
+    this.isActive = true;
+    this.folderViewModel = new FolderViewModel(folderContent);
+    this.currentFolder = folderContent.path;
+  }
+
+  async fileSelected(fileViewModel: FileViewModel) {
     const isBrowsable = !fileViewModel.type || fileViewModel.isDirectory;
     if (isBrowsable) {
-      this.explorerService.browseFolder(fileViewModel);
+      const folderContent = await this.fileExplorerService.browseFolder(
+        fileViewModel,
+        this.isMainExplorer,
+        this.fileFilter);
+      this.setFolderContent(folderContent);
       this.currentFolder = fileViewModel.filePath;
     } else {
       this.updateFileSelection(fileViewModel);
     }
   }
 
-  goUp(folderViewModel: FolderViewModel) {
-    this.explorerService.goUp(folderViewModel);
+  async goUp(folderViewModel: FolderViewModel) {
+    const folderContent = await this.fileExplorerService.goUp(
+      folderViewModel,
+      this.isMainExplorer,
+      this.fileFilter);
     this.currentFolder = folderViewModel.parentPath;
+    this.setFolderContent(folderContent);
   }
 
   isVisibleChanged(isVisible: boolean) {
@@ -100,7 +105,7 @@ export class FileExplorerCustomElement {
       if (isDir) {
         this.fileSelected(fileVm);
       } else {
-        this.explorerService.playMedium(fileVm);
+        this.fileExplorerService.playMedium(toMedium(fileVm));
       }
     } else { // item: select it | folder: navigate
       this.fileSelected(fileVm);
@@ -108,19 +113,18 @@ export class FileExplorerCustomElement {
   }
 
   innerPlayMedium(file) {
-    this.explorerService.playMedium(file);
+    this.fileExplorerService.playMedium(file);
   }
 
   exploreFileSystem() {
     return this.startExplore();
   }
 
-  private startExplore() {
-    return this.explorerService.startExplore();
-  }
-
-  setExplorerService(explorerBusiness: ExplorerService) {
-    this.explorerService = explorerBusiness;
+  private async startExplore() {
+    const folderContent = await this.fileExplorerService.startExplore(
+      this.isMainExplorer,
+      this.fileFilter);
+    this.setFolderContent(folderContent);
   }
 
   updateFileSelection(fileViewModel) {
@@ -191,7 +195,7 @@ export class FileExplorerCustomElement {
     const fileSelection = this.folderViewModel.files
       .filter(file => file.selected);
     this.selectedFiles = fileSelection;
-    this.explorerService.updateFileSelection(fileSelection);
+    this.fileExplorerService.updateFileSelection(fileSelection);
   }
 
   attached() {
@@ -233,7 +237,7 @@ export class FileExplorerCustomElement {
     this.updateSelectionMode(this.currentMode);
   }
 
-  updateSelectionMode(mode) {
+  private updateSelectionMode(mode) {
     this.selectionMode = mode;
   }
 }

@@ -2,8 +2,7 @@ import {autoinject} from 'aurelia-framework';
 import { Subject, Observable } from 'rx';
 import FavoriteModel from '../models/favorite.model';
 import {FavoriteRepository} from '../repositories/favorite.repository';
-import PlaylistExplorerService from './playlistExplorer.service';
-import FileExplorerService from './fileExplorer.service';
+import {FileExplorerService} from './fileExplorer.service';
 import {ChangeEvent} from '../constants';
 
 export interface FavoriteChangeEvent {
@@ -18,7 +17,6 @@ export default class FavoriteService {
 
   constructor(
     private repository: FavoriteRepository,
-    private playlistExplorerService: PlaylistExplorerService,
     private fileExplorerService: FileExplorerService
   ) { }
 
@@ -27,10 +25,7 @@ export default class FavoriteService {
   }
 
   changeSelectedFavorite(favorite: FavoriteModel) {
-    //noinspection JSIgnoredPromiseFromCall
-    this.playlistExplorerService.changeFolderByApiUrlAndResetSelection(favorite.folderPath);
-    //noinspection JSIgnoredPromiseFromCall
-    this.fileExplorerService.changeFolderByApiUrlAndResetSelection(favorite.folderPath);
+    return this.fileExplorerService.changeMainFolderByFavorite(favorite.folderPath);
   }
 
   async getFavorites(): Promise<FavoriteModel[]> {

@@ -14,14 +14,14 @@ export class PlaylistExplorerViewPort {
   @observable isPlaylistFinderVisible = false;
   @bindable selectedPlaylistFiles: FileViewModel[] = [];
   playlistsVm: PlaylistViewModel[];
-  selectedMedia = null;
-  newPlaylist = null;
+  selectedMedia: MediumModel[];
+  newPlaylist: PlaylistModel;
   isAdding = false;
   canShowMediaInPlaylist = true;
   canValidateSelection = true;
-  canShowPlaylistFinderValidate;
+  canShowPlaylistFinderValidate: boolean;
   hasMediaQueueAny = false;
-  selectedPlaylist;
+  selectedPlaylist: PlaylistViewModel;
   selectedPlaylistIndex: number;
 
   constructor(

@@ -6,7 +6,7 @@ import AuthenticationService from './authentication.service';
 import MediaQueueService from './mediaQueue.service';
 import UserStateRepository from '../repositories/userState.repository';
 import PlaylistService from './playlist.service';
-import FileExplorerService from './fileExplorer.service';
+import {FileExplorerService} from './fileExplorer.service';
 import Mediators from '../mediators';
 import {UserState} from '../entities/userState';
 import PlaylistRepository from '../repositories/playlist.repository';
@@ -255,7 +255,7 @@ export default class UserStateService {
     return Observable
       .timer(interval, interval)
       .withLatestFrom(
-        this.fileExplorerService.observeCurrentFolderContent(),
+        this.fileExplorerService.observeMainExplorerContent(),
         (t, m) => m
       )
       .distinctUntilChanged(x => x);
