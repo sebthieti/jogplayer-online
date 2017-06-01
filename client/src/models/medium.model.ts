@@ -1,7 +1,7 @@
 import {Medium} from '../entities/medium';
 
-export default class MediumModel {
-  id?: string;
+export default class MediumModel implements Medium {
+  id: string;
   title: string;
   index: number;
   isAvailable: boolean;

@@ -42,7 +42,7 @@
             <button type="button"
                     class="icon-close delete"
                     stop-event
-                    click.trigger="innerRemovePlaylist($index, playlistVm)">
+                    click.trigger="innerRemovePlaylist($index)">
             </button>
           </div>
         </li>
@@ -73,7 +73,7 @@
     </div>
     <div id="media-container">
       <ul show.bind="canShowMediaInPlaylist">
-        <li repeat.for="mediumVm of selectedPlaylist.media"
+        <li repeat.for="mediumVm of playlistsVm[selectedPlaylistIndex].media"
             click.trigger="mediaSelected(mediumVm)"
             dblclick.delegate="innerPlayMedium($index)"
             class="btn-enabled not-selectable ${mediumVm.isPlaying || mediumVm.selected ? 'current' : ''}">

@@ -14,19 +14,15 @@ export default class PlaylistService {
   private playlistsSubject = new BehaviorSubject<PlaylistModel[]>(null);
   private playingMediumSubject = new BehaviorSubject<any>(null);
   private playlists: PlaylistModel[];
-  private selectedPlaylistSubject = new BehaviorSubject<PlaylistModel>(null);
-  private selectedPlaylistPositionSubject = new BehaviorSubject<number>(null);
+  private selectedPlaylistIndexSubject = new BehaviorSubject<number>(null);
   private playingPlaylistSubject = new BehaviorSubject<PlaylistModel>(null);
 
   constructor(
     private mediaQueueService: MediaQueueService,
     private audioService: AudioService,
-    private authenticationService: AuthenticationService,
     private fileExplorerRepository: FileExplorerRepository,
     private playlistRepository: PlaylistRepository
-  ) {
-    // this.init();
-  }
+  ) {}
 
   async init() {
     // React on ended or next (when there's a need to change medium)
@@ -46,17 +42,9 @@ export default class PlaylistService {
       .observePlayingMedium()
       .whereIsNotNull()
       .do((currentMedium: MediumModel) => {
-        // Is medium from playlist of file system ?
-        // if (!currentMedium.model.playlistId) {
-        //   this.playingPlaylistSubject.onNext(null);
-        //   return;
-        // }
-
         const playingPlaylist = this.playlists.find(pl => pl.hasMedium(currentMedium));
         this.playingPlaylistSubject.onNext(playingPlaylist);
 
-        // TODO Was commented
-        // const currentMedium = this.findMediumFromOtherViewModelAsAsyncValue(currentMediumViewModel);
         this.playingMediumSubject.onNext(currentMedium);
       })
       .subscribe();
@@ -76,8 +64,9 @@ export default class PlaylistService {
   }
 
   playNext(currentMediumInQueue: MediumModel) {
-    const currentPlaylist = this.selectedPlaylistSubject.getValue();
-    const currentMediumIndex: number = currentPlaylist.findMediumIndex(currentMediumInQueue);
+    const currentPlaylistIndex = this.selectedPlaylistIndexSubject.getValue();
+    const currentPlaylist = this.playlistsSubject.getValue()[currentPlaylistIndex];
+    const currentMediumIndex = currentPlaylist.findMediumIndex(currentMediumInQueue);
     // If current ended medium isn't last from playlist, then play it
     if (currentMediumIndex < currentPlaylist.media.length - 1) {
       // take next
@@ -91,14 +80,14 @@ export default class PlaylistService {
   }
 
   observeOpenedPlaylistPosition(): Observable<number> {
-    return this.selectedPlaylistPositionSubject.whereIsDefined();
+    return this.selectedPlaylistIndexSubject.whereIsDefined();
   }
 
-  observeCurrentPlaylist(): Observable<PlaylistModel> {
-    return this.selectedPlaylistSubject.whereIsDefined();
+  observeSelectedPlaylistIndex(): Observable<number> {
+    return this.selectedPlaylistIndexSubject.whereIsDefined();
   }
 
-  async addVirtualPlaylistAsync(playlist: {name: string, filePath: string}) {
+  async addVirtualPlaylistAsync(playlist: {name: string, filePath: string}): Promise<PlaylistModel> {
     const entity = await this.playlistRepository.insertPlaylist({
       name: playlist.name,
       filePath: playlist.filePath
@@ -108,6 +97,7 @@ export default class PlaylistService {
     this.playlists.push(model);
 
     this.playlistsSubject.onNext(this.playlists);
+    return model;
   }
 
   // TODO Test when fileEx turns to model
@@ -124,13 +114,13 @@ export default class PlaylistService {
     this.playlistsSubject.onNext(models);
   }
 
-  async loadMediaFromPlaylist(playlistPosition: number): Promise<MediumModel[]> {
+  async loadMediaAsync(playlistPosition: number): Promise<MediumModel[]> {
     const media = await this.playlistRepository.getMedia(playlistPosition);
     const models = media.map(medium => new MediumModel(
       'playlist',
       medium
     ));
-    this.playlists[playlistPosition].media = this.playlists[playlistPosition].media.concat(models);
+    this.playlists[playlistPosition].media = models;
     return models;
   }
 
@@ -139,7 +129,6 @@ export default class PlaylistService {
     return new MediumModel('playlist', medium);
   }
 
-  // Was getMediumFromLinkUrl
   async setMediaFromUrl(playlistPosition: number, mediumPosition: number, url: string): Promise<MediumModel> {
     const model = this.playlists[playlistPosition].media[mediumPosition];
     const medium = await this.fileExplorerRepository.getMediumFromUrl(url);
@@ -190,14 +179,13 @@ export default class PlaylistService {
     this.playlists[playlistPosition].media.splice(mediumPosition, 1);
   }
 
-  async removePlaylistAsync(playlist: PlaylistModel): Promise<void> {
-    const index = this.playlists.findIndex(pl => pl === playlist);
-    await this.playlistRepository.deletePlaylist(index);
+  async removePlaylistAsync(position: number): Promise<void> {
+    await this.playlistRepository.deletePlaylist(position);
 
-    const currentPlaylist = this.selectedPlaylistSubject.getValue();
-    if (currentPlaylist === playlist) {
+    const currentPlaylistIndex = this.selectedPlaylistIndexSubject.getValue();
+    if (currentPlaylistIndex === position) {
       // Reset current playlist if it was the current one.
-      this.selectedPlaylistSubject.onNext(null);
+      this.selectedPlaylistIndexSubject.onNext(-1);
     }
   }
 
@@ -206,34 +194,14 @@ export default class PlaylistService {
     this.playlists[playlistIndex].media.splice(mediumIndex, 1);
 
     this.playlistsSubject.onNext(this.playlists);
-
-    //mediaChangeSubject.onNext({
-    //	entity: mediumToRemove.toArray(),
-    //	status: EntityStatus.Removed
-    //});
   }
 
   selectPlaylistByIndexAsync(playlistIndex: number): void {
-    this.selectedPlaylistSubject.onNext(this.playlists[playlistIndex]);
-    this.selectedPlaylistPositionSubject.onNext(playlistIndex);
-  } // TODO Maybe I should merge these 2 methods
-
-  async playlistSelected(playlistIndex: number, playlistViewModel): Promise<PlaylistModel> {
-    if (playlistViewModel.media) {
-      this.selectedPlaylistSubject.onNext(playlistViewModel);
-      return playlistViewModel.media;
-    }
-    playlistViewModel.media = await this.loadMediaAsync(playlistIndex);
-    this.selectedPlaylistSubject.onNext(playlistViewModel);
-    this.selectedPlaylistPositionSubject.onNext(playlistIndex);
+    this.selectedPlaylistIndexSubject.onNext(playlistIndex);
   }
 
-  private async loadMediaAsync(playlistIndex: number): Promise<MediumModel[]> {
-    const media = await this.playlistRepository.getMedia(playlistIndex);
-    return media.map(medium => new MediumModel(
-      'playlist',
-      medium
-    ))
+  playlistSelected(playlistIndex: number): void {
+    this.selectedPlaylistIndexSubject.onNext(playlistIndex);
   }
 
   playMedium(playlistIndex: number, mediumIndex: number) {
@@ -243,7 +211,7 @@ export default class PlaylistService {
   }
 
   addFilesToSelectedPlaylist(filePaths: string[]): Promise<MediumModel[]> {
-    const selectedPlaylistPosition = this.selectedPlaylistPositionSubject.getValue();
+    const selectedPlaylistPosition = this.selectedPlaylistIndexSubject.getValue();
     return Promise.all(filePaths.map(filePath =>
       this.addMediumByFilePathToPlaylist(selectedPlaylistPosition, filePath)
     ));

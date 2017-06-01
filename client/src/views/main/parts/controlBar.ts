@@ -32,9 +32,9 @@ export class ControlBarViewPort {
     this.fileExplorerService
       .getAndObserveHasFileSelection()
       .combineLatest(
-        this.playlistService.observeCurrentPlaylist(),
-        (hasFileSelection, currentPlaylist) =>
-          this.canAddFilesToPlaylist = hasFileSelection && currentPlaylist !== undefined
+        this.playlistService.observeSelectedPlaylistIndex(),
+        (hasFileSelection, currentPlaylistIndex) =>
+          this.canAddFilesToPlaylist = hasFileSelection && currentPlaylistIndex !== null
       )
       .subscribe();
 

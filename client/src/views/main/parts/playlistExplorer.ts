@@ -6,6 +6,7 @@ import PlaylistModel from '../../../models/playlist.model';
 import PlaylistViewModel from '../../../view-models/playlist.viewModel';
 import MediumModel from '../../../models/medium.model';
 import {FileViewModel} from '../../../view-models/file.viewModel';
+import MediumViewModel from '../../../view-models/medium.viewModel';
 
 @autoinject
 export class PlaylistExplorerViewPort {
@@ -21,7 +22,6 @@ export class PlaylistExplorerViewPort {
   canValidateSelection = true;
   canShowPlaylistFinderValidate: boolean;
   hasMediaQueueAny = false;
-  selectedPlaylist: PlaylistViewModel;
   selectedPlaylistIndex: number;
 
   constructor(
@@ -31,11 +31,6 @@ export class PlaylistExplorerViewPort {
   ) {}
 
   async bind() {
-    this.playlistService
-      .observeCurrentPlaylist()
-      .do(playlistVm => this.selectedPlaylist = playlistVm)
-      .subscribe();
-
     // BEGIN Bootstrap section
 
     this.playlistService
@@ -59,7 +54,8 @@ export class PlaylistExplorerViewPort {
       .do(hasMediaQueueAny => this.hasMediaQueueAny = hasMediaQueueAny)
       .subscribe();
 
-    this.playlistsVm = await this.playlistService.loadPlaylists();
+    const playlists = await this.playlistService.loadPlaylists();
+    this.playlistsVm = playlists.map(p => new PlaylistViewModel(p));
   }
 
   // BEGIN Add physical playlist
@@ -80,7 +76,7 @@ export class PlaylistExplorerViewPort {
     this.isPlaylistFinderVisible = false;
   }
 
-// END Add physical playlist
+  // END Add physical playlist
 
   cancelAddPlaylist(playlistVm) {
     if (playlistVm) {
@@ -101,10 +97,10 @@ export class PlaylistExplorerViewPort {
     this.canShowPlaylistFinderValidate = isVisible;
   }
 
-  mediaSelected(media) {
-    media.selected = !media.selected;
+  mediaSelected(medium: MediumViewModel) {
+    medium.selected = !medium.selected;
 
-    this.selectedMedia = this.selectedPlaylist.media
+    this.selectedMedia = this.playlistsVm[this.selectedPlaylistIndex].media
       .filter(media => media.selected);
 
     this.mediaService.changeMediaSelection(this.selectedMedia);
@@ -112,12 +108,11 @@ export class PlaylistExplorerViewPort {
 
   // BEGIN Playlist section
 
-  async innerRemovePlaylist(playlistIndex: number, playlistVm) {
-    await this.playlistService.removePlaylistAsync(playlistVm);
+  async innerRemovePlaylist(playlistIndex: number) {
+    await this.playlistService.removePlaylistAsync(playlistIndex);
     this.playlistsVm.splice(playlistIndex, 1);
 
-
-    this.selectedPlaylist = null;
+    this.selectedPlaylistIndex = null;
   }
 
   beginEditPlaylist(playlistVm) {
@@ -129,7 +124,7 @@ export class PlaylistExplorerViewPort {
   }
 
   async endEditPlaylist(playlistIndex: number, playlistVm: PlaylistViewModel) {
-    const updatedPlaylist = await this.playlistService.updatePlaylistAsync(playlistIndex, playlistVm);
+    await this.playlistService.updatePlaylistAsync(playlistIndex, playlistVm);
 
     playlistVm.isEditing = false;
 
@@ -137,10 +132,14 @@ export class PlaylistExplorerViewPort {
     this.currentIndexEdited = -1;
   }
 
-  innerPlaylistSelected(playlistIndex: number, playlistVm) {
+  async innerPlaylistSelected(playlistIndex: number, playlistVm: PlaylistViewModel) {
     this.selectedPlaylistIndex = playlistIndex;
 
-    this.playlistService.playlistSelected(playlistIndex, playlistVm); // TODO Rename to fireAndForget
+    if (!playlistVm.media) {
+      const media = await this.playlistService.loadMediaAsync(playlistIndex);
+      playlistVm.media = media.map(m => new MediumViewModel(m));
+    }
+    this.playlistService.playlistSelected(playlistIndex);
   }
 
   beginAddVirtualPlaylist() {
@@ -149,7 +148,9 @@ export class PlaylistExplorerViewPort {
   }
 
   async endAddVirtualPlaylist() {
-    await this.playlistService.addVirtualPlaylistAsync(this.newPlaylist);
+    const playlist = await this.playlistService.addVirtualPlaylistAsync(this.newPlaylist);
+    this.playlistsVm.push(new PlaylistViewModel(playlist));
+
     this.newPlaylist = null;
     this.isAdding = false;
   }
@@ -169,4 +170,3 @@ export class PlaylistExplorerViewPort {
 
   // END Media section
 }
-
