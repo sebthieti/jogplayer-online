@@ -214,7 +214,7 @@ jpoApp.factory('userStateBusiness', [
 						playedPosition: mediumPosition,
 						currentPlaylistVm: currentPlaylistVm,
 						currentFileExplorerPath: currentFileExplorerPath,
-						mediaQueueLinks: mediumQueueLinks,
+						mediaQueue: mediumQueueLinks,
 						playingMediumInQueueIndex: playingMediumInQueueIndex
 					}
 				}
@@ -236,7 +236,7 @@ jpoApp.factory('userStateBusiness', [
 					return !(controlsState.playedPosition === null &&
 						controlsState.currentPlaylistVm === null &&
 						controlsState.currentFileExplorerPath === null &&
-						controlsState.mediaQueueLinks === null &&
+						controlsState.mediaQueue === null &&
 						controlsState.playingMediumInQueueIndex === null);
 				})
 				.do(function (controlsStates) {
@@ -246,7 +246,7 @@ jpoApp.factory('userStateBusiness', [
 							: null;
 						if (userState) { // Just update
 							userState.playedPosition = controlsStates.playedPosition;
-							userState.mediaQueue = controlsStates.mediaQueueLinks;
+							userState.mediaQueue = controlsStates.mediaQueue;
 							userState.playingMediumInQueueIndex = controlsStates.playingMediumInQueueIndex;
 							userState.openedPlaylistId = plId;
 							userState.browsingFolderPath = controlsStates.currentFileExplorerPath;
@@ -258,7 +258,7 @@ jpoApp.factory('userStateBusiness', [
 						} else { // Insertion
 							var newUserState = UserStateModel
 								.createEmptyUserStateEntity()
-								.setMediaQueue(controlsStates.mediaQueueLinks)
+								.setMediaQueue(controlsStates.mediaQueue)
 								.setPlayedPosition(controlsStates.playedPosition)
 								.setBrowsingFolderPath(controlsStates.currentFileExplorerPath)
 								.setPlayingMediumInQueueIndex(controlsStates.playingMediumInQueueIndex)

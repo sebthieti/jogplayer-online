@@ -53,7 +53,7 @@ export class Home implements ConfiguresRouter {
         if (!medium) {
           routeConfig.navModel.setTitle('JogPlayer Online');
         } else {
-          const nameOrTitle = medium.title || medium.name;
+          const nameOrTitle = medium.title;
           routeConfig.navModel.setTitle(`${nameOrTitle} - JogPlayer Online`);
         }
       })

@@ -1,6 +1,7 @@
 export interface Medium {
   id: string;
   title: string;
+  name: string;
   isAvailable: boolean;
   isChecked: boolean;
   mimeType: string;

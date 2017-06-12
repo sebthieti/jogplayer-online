@@ -34,8 +34,8 @@ export default class PlaylistService {
       .observeQueueEndedWithMedium()
       // React only if current playing medium is a medium from playlist
       .filter(lastMediumInQueueViewModel => !!lastMediumInQueueViewModel)
-      .filter(mediumVm => mediumVm.origin === 'playlist')
-      .do(lastMediumInQueueViewModel => this.playNext(lastMediumInQueueViewModel))
+      .filter(mediumInQueue => mediumInQueue.medium.origin === 'playlist')
+      .do(lastMediumInQueueViewModel => this.playNext(lastMediumInQueueViewModel.medium))
       .subscribe();
 
     this.audioService
@@ -71,7 +71,13 @@ export default class PlaylistService {
     if (currentMediumIndex < currentPlaylist.media.length - 1) {
       // take next
       const nextMedium = currentPlaylist.media[currentMediumIndex+1];
-      this.mediaQueueService.enqueueMediumAndStartQueue(nextMedium);
+      this.mediaQueueService.enqueueMediumAndStartQueue(
+        nextMedium,
+        {
+          playlistIndex: currentPlaylistIndex,
+          mediumIndex: currentMediumIndex
+        }
+      );
     }
   }
 
@@ -206,7 +212,11 @@ export default class PlaylistService {
 
   playMedium(playlistIndex: number, mediumIndex: number) {
     this.mediaQueueService.enqueueMediumAndStartQueue(
-      this.playlists[playlistIndex].media[mediumIndex]
+      this.playlists[playlistIndex].media[mediumIndex],
+      {
+        playlistIndex,
+        mediumIndex
+      }
     );
   }
 

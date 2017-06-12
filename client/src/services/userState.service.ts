@@ -13,19 +13,21 @@ import PlaylistRepository from '../repositories/playlist.repository';
 import MediumModel from '../models/medium.model';
 import {FileExplorerRepository} from '../repositories/fileExplorer.repository';
 import MediaService from './media.service';
+import MediumInQueueModel from '../models/mediumInQueue.model';
 
 interface ControlsState {
   playedPosition: number,
-  currentPlaylistVm: any,
+  // currentPlaylistVm: any,
   currentFileExplorerPath: string,
-  mediaQueueLinks: string[],
+  mediaQueue: MediumInQueueModel[],
   openedPlaylistPosition: number,
   playingMediumInQueueIndex: number
 }
 
 @autoinject
 export default class UserStateService {
-  userStateSubject = new BehaviorSubject<UserStateModel>(null);
+  // userState = new BehaviorSubject<UserStateModel>(null);
+  userState: UserStateModel = null;
   initializingState = false;
 
   constructor(
@@ -54,7 +56,7 @@ export default class UserStateService {
     const userStateModel = new UserStateModel(userState);
     this.initializingState = true;
     this.mediators.setIsUserStateInitialized(this.initializingState);
-    this.userStateSubject.onNext(userStateModel);
+    this.userState = userStateModel;
 
     if (!userState) {
       this.initializingState = false;
@@ -82,20 +84,10 @@ export default class UserStateService {
   }
 
   private async loadMediaQueueAsync(userState: UserState): Promise<void> {
-    const mediaInQueuePromises = (userState.mediaQueue || []).map(mediumFilePath => {
-      if (mediumFilePath.startsWith('/api/playlists/')) {
-        // return new PlaylistMediaModel(
-        //   this.playlistRepository,
-        //   this.fileExplorerRepository,
-        //   this.mediaQueueService
-        // )
-        // .getMediumFromFilePath(mediumFilePath);
-      } else {
-        // TODO In DB, userState.mediumLinks => url and origin. For now, only file
-        return this.mediaService.setMediaFromFilePath(
-          new MediumModel('file'),
-          mediumFilePath);
-      }
+    const mediaInQueuePromises = (userState.mediaQueue || []).map(mediumInQueue => {
+      return this.mediaService.setMediaFromFilePath(
+        new MediumModel(mediumInQueue.playlistLink ? 'playlist' : 'file'),
+        mediumInQueue.mediumPath);
     });
 
     try {
@@ -107,7 +99,7 @@ export default class UserStateService {
     }
   }
 
-  private async loadCurrentMediumAsync(userState: UserState) {
+  private async loadCurrentMediumAsync(userState: UserState): Promise<void> {
     // Search medium at index
     const mediumInQueue = await this.mediaQueueService.getMediumAtIndexAsync(
       userState.playingMediumInQueueIndex
@@ -118,14 +110,6 @@ export default class UserStateService {
       this.audioService.setMediumPositionByTime(userState.playedPosition);
       //audioService.playOrPause();
     }
-  }
-
-  async updateStateAsync(userState: UserStateModel): Promise<UserStateModel> {
-    const updateRequest = userState.toUpdateUserStateRequest();
-    const updatedState = await this.userStateRepository.updateUserState(updateRequest);
-    userState.setFromEntity(updatedState);
-
-    return userState;
   }
 
   private tryLoadVolumeState(): number {
@@ -147,28 +131,30 @@ export default class UserStateService {
     this.playlistService.selectPlaylistByIndexAsync(userState.openedPlaylistPosition);
   }
 
-  observeUserState() {
-    return this.userStateSubject;
-  }
-
-  observeControlsForStateChange() {
+  observeControlsForStateChange(): Observable<ControlsState> {
     return Observable.combineLatest(
       this.observeMediumPositionChangeByInterval(5000)
         .startWith(null).map(x => x),
-      this.observePlaylistSelectionChangeByInterval(5000)
-        .startWith(null).map(x => x),
-      this.observeFileExplorerPathChangeByInterval(5000)
-        .startWith(null).map(x => x),
-      this.observeMediumQueueSelectLinkUrl()
-        .startWith(null).map(x => x),
+      this.observeOpenedPlaylistByInterval(5000)
+        .startWith(-1).map(x => x),
+      this.observeFileExplorerPathByInterval(5000)
+        .startWith('').map(x => x),
+      this.observeMediumQueue()
+        .startWith([]).map(x => x),
       this.observeCurrentMediumIndexInQueue()
-        .startWith(null).map(x => x),
-      (mediumPosition, openedPlaylistPosition, currentFileExplorerPath, mediumQueueLinks, playingMediumInQueueIndex) => {
+        .startWith(-1).map(x => x),
+      (
+        mediumPosition: number,
+        openedPlaylistPosition: number,
+        currentFileExplorerPath: string,
+        mediumQueue,
+        playingMediumInQueueIndex: number
+      ) => {
         return {
           playedPosition: mediumPosition,
           openedPlaylistPosition: openedPlaylistPosition,
           currentFileExplorerPath: currentFileExplorerPath,
-          mediaQueueLinks: mediumQueueLinks,
+          mediaQueue: mediumQueue,
           playingMediumInQueueIndex: playingMediumInQueueIndex
         }
       }
@@ -184,43 +170,47 @@ export default class UserStateService {
     this.observeControlsForStateChange()
       .where(controlsState =>
         !(controlsState.playedPosition === null &&
-        controlsState.openedPlaylistPosition === null &&
+        controlsState.openedPlaylistPosition === -1 &&
         controlsState.currentFileExplorerPath === null &&
-        controlsState.mediaQueueLinks === null &&
-        controlsState.playingMediumInQueueIndex === null)
+        controlsState.mediaQueue === null &&
+        controlsState.playingMediumInQueueIndex === -1)
       )
       .do(async controlsState => {
-        const userState = this.observeUserState().getValue();
-        if (userState) { // Just update
-          userState.playedPosition = controlsState.playedPosition;
-          userState.mediaQueue = controlsState.mediaQueueLinks;
-          userState.playingMediumInQueueIndex = controlsState.playingMediumInQueueIndex;
-          userState.openedPlaylistPosition = controlsState.openedPlaylistPosition;
-          userState.browsingFolderPath = controlsState.currentFileExplorerPath && controlsState.currentFileExplorerPath.path;
-          // const updatedState = await userState.updateAsync();
-          const updatedState = await this.updateStateAsync(userState);
-          this.userStateSubject.onNext(updatedState);
+        if (this.userState) { // Just update
+          this.userState.playedPosition = controlsState.playedPosition;
+          this.userState.mediaQueue = controlsState.mediaQueue.map(mq => mq.toEntity());
+          this.userState.playingMediumInQueueIndex = controlsState.playingMediumInQueueIndex;
+          this.userState.openedPlaylistPosition = controlsState.openedPlaylistPosition;
+          this.userState.browsingFolderPath = controlsState.currentFileExplorerPath;
+          this.userState = await this.updateAsync(this.userState);
         } else { // Insertion
-          this.addAsync(controlsState);
-
-          this.userStateSubject.onNext(userState);
+          this.userState = await this.addStateAsync(controlsState);
           // TODO PB 2 calls are made: 1 for add, other for update
         }
       })
       .subscribe();
   }
 
-  private addAsync(controlsState: ControlsState) {
-    return this.userStateRepository.updateUserState({
-      mediaQueue: controlsState.mediaQueueLinks,
+  private async addStateAsync(controlsState: ControlsState): Promise<UserStateModel> {
+    const userState = await this.userStateRepository.updateUserState({
+      mediaQueue: controlsState.mediaQueue.map(mq => mq.toEntity()),
       playedPosition: controlsState.playedPosition,
       browsingFolderPath: controlsState.currentFileExplorerPath,
       playingMediumInQueueIndex: controlsState.playingMediumInQueueIndex,
       openedPlaylistPosition: controlsState.openedPlaylistPosition
     });
+    return new UserStateModel(userState);
   }
 
-  observeMediumQueueSelectLinkUrl() {
+  private async updateAsync(userState: UserStateModel): Promise<UserStateModel> {
+    const updateRequest = userState.toUpdateUserStateRequest();
+    const updatedState = await this.userStateRepository.updateUserState(updateRequest);
+    userState.setFromEntity(updatedState);
+
+    return userState;
+  }
+
+  observeMediumQueue(): Observable<MediumInQueueModel[]> {
     return this.mediaQueueService
       .observeMediaQueue()
       .mapWithPreviousValue((oldValue, newValue) => {
@@ -233,13 +223,10 @@ export default class UserStateService {
         !(!(values.oldValue && values.oldValue.length > 0) && !(values.newValue && values.newValue.length > 0)) // TODO Revamp
       )
       .map(values => values.newValue)
-      .filter(x => !!x)
-      .map(mediaQueue => mediaQueue.map(mediumInQueue => {
-        return mediumInQueue.selfPath || mediumInQueue.filePath;
-      }));
+      .filter(x => !!x);
   }
 
-  observeMediumPositionChangeByInterval(interval) {
+  observeMediumPositionChangeByInterval(interval: number): Observable<number|null> {
     return Observable
       .timer(interval, interval)
       .withLatestFrom(
@@ -251,17 +238,17 @@ export default class UserStateService {
       .distinctUntilChanged(x => x);
   }
 
-  observeFileExplorerPathChangeByInterval(interval) {
+  observeFileExplorerPathByInterval(interval: number): Observable<string> {
     return Observable
       .timer(interval, interval)
       .withLatestFrom(
         this.fileExplorerService.observeMainExplorerContent(),
-        (t, m) => m
+        (t, m) => m.path
       )
       .distinctUntilChanged(x => x);
   }
 
-  observePlaylistSelectionChangeByInterval(interval) {
+  observeOpenedPlaylistByInterval(interval: number): Observable<number> {
     return Observable
       .timer(interval, interval)
       .withLatestFrom(
@@ -271,7 +258,7 @@ export default class UserStateService {
       .distinctUntilChanged(x => x);
   }
 
-  observeCurrentMediumIndexInQueue() {
+  observeCurrentMediumIndexInQueue(): Observable<number> {
     return this.mediaQueueService.observeCurrentMediumIndexInQueue();
   }
 

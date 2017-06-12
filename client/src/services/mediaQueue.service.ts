@@ -4,13 +4,15 @@ import MediumModel from '../models/medium.model';
 import {PlayerEvent} from '../constants';
 import AudioService from './audio.service';
 import Mediators from "../mediators";
+import MediumInQueueModel from '../models/mediumInQueue.model';
+import {MediumPlaylistLink} from '../entities/mediumPlaylistLink';
 
 @autoinject
 export default class MediaQueueService {
-  private currentMediumIndexInQueueSubject = new BehaviorSubject<number>(-1);
-  private mediaQueueSubject = new BehaviorSubject<MediumModel[]>([]);
+  private currentMediumIndexInQueueSubject = new BehaviorSubject<number>(null);
+  private mediaQueueSubject = new BehaviorSubject<MediumInQueueModel[]>([]);
   private mediumOnErrorSubject = new Subject<MediumModel>();
-  private queueEndedWithMediumSubject = new Subject<MediumModel>();
+  private queueEndedWithMediumSubject = new Subject<MediumInQueueModel>();
 
   constructor(
     private audioService: AudioService,
@@ -31,18 +33,14 @@ export default class MediaQueueService {
       .do(e => {
         switch (e.name) {
           case PlayerEvent.Error:
-            this.displayMediumErrorResumeNext();
-            break;
+            return this.displayMediumErrorResumeNext();
           case PlayerEvent.Ended:
           case PlayerEvent.Next:
-            this.playNext();
-            break;
+            return this.playNext();
           case PlayerEvent.Previous:
-            this.playPrevious();
-            break;
+            return this.playPrevious();
           case PlayerEvent.PlayFirst:
-            this.playFirst();
-            break;
+            return this.playFirst();
         }
       })
       .subscribe();
@@ -65,12 +63,12 @@ export default class MediaQueueService {
     return this.mediumOnErrorSubject;
   }
 
-  playMediumAsync(mediumPosition: number, medium: MediumModel) {
+  playMediumAsync(mediumPosition: number, medium: MediumInQueueModel) {
     this.currentMediumIndexInQueueSubject.onNext(mediumPosition);
     return this.audioService.setMediumToPlayAndPlayAsync(medium);
   }
 
-  getMediumAtIndexAsync(index: number): MediumModel {
+  getMediumAtIndexAsync(index: number): MediumInQueueModel {
     const mediaQueue = this.mediaQueueSubject.getValue();
     return mediaQueue[index];
   }
@@ -165,14 +163,19 @@ export default class MediaQueueService {
     return this.audioService.setMediumToPlayAndPlayAsync(mediaQueue[0]);
   }
 
-  enqueueMediumAndStartQueue(mediumModel): void {
+  enqueueMediumAndStartQueue(mediumModel: MediumModel, playlistLink?: MediumPlaylistLink): void {
     const mediaQueue = this.mediaQueueSubject.getValue();
-    this.mediaQueueSubject.onNext(mediaQueue.concat(mediumModel));
+    const mediumInQueue = new MediumInQueueModel(mediumModel, playlistLink);
+    this.mediaQueueSubject.onNext(mediaQueue.concat(mediumInQueue));
   }
 
-  enqueueMediaAndStartQueue(mediaModels: MediumModel[]): void {
+  // TODO Stopped here. playlistLink doesn't make sence here
+  enqueueMediaAndStartQueue(mediaModels: MediumModel[], playlistLink?: MediumPlaylistLink): void {
     const mediaQueue = this.mediaQueueSubject.getValue();
-    this.mediaQueueSubject.onNext(mediaQueue.concat(mediaModels));
+    const mediaInQueue = mediaModels.map(mediumModel =>
+      new MediumInQueueModel(mediumModel, playlistLink)
+    );
+    this.mediaQueueSubject.onNext(mediaQueue.concat(mediaInQueue));
   }
 
   removeMedium(position: number): void {
@@ -188,21 +191,15 @@ export default class MediaQueueService {
     this.mediaQueueSubject.onNext(mediaQueue);
   }
 
-  observeCurrentMediumInQueue(): Observable<MediumModel> {
-    return this.currentMediumIndexInQueueSubject
-      .map(position => {
-        return position >= 0 ?
-            this.mediaQueueSubject.getValue()[position] :
-            null
-        }
-      );
+  observeCurrentMediumInQueueIndex(): Observable<number> {
+    return this.currentMediumIndexInQueueSubject;
   }
 
   observeCurrentMediumIndexInQueue(): Observable<number> {
     return this.currentMediumIndexInQueueSubject;
   }
 
-  observeMediaQueue(): BehaviorSubject<MediumModel[]> {
+  observeMediaQueue(): BehaviorSubject<MediumInQueueModel[]> {
     return this.mediaQueueSubject;
   }
 
@@ -212,7 +209,7 @@ export default class MediaQueueService {
     this.mediaQueueSubject.onNext([]);
   }
 
-  observeQueueEndedWithMedium(): Observable<MediumModel> {
+  observeQueueEndedWithMedium(): Observable<MediumInQueueModel> {
     return this.queueEndedWithMediumSubject;
   }
 }

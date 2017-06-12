@@ -127,6 +127,7 @@ export default class PlaylistRepository {
     return {
       id: entity.id,
       title: entity.title,
+      name: entity.name || entity.title,
       isAvailable: entity.isAvailable,
       isChecked: entity.isChecked,
       mimeType: entity.mimeType,

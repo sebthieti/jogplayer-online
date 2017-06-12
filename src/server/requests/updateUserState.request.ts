@@ -1,7 +1,9 @@
+import {MediumInQueue} from '../entities/mediumInQueue';
+
 export interface UpdateUserStateRequest {
-  playedPosition: number;
-  mediaQueue: string[];
-  browsingFolderPath: string;
-  openedPlaylistPosition: string;
-  playingMediumInQueueIndex: number;
+  playedPosition?: number;
+  mediaQueue?: MediumInQueue[];
+  browsingFolderPath?: string;
+  openedPlaylistPosition?: number;
+  playingMediumInQueueIndex?: number;
 }

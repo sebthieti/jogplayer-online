@@ -1,9 +1,10 @@
 import * as _ from 'lodash';
 import {UpdateUserState, UserState} from '../entities/userState';
+import {MediumInQueue} from '../entities/mediumInQueue';
 
 interface UserStateModelSnapshot {
   playedPosition?: number;
-  mediaQueue?: string[];
+  mediaQueue?: MediumInQueue[];
   browsingFolderPath?: string;
   openedPlaylistPosition?: number;
   playingMediumInQueueIndex?: number;
@@ -11,7 +12,7 @@ interface UserStateModelSnapshot {
 
 export class UserStateModel {
   playedPosition: number;
-  mediaQueue: string[];
+  mediaQueue: MediumInQueue[];
   browsingFolderPath: string;
   openedPlaylistPosition: number;
   playingMediumInQueueIndex: number;

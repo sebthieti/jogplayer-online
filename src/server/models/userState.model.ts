@@ -5,12 +5,13 @@ import {UpdateUserStateRequest} from '../requests/updateUserState.request';
 import {Link} from '../entities/link';
 import {IUserModel} from './user.model';
 import {IUserStateRepository} from '../repositories/userState.repository';
+import {MediumInQueue} from '../entities/mediumInQueue';
 
 export interface IUserStateModel extends IModel<UserState> {
   playedPosition: number;
-  mediaQueue: string[];
+  mediaQueue: MediumInQueue[];
   browsingFolderPath: string;
-  openedPlaylistPosition: string;
+  openedPlaylistPosition: number;
   playingMediumInQueueIndex: number;
   links: Link[];
   updateWith(updatedState: IUserStateModel): IUserStateModel;
@@ -20,9 +21,9 @@ export interface IUserStateModel extends IModel<UserState> {
 
 export class UserStateModel implements IUserStateModel {
   playedPosition: number;
-  mediaQueue: string[];
+  mediaQueue: MediumInQueue[];
   browsingFolderPath: string;
-  openedPlaylistPosition: string;
+  openedPlaylistPosition: number;
   playingMediumInQueueIndex: number;
 
   constructor(
@@ -32,7 +33,7 @@ export class UserStateModel implements IUserStateModel {
   ) { // TODO Have attach method on user side?
     this.playedPosition = entity && entity.playedPosition || 0;
     this.playingMediumInQueueIndex = entity && entity.playingMediumInQueueIndex || 0;
-    this.openedPlaylistPosition = entity && entity.openedPlaylistId || null;
+    this.openedPlaylistPosition = entity && entity.openedPlaylistPosition || null;
     this.browsingFolderPath = entity && entity.browsingFolderPath || null;
 
     this.mediaQueue = entity && entity.mediaQueue || [];
@@ -82,7 +83,7 @@ export class UserStateModel implements IUserStateModel {
       playedPosition: this.playedPosition,
       mediaQueue: this.mediaQueue,
       browsingFolderPath: this.browsingFolderPath,
-      openedPlaylistId: this.openedPlaylistPosition,
+      openedPlaylistPosition: this.openedPlaylistPosition,
       playingMediumInQueueIndex: this.playingMediumInQueueIndex
     };
   }

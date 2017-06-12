@@ -1,6 +1,8 @@
+import {MediumInQueue} from './mediumInQueue';
+
 export interface UserState {
   playedPosition: number;
-  mediaQueue: string[];
+  mediaQueue: MediumInQueue[];
   browsingFolderPath: string;
   openedPlaylistPosition: number;
   playingMediumInQueueIndex: number;
@@ -8,7 +10,7 @@ export interface UserState {
 
 export interface UpdateUserState {
   playedPosition?: number;
-  mediaQueue?: string[];
+  mediaQueue?: MediumInQueue[];
   browsingFolderPath?: string;
   openedPlaylistPosition?: number;
   playingMediumInQueueIndex?: number;

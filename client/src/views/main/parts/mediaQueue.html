@@ -5,13 +5,13 @@
     <ul id="queue">
       <li repeat.for="mVm of mediaQueueViewModels"
           click.trigger="playMediumAsync($index, mVm)"
-          class="not-selectable ${mVm.isPlaying ? 'active btn-enabled' : 'btn-enabled'}">
+          class="not-selectable ${mVm.medium.isPlaying ? 'active btn-enabled' : 'btn-enabled'}">
         <button type="button"
                 click.trigger="innerRemove($index)"
                 class="remove"
                 stop-event>[x]</button>
-        <span class="error" show.bind="mVm.hasError" stop-event>[!]</span>
-        <span textcontent.one-time="mVm.name || mVm.title"></span>
+        <span class="error" show.bind="mVm.medium.hasError" stop-event>[!]</span>
+        <span textcontent.one-time="mVm.medium.name"></span>
       </li>
     </ul>
     <button type="button"

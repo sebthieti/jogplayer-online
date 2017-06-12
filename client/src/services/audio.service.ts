@@ -6,6 +6,7 @@ import MediumSourceTag from '../helpers/mediumSourceTag.helper';
 import MediumModel from '../models/medium.model';
 import {FileViewModel} from '../view-models/file.viewModel';
 import FileModel from '../models/file.model';
+import MediumInQueueModel from '../models/mediumInQueue.model';
 
 export interface AudioServiceEvent {
   name: string,
@@ -116,7 +117,7 @@ export default class AudioService {
     return this.eventSubject;
   }
 
-  observePlayingMedium(): Observable<MediumModel | FileModel> {
+  observePlayingMedium(): Observable<MediumModel> {
     return this.observeEvents()
       .filter(e => e.name === PlayerEvent.MediumSet)
       .map(e => e.value.medium);
@@ -210,12 +211,12 @@ export default class AudioService {
     this.audioPlayer.currentTime = cursorPercent * this.audioPlayer.duration;
   }
 
-  async setMediumToPlayAndPlayAsync(medium: MediumModel): Promise<void> {
+  async setMediumToPlayAndPlayAsync(medium: MediumInQueueModel): Promise<void> {
     await this.setMediumToPlayAsync(medium);
     this.audioPlayer.play();
   }
 
-  setMediumToPlayAsync(medium: MediumModel): Promise<void> {
+  setMediumToPlayAsync(mediumInQueue: MediumInQueueModel): Promise<void> {
     return new Promise<void>(resolve => {
       const mediumToPlayLoaded = () => {
         this.audioPlayer.removeEventListener('loadeddata', mediumToPlayLoaded);
@@ -224,14 +225,14 @@ export default class AudioService {
       };
       this.audioPlayer.addEventListener('loadeddata', mediumToPlayLoaded, true);
 
-      const extPos = medium.playPath.lastIndexOf('.');
-      const mediumExt = medium.playPath.substring(extPos);
+      const extPos = mediumInQueue.medium.playPath.lastIndexOf('.');
+      const mediumExt = mediumInQueue.medium.playPath.substring(extPos);
 
       // Search for source tag to set medium to read.
       const allSourceTags = this.audioPlayer.querySelectorAll('source');
       _.each(allSourceTags, tag => this.audioPlayer.removeChild(tag));
 
-      const src = medium.playPath;
+      const src = mediumInQueue.medium.playPath;
       this.audioPlayer.appendChild(this.mediumSourceTag.build(src));
 
       // We'll have mp3 and ogg, in case the browser can't play
@@ -251,7 +252,7 @@ export default class AudioService {
 
       this.eventSubject.onNext({
         name: PlayerEvent.MediumSet, // TODO To avoid event data corruption, make name private, give getName
-        value: { medium }
+        value: { medium: mediumInQueue.medium }
       });
     });
   }

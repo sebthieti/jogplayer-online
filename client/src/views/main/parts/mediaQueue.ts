@@ -1,10 +1,10 @@
 import {autoinject, computedFrom} from 'aurelia-framework';
 import MediaQueueService from '../../../services/mediaQueue.service';
-import MediumModel from '../../../models/medium.model';
+import MediumInQueueModel from '../../../models/mediumInQueue.model';
 
 @autoinject
 export class MediaQueue {
-  mediaQueueViewModels: any[];
+  mediaQueueViewModels: MediumInQueueModel[];
 
   constructor(private mediaQueueService: MediaQueueService) {
   }
@@ -12,33 +12,35 @@ export class MediaQueue {
   bind() {
     this.mediaQueueService
       .observeMediaQueue()
-      .do(mediaQueueViewModels => {
-        this.mediaQueueViewModels = mediaQueueViewModels;
+      .do(mediaInQueue => {
+        this.mediaQueueViewModels = mediaInQueue
       })
       .subscribe();
 
     this.mediaQueueService
-      .observeCurrentMediumInQueue()
+      .observeCurrentMediumInQueueIndex()
       .whereIsNotNull()
-      .mapWithPreviousValue((oldValue, newValue) => {
+      .mapWithPreviousValue((oldValueIndex, newValueIndex) => {
         // If a medium is already playing, then unset it's playing status (the color change) and set the new one
-        if (oldValue) { // TODO Can Still be an object but unlinked from array
-          oldValue.isPlaying = false;
+        if (oldValueIndex !== -1) { // TODO Can Still be an object but unlinked from array
+          this.mediaQueueViewModels[oldValueIndex].medium.isPlaying = false;
         }
-        newValue.isPlaying = true;
-        newValue.hasError = false;
+        if (newValueIndex === -1) {
+          return;
+        }
+        const nextMedium = this.mediaQueueViewModels[newValueIndex].medium;
+        nextMedium.isPlaying = true;
+        nextMedium.hasError = false;
       })
       .subscribe();
 
     this.mediaQueueService
       .observeMediumError()
-      .do(mediumInError => {
-        mediumInError.hasError = true;
-      })
+      .do(medium => medium.hasError = true)
       .subscribe()
   }
 
-  playMediumAsync(mediumPosition: number, medium: MediumModel) {
+  playMediumAsync(mediumPosition: number, medium: MediumInQueueModel) {
     return this.mediaQueueService.playMediumAsync(mediumPosition, medium);
   }
 

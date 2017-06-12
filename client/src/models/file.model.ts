@@ -35,12 +35,12 @@ export default class FileModel {
 export function toMedium(file: FileModel): MediumModel {
   return new MediumModel('file', {
     id: 'INVALID',
+    name: file.name,
     title: file.name,
     isAvailable: true,
     duration: 0,
     isChecked: true,
     mimeType: '',
-
     filePath: file.filePath,
     ext: file.name.substr(file.name.lastIndexOf('.'))
   })
