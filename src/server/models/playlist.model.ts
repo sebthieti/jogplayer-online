@@ -59,7 +59,8 @@ export class PlaylistModel implements IPlaylistModel {
   ) {
     this.name = playlist && playlist.name || null;
     this.filePath = playlist && playlist.filePath || null;
-    this.metadata = playlist && playlist.metadata || {createdOn: new Date(), updatedOn: null};
+    const now = new Date();
+    this.metadata = playlist && playlist.metadata || {createdOn: now, updatedOn: now};
 
     this.isAvailable = false; // TODO For now
 

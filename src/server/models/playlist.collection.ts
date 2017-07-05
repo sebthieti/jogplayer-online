@@ -87,11 +87,12 @@ export default class PlaylistCollection implements IPlaylistCollection {
     request: UpsertPlaylistRequest,
     position?: number
   ): Promise<IPlaylistModel> {
+    const now = new Date();
     const entity: Playlist = {
       name: request.name,
         filePath: null,
         mediaIds: [],
-        metadata: {createdOn: new Date(), updatedOn: null}
+        metadata: {createdOn: now, updatedOn: now}
     };
     const emptyPlaylist = new PlaylistModel(
       this.user,
@@ -130,11 +131,12 @@ export default class PlaylistCollection implements IPlaylistCollection {
     request: UpsertPlaylistRequest,
     position?: number
   ): Promise<IPlaylistModel> {
+    const now = new Date();
     const entity: Playlist = {
       name: request.name,
       filePath: request.filePath,
       mediaIds: [],
-      metadata: {createdOn: new Date(), updatedOn: null}
+      metadata: {createdOn: now, updatedOn: now}
     };
     let playlist = new PlaylistModel(
       this.user,
