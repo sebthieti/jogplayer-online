@@ -157,7 +157,7 @@ export class PlaylistModel implements IPlaylistModel {
   }
 
   private async clearPlaylist(): Promise<void> {
-    await this.mediaRepository.removeMediaAsync(this.media.value.map(m => m._id));
+    await this.mediaRepository.removeMediaAsync(this.media.entities);
     this.media = new LazyModelAsync(async () => [], []);
   }
 
