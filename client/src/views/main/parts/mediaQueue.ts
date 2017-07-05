@@ -22,7 +22,7 @@ export class MediaQueue {
       .whereIsNotNull()
       .mapWithPreviousValue((oldValueIndex, newValueIndex) => {
         // If a medium is already playing, then unset it's playing status (the color change) and set the new one
-        if (oldValueIndex !== -1) { // TODO Can Still be an object but unlinked from array
+        if (oldValueIndex !== null && oldValueIndex >= 0) { // TODO Can Still be an object but unlinked from array
           this.mediaQueueViewModels[oldValueIndex].medium.isPlaying = false;
         }
         if (newValueIndex === -1) {
